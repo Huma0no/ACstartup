@@ -1,0 +1,10 @@
+[[redirects]]
+  from = "/sw.js"
+  to = "/sw.js"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

@@ -1,0 +1,547 @@
+/* ========================================
+   TEMA PILL STYLE (iOS MODERN)
+   ======================================== */
+
+html[data-theme="pill-style"] .btn {
+  /* Estado normal: pastilla suave apoyada */
+  background: linear-gradient(145deg, #ffffff, #e0e0e8);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 13px 26px;
+  min-height: 52px;
+  font-weight: 600;
+  font-size: 10pt;
+  color: #1c1c1e;
+  cursor: pointer;
+  position: relative;
+  transform: translateY(4px);
+  
+  /* La magia 3D real: múltiples sombras y luces */
+  box-shadow: 
+    0 8px 15px rgba(0,0,0,0.15),
+    0 14px 25px rgba(0,0,0,0.12),
+    inset 0 -4px 8px rgba(0,0,0,0,0.08),
+    inset 0 2px 4px rgba(255,255,255,0.9);
+  
+  transition: all 0.38s cubic-bezier(0.34, 1.56, 0.64, 1); /* rebote elástico
+  overflow: hidden;
+  letter-spacing: -0.2px;
+}
+
+/* ========================================
+   BACKGROUND LIMPIO ESTILO iOS
+   ======================================== */
+html[data-theme="pill-style"] body {
+  background: var(--background);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   CONTAINERS MINIMALISTAS
+   ======================================== */
+html[data-theme="pill-style"] .container,
+html[data-theme="pill-style"] .section,
+html[data-theme="pill-style"] .navbar {
+  background: var(--container-bg);
+  border: 1px solid var(--container-border-light);
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  position: relative;
+}
+
+html[data-theme="pill-style"] .container::before {
+  background: transparent;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 18pt;
+  text-transform: none;
+  letter-spacing: -0.5px;
+  border: none;
+  box-shadow: none;
+  padding: 0 0 16px 0;
+  margin: -16px -16px 16px -16px;
+  border-bottom: 1px solid var(--container-border-light);
+}
+
+html[data-theme="pill-style"] .section {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  transition: var(--transition);
+}
+
+html[data-theme="pill-style"] .section:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   NAVBAR ESTILO iOS
+   ======================================== */
+html[data-theme="pill-style"] .navbar {
+  background: var(--container-bg);
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--container-border-light);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+}
+
+html[data-theme="pill-style"] .nav-brand {
+  color: var(--text-color);
+  font-size: 14pt;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+html[data-theme="pill-style"] .nav-link {
+  background: transparent;
+  border: none;
+  color: #007aff;
+  font-weight: 500;
+  transition: var(--transition);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+html[data-theme="pill-style"] .nav-link:hover {
+  background: rgba(0, 122, 255, 0.1);
+  color: #0051d5;
+}
+
+/* ========================================
+   BOTONES TIPO PÍLDORA (PILL BUTTONS)
+   ======================================== */
+/* Brillo superior que se mueve */
+html[data-theme="pill-style"] .btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    135deg,
+    transparent 30%,
+    rgba(255,255,255,0.7) 45%,
+    rgba(255,255,255,0.95) 50%,
+    rgba(255,255,255,0.7) 55%,
+    transparent 70%
+  );
+  transform: rotate(30deg);
+  transition: 0.7s;
+  opacity: 0;
+}
+
+/* Hover = la pastilla se levanta y brilla */
+html[data-theme="pill-style"] .btn:hover {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: 
+    0 20px 35px rgba(0,0,0,0.22),
+    0 30px 50px rgba(0,0,0,0.18),
+    inset 0 -4px 10px rgba(0,0,0,0.08),
+    inset 0 3px 8px rgba(255,255,255,1);
+}
+html[data-theme="pill-style"] .btn:hover::before {
+  opacity: 1;
+  transform: rotate(30deg) translateX(60%);
+}
+
+/* ACTIVE / CLICK = ¡EXPLOSIÓN DE PÍLDORA! */
+html[data-theme="pill-style"] .btn:active,
+html[data-theme="pill-style"] .btn.active {
+  /* Se infla hacia adelante como si fuera gelatina */
+  transform: translateY(-1px) scale(1.08);
+  background: linear-gradient(180deg, #007aff 0%, #0040dd 100%);
+  color: white;
+  font-weight: 700;
+  
+  /* Glow azul potente + sombra gigante */
+  box-shadow: 
+    0 0 30px rgba(0,122,255,0.7),
+    0 12px 40px rgba(0,122,255,0.5),
+    inset 0 -6px 20px rgba(0,0,0,0.3),
+    inset 0 0 4px 12px rgba(255,255,255,0.4);
+  
+  /* Bordes internos brillantes para más profundidad */
+  border-bottom: 4px solid #003abb;
+}
+/* Pequeña animación extra al soltar el botón (pop out) */
+html[data-theme="pill-style"] .btn {
+  transition: all 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html[data-theme="pill-style"] .btn:active {
+  transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+html[data-theme="pill-style"] .btn.active {
+  transform: translateY(-4px) scale(1.05);
+  background: linear-gradient(180deg, #0066ff 0%, #0040dd 100%);
+  box-shadow: 
+    0 0 35px rgba(0,102,255,0.8),
+    0 18px 45px rgba(0,102,255,0.5),
+    inset 0 -6px 20px rgba(0,0,0,0.25);
+  animation: pulse-glow 3s infinite alternate;
+}
+
+/* Pulsito suave de brillo para botones activos */
+@keyframes pulse-glow {
+  from { box-shadow: 0 0 35px rgba(0,102,255,0.8), 0 18px 45px rgba(0,102,255,0.5), inset 0 -6px 20px rgba(0,0,0,0.25); }
+  to   { box-shadow: 0 0 45px rgba(0,102,255,1),   0 24px 60px rgba(0,102,255,0.7), inset 0 -6px 20px rgba(0,0,0,0.3); }
+}
+
+html[data-theme="pill-style"] .btn.active:hover {
+  background: linear-gradient(180deg, #0077ea 0%, #004fc5 100%);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+/* ========================================
+   INPUTS ESTILO iOS
+   ======================================== */
+html[data-theme="pill-style"] input[type="text"],
+html[data-theme="pill-style"] input[type="number"],
+html[data-theme="pill-style"] textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border-light);
+  border-radius: 10px;
+  color: var(--text-color);
+  font-weight: 400;
+  font-size: var(--font-size);
+  padding: 12px 16px;
+  width: 100%;
+  transition: var(--transition);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="pill-style"] input[type="text"]::placeholder,
+html[data-theme="pill-style"] input[type="number"]::placeholder,
+html[data-theme="pill-style"] textarea::placeholder {
+  color: var(--input-placeholder);
+  font-weight: 400;
+}
+
+html[data-theme="pill-style"] input[type="text"]:focus,
+html[data-theme="pill-style"] input[type="number"]:focus,
+html[data-theme="pill-style"] textarea:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme="pill-style"] textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* ========================================
+   RANGE SLIDER ESTILO iOS
+   ======================================== */
+html[data-theme="pill-style"] input[type="range"] {
+  background: transparent;
+  height: 4px;
+  width: 100%;
+  margin: 12px 0;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+html[data-theme="pill-style"] input[type="range"]::-webkit-slider-track {
+  background: #d2d2d7;
+  height: 4px;
+  border-radius: 2px;
+}
+
+html[data-theme="pill-style"] input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  transition: var(--transition);
+}
+
+html[data-theme="pill-style"] input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transform: scale(1.05);
+}
+
+html[data-theme="pill-style"] input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.98);
+}
+
+html[data-theme="pill-style"] input[type="range"]::-moz-range-track {
+  background: #d2d2d7;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+html[data-theme="pill-style"] input[type="range"]::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: var(--transition);
+}
+
+html[data-theme="pill-style"] input[type="range"]::-moz-range-thumb:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+html[data-theme="pill-style"] #quantity-value {
+  font-size: var(--font-size);
+  color: var(--text-color);
+  margin-left: 12px;
+  font-weight: 600;
+}
+
+/* ========================================
+   REPORT ENTRIES
+   ======================================== */
+html[data-theme="pill-style"] .report-entry {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border-light);
+  border-radius: 10px;
+  color: var(--text-color);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-weight: 400;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: var(--transition);
+}
+
+html[data-theme="pill-style"] .report-entry:hover {
+  background: var(--button-bg-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transform: translateX(4px);
+}
+
+/* ========================================
+   HEADINGS Y LABELS
+   ======================================== */
+html[data-theme="pill-style"] .section h2 {
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 11pt;
+  margin-bottom: 12px;
+  letter-spacing: -0.3px;
+}
+
+html[data-theme="pill-style"] label {
+  color: var(--text-color);
+  font-weight: 500;
+  font-size: var(--font-size);
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* ========================================
+   TOOLTIPS
+   ======================================== */
+html[data-theme="pill-style"] .btn[title]:hover:after {
+  background: var(--tooltip-bg);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 8px;
+  color: var(--tooltip-text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 8pt;
+}
+
+/* ========================================
+   PRICE DISPLAY
+   ======================================== */
+html[data-theme="pill-style"] #service-options-display {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border-light);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  color: var(--text-color);
+}
+
+/* ========================================
+   BUTTON GROUPS
+   ======================================== */
+html[data-theme="pill-style"] .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* ========================================
+   JOBS LIST
+   ======================================== */
+html[data-theme="pill-style"] #jobs-list-container {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border-light);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="pill-style"] .job-item {
+  background: var(--button-bg);
+  border: 1.5px solid #d2d2d7;
+  border-radius: 50px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  transition: var(--transition);
+  box-shadow: var(--pill-shadow);
+}
+
+html[data-theme="pill-style"] .job-item:hover {
+  background: var(--button-bg-hover);
+  box-shadow: var(--pill-shadow-hover);
+  border-color: #1d1d1f;
+}
+
+html[data-theme="pill-style"] .job-item.selected {
+  background: var(--blue-gradient);
+  color: var(--button-text-active);
+  border-color: transparent;
+  box-shadow: var(--pill-shadow-active);
+}
+
+html[data-theme="pill-style"] .job-item.selected label {
+  color: var(--button-text-active);
+  font-weight: 600;
+}
+
+html[data-theme="pill-style"] .job-item input[type="radio"] {
+  accent-color: #007aff;
+}
+
+/* Botones de acción en job items */
+html[data-theme="pill-style"] .btn-delete,
+html[data-theme="pill-style"] .btn-edit,
+html[data-theme="pill-style"] .btn-maps {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 11pt;
+  border: 1.5px solid #d2d2d7;
+}
+
+html[data-theme="pill-style"] .btn-delete:hover {
+  background: #ff3b30;
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+}
+
+html[data-theme="pill-style"] .btn-edit:hover {
+  background: #007aff;
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+html[data-theme="pill-style"] .btn-maps:hover {
+  background: #34c759;
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+}
+
+/* ========================================
+   VALIDATION ERRORS
+   ======================================== */
+html[data-theme="pill-style"] #validation-errors {
+  background: #fff5f5 !important;
+  border: 1px solid #ff3b30 !important;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(255, 59, 48, 0.2);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+html[data-theme="pill-style"] #validation-errors h2 {
+  color: #ff3b30 !important;
+  font-weight: 600;
+}
+
+html[data-theme="pill-style"] #validation-errors ul {
+  color: #d70015 !important;
+}
+
+/* ========================================
+   HAMBURGER MENU
+   ======================================== */
+html[data-theme="pill-style"] .hamburger {
+  background: transparent;
+  border: 1.5px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+html[data-theme="pill-style"] .hamburger:hover {
+  background: var(--button-bg-hover);
+  border-color: #1d1d1f;
+}
+
+html[data-theme="pill-style"] .bar {
+  background: var(--text-color);
+  display: block;
+  width: 20px;
+  height: 2px;
+  margin: 4px;
+  border-radius: 1px;
+  transition: var(--transition);
+}
+
+/* ========================================
+   HIDDEN CLASS
+   ======================================== */
+html[data-theme="pill-style"] .hidden {
+  display: none;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+@media (max-width: 768px) {
+  html[data-theme="pill-style"] .btn {
+    font-size: 8pt;
+    padding: 8px 16px;
+    min-height: 36px;
+  }
+
+  html[data-theme="pill-style"] .button-group {
+    gap: 6px;
+  }
+
+  html[data-theme="pill-style"] .container {
+    width: 95%;
+    border-radius: 12px;
+  }
+
+  html[data-theme="pill-style"] .btn-delete,
+  html[data-theme="pill-style"] .btn-edit,
+  html[data-theme="pill-style"] .btn-maps {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 10pt;
+  }
+}

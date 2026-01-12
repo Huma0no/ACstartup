@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="pill-style">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Service Call Report Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      main.container {
+        padding-bottom: 80px; /* Ensure content is not hidden behind FAB */
+      }
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+      }
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-content {
+        background-color: var(--bg-color, #fff);
+        color: var(--text-color, #000);
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 10px;
+      }
+      .model-list-item {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .model-list-item:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+      .model-list-item:last-child {
+        border-bottom: none;
+      }
+      /* Floating Action Button (FAB) Styles */
+      .fab-container {
+        position: fixed;
+        bottom: 80px; /* Adjusted to avoid overlap with bottom nav */
+        right: 20px;
+        z-index: 999;
+      }
+      .fab-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background-color: var(--button-bg-active, #3b82f6);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        font-size: 24px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: transform 0.2s;
+      }
+      .fab-btn:hover {
+        transform: scale(1.1);
+      }
+      /* Side Navigation Bar */
+      .side-nav {
+        position: fixed;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        width: 50px;
+        background-color: var(--bg-color, #fff);
+        border: 1px solid var(--border-color, #ccc);
+        border-radius: 25px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 15px 0;
+        gap: 15px;
+        z-index: 998;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: transform 0.3s ease-in-out, opacity 0.3s;
+      }
+      .side-nav.hidden {
+        transform: translateY(-50%) translateX(200%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6em;
+        color: var(--text-color);
+        opacity: 0.6;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        width: 100%;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        opacity: 1;
+        color: var(--button-bg-active, #3b82f6);
+      }
+      .nav-icon {
+        font-size: 1.4em;
+        margin-bottom: 2px;
+      }
+
+      /* --- THEME COHERENCE & CONTRAST FIXES --- */
+
+      /* Tell browser to adapt native controls based on theme */
+      :root {
+        color-scheme: light;
+      }
+
+      /* Force form elements to use theme variables */
+      input,
+      select,
+      textarea,
+      button.input-select {
+        background-color: var(--input-bg, var(--bg-color, #fff)) !important;
+        color: var(--text-color, #000) !important;
+        border: 1px solid var(--border-color, #ccc) !important;
+      }
+
+      /* Fix for select dropdown options */
+      select option,
+      select optgroup {
+        background-color: var(--bg-color, #fff);
+        color: var(--text-color, #000);
+      }
+
+      /* Modal Specific Overrides */
+      .modal-content {
+        background-color: var(--bg-color, #fff) !important;
+        color: var(--text-color, #000) !important;
+        border: 1px solid var(--border-color, #ccc);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .model-list-item:hover {
+        background-color: var(--hover-bg, rgba(127, 127, 127, 0.1));
+      }
+
+      /* Result Box Contrast */
+      .result-box {
+        background-color: var(--hover-bg, rgba(127, 127, 127, 0.1));
+        color: var(--text-color, #000);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <form id="report-form">
+        <section class="section" id="address-section">
+          <h2>Address</h2>
+          <label for="address">Service Address:</label>
+          <input
+            type="text"
+            id="address"
+            placeholder="Enter address or multiple addresses separated by commas"
+            required
+          />
+          <label for="address-details" class="block mt-2">
+            Details (optional):
+          </label>
+          <textarea
+            id="address-details"
+            placeholder="Extra notes for this address (first line shows in list)"
+            class="min-h-60"
+          ></textarea>
+
+          <div id="weighin-section">
+            <label class="sub-label block mt-2">
+              Indoor/Outdoor Units (Optional):
+            </label>
+            <div id="equipment-selection-container">
+              <!-- Heater Selection -->
+              <div class="mb-2">
+                <div class="flex-row">
+                  <select
+                    id="job-heater-series"
+                    class="input-select flex-1"
+                    aria-label="Select Heater Series"
+                  >
+                    <option value="">Select Heater Series</option>
+                  </select>
+                  <select id="job-heater-model" class="hidden"></select>
+                  <button
+                    type="button"
+                    id="btn-heater-model"
+                    class="input-select flex-1 text-left text-ellipsis"
+                    disabled
+                  >
+                    Select Model
+                  </button>
+                </div>
+                <div
+                  id="job-heater-links"
+                  class="text-small mt-1 min-h-text"
+                ></div>
+              </div>
+              <!-- Outdoor Unit Selection -->
+              <div>
+                <div class="flex-row">
+                  <select
+                    id="job-outdoor-series"
+                    class="input-select flex-1"
+                    aria-label="Select Outdoor Series"
+                  >
+                    <option value="">Select Outdoor Series</option>
+                  </select>
+                  <select id="job-outdoor-model" class="hidden"></select>
+                  <button
+                    type="button"
+                    id="btn-outdoor-model"
+                    class="input-select flex-1 text-left text-ellipsis"
+                    disabled
+                  >
+                    Select Model
+                  </button>
+                </div>
+                <div
+                  id="job-outdoor-links"
+                  class="text-small mt-1 min-h-text"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn mt-2" id="add-jobs-btn">
+            Add Jobs
+          </button>
+          <div class="mt-2">
+            <label for="pdf-upload" class="block mb-1">
+              Upload PDF with addresses:
+            </label>
+            <input type="file" id="pdf-upload" accept="application/pdf" />
+            <div id="pdf-status" class="text-small mt-1">
+              Extract addresses automatically from a PDF.
+            </div>
+          </div>
+
+          <div id="jobs-list-container" class="hidden mt-3">
+            <div data-testid="jobs-list" class="jobs-list-spacer"></div>
+            <div id="jobs-list"></div>
+          </div>
+        </section>
+
+        <section class="section" id="service-section">
+          <h2>Service</h2>
+          <div class="button-group" id="service-type-buttons">
+            <button type="button" class="btn" data-service="AC" data-price="30">
+              ❄️ AC
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-service="Heat"
+              data-price="30"
+            >
+              🔥 Heat
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-service="Prestart"
+              data-price="20"
+            >
+              ⚙️ Prestart
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-service="Finish"
+              data-price="20"
+            >
+              🏁 Finish
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-service="Drive Run"
+              data-price="10"
+            >
+              🚗 Drive Run
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-service="Cancel"
+              data-price="0"
+            >
+              🛑 Cancel
+            </button>
+          </div>
+
+          <div id="ac-heat-options" class="hidden">
+            <div class="button-group">
+              <button type="button" class="btn" data-option="Temporary">
+                Temporary
+              </button>
+              <button type="button" class="btn" data-option="2 Systems">
+                2 Systems
+              </button>
+              <button type="button" class="btn" data-option="2 Stage">
+                2 Stage
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="thermostat-section">
+          <h2>Thermostat</h2>
+          <div class="button-group" id="thermostat-buttons">
+            <button type="button" class="btn" data-thermostat="T-4">T-4</button>
+            <button type="button" class="btn" data-thermostat="T-6">T-6</button>
+            <button type="button" class="btn" data-thermostat="T-10">
+              T-10
+            </button>
+            <button type="button" class="btn" data-thermostat="T-8321">
+              T-8321
+            </button>
+            <button type="button" class="btn" data-thermostat="Ecobee">
+              Ecobee
+            </button>
+            <button type="button" class="btn" data-thermostat="Otro">
+              Otro
+            </button>
+          </div>
+          <div id="thermostat-quantity" class="hidden">
+            <label for="quantity-slider">Amount:</label>
+            <input
+              type="range"
+              id="quantity-slider"
+              min="1"
+              max="4"
+              value="1"
+            />
+            <span id="quantity-value">1</span>
+          </div>
+        </section>
+
+        <section class="section" id="accessory-section">
+          <h2>Accessories</h2>
+          <div class="button-group" id="accessory-buttons">
+            <button
+              type="button"
+              class="btn"
+              data-accessory="Zoning"
+              data-price="30"
+              data-toggle-target="#zoning-options"
+            >
+              🧩 Zoning
+            </button>
+            <div id="zoning-options" class="hidden accessory-subgroup">
+              <div class="button-group">
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="Harmony"
+                  data-price="40"
+                >
+                  🎛️ Harmony
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="Bypass Control"
+                  data-price="5"
+                >
+                  🔁 Bypass Control
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn"
+              data-accessory="FreshAir"
+              data-price="0"
+              data-toggle-target="#freshair-options"
+            >
+              🍃 FreshAir
+            </button>
+            <div id="freshair-options" class="hidden accessory-subgroup">
+              <div class="button-group">
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="FIN180P"
+                  data-price="10"
+                >
+                  🔧 FIN180P
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="Dehum"
+                  data-price="10"
+                >
+                  💧 Dehum
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="F/A"
+                  data-price="10"
+                >
+                  F/A Intake
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="FIN6-MD"
+                  data-price="10"
+                >
+                  FIN6-MD
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn"
+              data-accessory="A2L"
+              data-price="0"
+              data-toggle-target="#a2l-options"
+            >
+              🧪 A2L
+            </button>
+            <div id="a2l-options" class="hidden accessory-subgroup">
+              <div class="button-group">
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="Weight-In-Data"
+                  data-price="10"
+                >
+                  📝 Weight-In-Data
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="Trane Harness"
+                  data-price="10"
+                >
+                  🧰 Trane Harness
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-accessory="DragonFly"
+                  data-price="10"
+                >
+                  🐉 DragonFly
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn"
+              data-accessory="Float Switch"
+              data-price="5"
+            >
+              🛟 Float
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-accessory="LP Kit"
+              data-price="20"
+            >
+              🧯 L.P. Kit
+            </button>
+            <button type="button" class="btn" data-accessory="Otro">
+              ➕ Other
+            </button>
+          </div>
+          <div id="accessory-otro" class="hidden">
+            <label for="otro-name">Nombre:</label>
+            <input type="text" id="otro-name" placeholder="Accessory name" />
+            <label for="otro-price">Precio ($):</label>
+            <input type="number" id="otro-price" min="0" placeholder="Price" />
+          </div>
+        </section>
+
+        <section class="section" id="common-fixes-section">
+          <h2>Common Fixes</h2>
+          <div class="button-group" id="common-fixes-buttons">
+            <button
+              type="button"
+              class="btn"
+              data-fix="Pressure Test"
+              data-price="10"
+            >
+              🧪 Pressure Test
+            </button>
+            <button type="button" class="btn" data-fix="Leaks" data-price="20">
+              💧Leaks
+            </button>
+            <div id="leaks-options" class="leaks-subgroup hidden">
+              <div class="button-group">
+                <button type="button" class="btn" data-leak-option="Ecoil">
+                  Ecoil
+                </button>
+                <button type="button" class="btn" data-leak-option="Cunit">
+                  Cunit
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn"
+              data-fix="Open Ecoil"
+              data-price="30"
+            >
+              🌀Open Ecoil
+            </button>
+          </div>
+
+          <button type="button" class="btn" id="common-fixes-toggle">
+            More ▼
+          </button>
+          <div id="common-fixes-extra" class="collapsible">
+            <div class="button-group">
+              <button
+                type="button"
+                class="btn"
+                data-fix="Wires Jammed"
+                data-price="5"
+              >
+                🔌Wires Jammed
+              </button>
+              <button
+                type="button"
+                class="btn"
+                data-fix="Stuck Blower"
+                data-price="20"
+              >
+                ✳️ Stuck Blower
+              </button>
+              <button
+                type="button"
+                class="btn"
+                data-fix="Cut Sheetrock"
+                data-price="15"
+              >
+                🪚Cut Sheetrock
+              </button>
+              <button
+                type="button"
+                class="btn"
+                data-fix="Extended Wire"
+                data-price="5"
+              >
+                Extended Wire
+              </button>
+              <button
+                type="button"
+                class="btn"
+                data-fix="PVC Work"
+                data-price="15"
+              >
+                🧰 PVC Work
+              </button>
+              <button type="button" class="btn" data-fix="Otro">
+                ➕ Other
+              </button>
+            </div>
+          </div>
+          <div id="fix-otro" class="hidden">
+            <label for="fix-otro-name">Nombre:</label>
+            <input type="text" id="fix-otro-name" placeholder="Fix name" />
+            <label for="fix-otro-price">Precio ($):</label>
+            <input
+              type="number"
+              id="fix-otro-price"
+              min="0"
+              placeholder="Price"
+            />
+          </div>
+        </section>
+
+        <section class="section" id="weight-in-data-section">
+          <div class="section-title-row">
+            <h2>Weight-In Data</h2>
+            <button type="button" class="btn" id="weight-in-toggle">
+              Expand ▼
+            </button>
+          </div>
+          <div id="weight-in-content" class="collapsible-panel">
+            <div class="weight-in-grid">
+              <label class="weight-in-field" for="weight-lineset-length">
+                <span>Length of Lineset</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-lineset-length"
+                  placeholder="Enter length"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-liquid-diameter">
+                <span>Factory supplied liquid line length</span>
+                <select id="weight-liquid-diameter">
+                  <option value="">Select an option</option>
+                  <option value="10ft-trane">10 ft. (Trane)</option>
+                  <option value="25ft-trane-overcharged">
+                    25 ft. (Trane Overcharged)
+                  </option>
+                  <option value="15ft-lennox-goodman">
+                    15 ft. (Lennox, Goodman)
+                  </option>
+                  <option value="30ft-lennox-overcharged">
+                    30 ft. (Lennox Overcharged)
+                  </option>
+                </select>
+              </label>
+              <label class="weight-in-field" for="weight-factory-charge">
+                <span>Weight of factory supplied refrigerant (oz)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-factory-charge"
+                  placeholder="Factory charge"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-approx-adjust">
+                <span>Approx weight of refrigerant to add/remove (oz)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-approx-adjust"
+                  placeholder="Approximate oz to adjust"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-adjusted">
+                <span>Weight of refrigerant added/removed (oz)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-adjusted"
+                  placeholder="Actual oz adjusted"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-fan-speed">
+                <span>Fan speed setting (CFM)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-fan-speed"
+                  placeholder="e.g. 1200 CFM"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-liquid-temp">
+                <span>Liquid line temp. (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-liquid-temp"
+                  placeholder="Temperature"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-suction-temp">
+                <span>Suction line temp. (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-suction-temp"
+                  placeholder="Temperature"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-condenser-temp">
+                <span>Condenser saturation temp. (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-condenser-temp"
+                  placeholder="Temperature"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-subcooling-value">
+                <span>Subcooling value (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-subcooling-value"
+                  placeholder="Subcooling"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-oem-goal">
+                <span>OEM subcooling goal (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-oem-goal"
+                  placeholder="Goal"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-subcooling-deviation">
+                <span>Subcooling deviation (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-subcooling-deviation"
+                  placeholder="Deviation"
+                />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="notes-section">
+          <h2>Notes</h2>
+          <textarea id="notes" placeholder="Enter additional notes"></textarea>
+        </section>
+
+        <button type="submit" class="btn" id="generate-report">
+          Generate Report
+        </button>
+      </form>
+
+      <section class="section hidden" id="report-container">
+        <h2>Completion Report</h2>
+        <div id="report-content"></div>
+        <div id="report-actions" class="hidden">
+          <button type="button" class="btn" id="report-edit">Edit</button>
+          <button type="button" class="btn" id="report-delete">Delete</button>
+          <button type="button" class="btn" id="report-share">Share</button>
+          <button type="button" class="btn" id="report-export-csv">
+            📊 CSV
+          </button>
+        </div>
+        <div id="share-options" class="hidden">
+          <button type="button" class="btn" id="share-whatsapp">
+            WhatsApp
+          </button>
+          <button type="button" class="btn" id="share-sms">SMS</button>
+          <button type="button" class="btn" id="share-email">Email</button>
+          <button type="button" class="btn" id="share-copy">Copy</button>
+        </div>
+      </section>
+
+      <div id="error-dialog" class="section hidden">
+        <h2>Error</h2>
+        <p>Please enter an address before generating the report.</p>
+        <button type="button" class="btn" id="error-dialog-close">OK</button>
+      </div>
+    </main>
+
+    <!-- Model Selection Modal -->
+    <div id="model-selection-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header" id="modal-title">Select Model</div>
+        <div id="modal-list" class="modal-list-container"></div>
+        <button type="button" class="btn mt-3" id="modal-close-btn">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Charge Calculator FAB -->
+    <div class="fab-container">
+      <button
+        id="quick-calc-fab"
+        class="fab-btn"
+        title="Quick Charge Calculator"
+      >
+        🧮
+      </button>
+    </div>
+
+    <!-- Quick Charge Calculator Modal -->
+    <div id="quick-calc-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          Quick Charge Calculator
+          <button
+            type="button"
+            class="btn modal-close-icon"
+            id="quick-calc-close"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="quick-calc-wrapper">
+          <div class="quick-calc-flex">
+            <label style="display: flex; flex-direction: column">
+              <span class="text-small mb-1">Total Line set length (ft)</span>
+              <input
+                type="number"
+                id="quick-pies"
+                min="0"
+                placeholder="0"
+                class="input-lg"
+              />
+            </label>
+
+            <div class="brand-selector-container">
+              <!-- Brand Selector -->
+              <select id="quick-brand" class="select-brand">
+                <option value="standard">Standard (Lennox/Goodman)</option>
+                <option value="trane">Trane</option>
+                <option value="daikin">Daikin Fit</option>
+              </select>
+
+              <!-- Dynamic Options -->
+              <div id="quick-options-wrapper" class="options-wrapper">
+                <label id="lbl-overcharged" class="checkbox-label"
+                  ><input type="checkbox" id="quick-overcharged" />
+                  Overcharged?</label
+                >
+
+                <select id="quick-daikin-ton" class="hidden select-sm">
+                  <option value="1.5">1.5 Ton</option>
+                  <option value="2.0">2.0 Ton</option>
+                  <option value="2.5">2.5 Ton</option>
+                  <option value="3.0">3.0 Ton</option>
+                  <option value="3.5">3.5 Ton</option>
+                  <option value="4.0">4.0 Ton</option>
+                  <option value="5.0">5.0 Ton</option>
+                </select>
+                <label id="lbl-daikin-he" class="hidden checkbox-label"
+                  ><input type="checkbox" id="quick-daikin-he" /> High
+                  Eff.</label
+                >
+              </div>
+            </div>
+          </div>
+          <p id="quick-resultado" class="hidden result-box result-box-large">
+            Refrigerant To Add: N/A
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Navigation Bar -->
+    <nav id="side-nav" class="side-nav hidden">
+      <button type="button" class="nav-item" data-target="service-section">
+        <span class="nav-icon">❄️</span>
+        <span>Service</span>
+      </button>
+      <button type="button" class="nav-item" data-target="thermostat-section">
+        <span class="nav-icon">🌡️</span>
+        <span>Tstat</span>
+      </button>
+      <button type="button" class="nav-item" data-target="accessory-section">
+        <span class="nav-icon">📦</span>
+        <span>Acc</span>
+      </button>
+      <button type="button" class="nav-item" data-target="common-fixes-section">
+        <span class="nav-icon">🔧</span>
+        <span>Fixes</span>
+      </button>
+      <button
+        type="button"
+        class="nav-item"
+        data-target="weight-in-data-section"
+      >
+        <span class="nav-icon">⚖️</span>
+        <span>Weight</span>
+      </button>
+      <button type="button" class="nav-item" data-target="notes-section">
+        <span class="nav-icon">📝</span>
+        <span>Notes</span>
+      </button>
+    </nav>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="weightInData.js" defer></script>
+    <script src="dropdowns.js" defer></script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
