@@ -923,6 +923,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   <div class="nav-item" data-panel="payments">
     <span class="nav-icon">$</span> Payments
   </div>
+  <div class="sidebar-sec">Stock &amp; Records</div>
+  <div class="nav-item" data-panel="inventory">
+    <span class="nav-icon">📦</span> Inventory
+  </div>
+  <div class="nav-item" data-panel="history">
+    <span class="nav-icon">📋</span> History
+  </div>
 </nav>
 
 <!-- MAIN -->
@@ -1253,6 +1260,62 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     </div>
   </div>
 
+
+  <!-- ══════════ PANEL: INVENTORY ══════════ -->
+  <div class="panel" id="panel-inventory">
+    <div class="sec-header">
+      <div class="sec-title">Inventory</div>
+      <div class="sec-sub">Stock levels · Adjust quantities</div>
+      <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="loadInventoryPanel()">↻ Refresh</button>
+    </div>
+
+    <div class="card" id="inv-ref-card">
+      <div class="card-title">❄ Refrigerant</div>
+      <div id="inv-ref-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
+        <div style="text-align:center;color:var(--text-dim);padding:20px">Loading...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All Items</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Item</th><th>Category</th><th>Stock</th><th>Status</th><th>Action</th>
+          </tr></thead>
+          <tbody id="inv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PANEL: HISTORY ══════════ -->
+  <div class="panel" id="panel-history">
+    <div class="sec-header">
+      <div class="sec-title">History</div>
+      <div class="sec-sub">Completed service records</div>
+      <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="loadHistoryPanel()">↻ Refresh</button>
+    </div>
+
+    <div class="card">
+      <input type="text" id="history-filter" placeholder="Filter by address, tech, notes..."
+        style="width:100%;margin-bottom:12px" oninput="filterHistory()"/>
+      <div class="tbl-wrap" style="max-height:580px;overflow-y:auto">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Address</th><th>Tech</th><th>Notes</th><th></th>
+          </tr></thead>
+          <tbody id="history-tbody">
+            <div class="empty" style="padding:30px">
+              <div class="empty-icon">📋</div>
+              <div class="empty-text">Open this panel to load records</div>
+            </div>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </main>
 </div>
 
@@ -1267,6 +1330,45 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     </div>
     <div class="modal-body" id="m-body"></div>
     <div class="modal-footer" id="m-footer"></div>
+  </div>
+</div>
+
+<!-- INVENTORY ADJUST MODAL -->
+<div class="modal-bg" id="inv-adjust-modal" role="dialog" aria-modal="true"
+     onclick="if(event.target===this)closeInvAdjust()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-addr" id="inv-adj-title">Adjust Stock</div>
+      <div class="modal-meta" id="inv-adj-meta">Current: —</div>
+      <button type="button" class="modal-close" onclick="closeInvAdjust()">✕</button>
+    </div>
+    <div class="modal-body">
+      <span class="label">Operation</span>
+      <select id="inv-adj-op" onchange="updateInvAdjLabel()" style="width:100%;margin-bottom:14px">
+        <option value="add">➕ Received — Add stock</option>
+        <option value="remove">➖ Consumed / Removed</option>
+        <option value="set">📌 Set exact value</option>
+      </select>
+      <span class="label" id="inv-adj-amount-label">Amount</span>
+      <input type="number" id="inv-adj-amount" min="0" step="0.1" placeholder="0" style="width:100%"/>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" onclick="submitInvAdjust()">Save</button>
+      <button type="button" class="btn btn-ghost" onclick="closeInvAdjust()" style="margin-left:auto">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY DETAIL MODAL -->
+<div class="modal-bg" id="hist-detail-modal" role="dialog" aria-modal="true"
+     onclick="if(event.target===this)closeHistDetail()">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div class="modal-addr" id="hist-addr">—</div>
+      <div class="modal-meta" id="hist-meta">—</div>
+      <button type="button" class="modal-close" onclick="closeHistDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="hist-body" style="max-height:65vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -1334,7 +1436,9 @@ function switchPanel(name) {
   const navEl = document.querySelector(`[data-panel="${name}"]`);
   if (navEl) navEl.classList.add('active');
   document.getElementById('panel-' + name)?.classList.add('active');
-  if (name === 'export') renderExportPanel();
+  if (name === 'export')    renderExportPanel();
+  if (name === 'inventory') loadInventoryPanel();
+  if (name === 'history')   loadHistoryPanel();
 }
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => switchPanel(item.dataset.panel));
@@ -3031,7 +3135,254 @@ function showExportStatus(msg, color) {
 }
 
 renderNJHintChips();
-document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+document.getElementById('topbar-date').textContent =
+  new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+
+// ═══════════════════════════════════════
+// INVENTORY PANEL
+// ═══════════════════════════════════════
+let _invAdjId = null, _invAdjCurrentQty = 0, _invAdjUnit = 'ea';
+
+async function loadInventoryPanel() {
+  const refGrid = document.getElementById('inv-ref-grid');
+  const tbody   = document.getElementById('inv-tbody');
+  refGrid.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:16px">Loading...</div>';
+  tbody.innerHTML   = '';
+
+  try {
+    // Refrigerant cards
+    const refRes  = await fetch(API_BASE + '/reports/refrigerant');
+    const refData = await refRes.json();
+    refGrid.innerHTML = refData.map(r => `
+      <div style="background:var(--bg3);border:1px solid ${r.alert ? 'var(--red)' : 'var(--border)'};
+                  border-radius:4px;padding:14px;text-align:center">
+        <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;
+                    color:var(--text-dim);margin-bottom:6px">${esc(r.type)}</div>
+        <div style="font-family:var(--head);font-size:24px;font-weight:800;
+                    color:${r.alert ? 'var(--red)' : 'var(--amber)'}">${esc(r.stock_display)}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px">
+          Used total: ${(r.used_oz / 16).toFixed(1)} lb
+        </div>
+        ${r.alert ? '<div style="color:var(--red);font-size:10px;font-weight:700;margin-top:6px">⚠ LOW STOCK</div>' : ''}
+      </div>
+    `).join('');
+
+    // Full inventory table
+    const invRes  = await fetch(API_BASE + '/inventory');
+    const invData = await invRes.json();
+
+    tbody.innerHTML = invData.map(item => {
+      const isLow = item.quantity <= item.min_threshold;
+      const stockDisplay = item.unit === 'oz'
+        ? `${Math.floor(item.quantity / 16)} lb ${(item.quantity % 16).toFixed(1)} oz`
+        : `${item.quantity} ${item.unit || 'ea'}`;
+      return `<tr>
+        <td class="bright">${esc(item.item_name)}</td>
+        <td class="dim">${esc(item.category)}</td>
+        <td style="color:${isLow ? 'var(--red)' : 'var(--text-bright)'};font-weight:${isLow ? '700' : '400'}">
+          ${stockDisplay}
+        </td>
+        <td style="color:${isLow ? 'var(--red)' : 'var(--green)'};font-size:11px">
+          ${isLow ? '⚠ RESTOCK' : '✓ OK'}
+        </td>
+        <td>
+          <button type="button" class="btn btn-outline btn-sm"
+            onclick="openInvAdjust(${item.id},'${esc(item.item_name)}',${item.quantity},'${item.unit || 'ea'}')">
+            Adjust
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    refGrid.innerHTML = '';
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red);text-align:center;padding:24px">
+      Error loading inventory. Is server.js running?</td></tr>`;
+  }
+}
+
+function openInvAdjust(id, name, currentQty, unit) {
+  _invAdjId = id; _invAdjCurrentQty = currentQty; _invAdjUnit = unit;
+  const display = unit === 'oz'
+    ? `${Math.floor(currentQty / 16)} lb ${(currentQty % 16).toFixed(1)} oz`
+    : `${currentQty} ${unit}`;
+  document.getElementById('inv-adj-title').textContent = name;
+  document.getElementById('inv-adj-meta').textContent  = `Current: ${display}`;
+  document.getElementById('inv-adj-amount').value      = '';
+  document.getElementById('inv-adj-op').value          = 'add';
+  updateInvAdjLabel();
+  document.getElementById('inv-adjust-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('inv-adj-amount').focus(), 100);
+}
+
+function closeInvAdjust() {
+  document.getElementById('inv-adjust-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  _invAdjId = null;
+}
+
+function updateInvAdjLabel() {
+  const op = document.getElementById('inv-adj-op').value;
+  document.getElementById('inv-adj-amount-label').textContent =
+    op === 'set' ? `New value (${_invAdjUnit})` : `Amount (${_invAdjUnit})`;
+}
+
+async function submitInvAdjust() {
+  const amount = parseFloat(document.getElementById('inv-adj-amount').value);
+  if (isNaN(amount) || amount < 0) { alert('Enter a valid amount.'); return; }
+  const op    = document.getElementById('inv-adj-op').value;
+  const delta = op === 'add' ? amount : op === 'remove' ? -amount : amount - _invAdjCurrentQty;
+
+  try {
+    const res = await fetch(`${API_BASE}/inventory/${_invAdjId}/adjust`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ delta }),
+    });
+    if (res.ok) { closeInvAdjust(); loadInventoryPanel(); }
+    else { const e = await res.json(); alert('Error: ' + e.error); }
+  } catch(e) { alert('Connection error: ' + e.message); }
+}
+
+// ═══════════════════════════════════════
+// HISTORY PANEL
+// ═══════════════════════════════════════
+let _histAllJobs = [];
+
+async function loadHistoryPanel() {
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:28px">
+    Loading...</td></tr>`;
+
+  try {
+    const res    = await fetch(API_BASE + '/jobs');
+    _histAllJobs = await res.json();
+    renderHistoryTable(_histAllJobs);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red);text-align:center;padding:24px">
+      Error loading history. Is server.js running?</td></tr>`;
+  }
+}
+
+function filterHistory() {
+  const q        = document.getElementById('history-filter').value.toLowerCase();
+  const filtered = _histAllJobs.filter(j =>
+    `${j.address} ${j.technician} ${j.notes} ${j.date}`.toLowerCase().includes(q)
+  );
+  renderHistoryTable(filtered);
+}
+
+function renderHistoryTable(jobs) {
+  const tbody = document.getElementById('history-tbody');
+  if (!jobs.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:28px">
+      No records found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = jobs.map(j => `
+    <tr style="cursor:pointer" onclick="showHistDetail(${j.id})">
+      <td class="amber">${esc(j.date || '')}</td>
+      <td class="bright">${esc(j.address || '')}</td>
+      <td class="dim">${esc(j.technician || '—')}</td>
+      <td class="dim" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${esc(j.notes || '')}
+      </td>
+      <td>
+        <button type="button" class="btn btn-ghost btn-sm"
+          onclick="event.stopPropagation();showHistDetail(${j.id})">View</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function showHistDetail(jobId) {
+  const job = _histAllJobs.find(j => j.id === jobId);
+  if (!job) return;
+
+  document.getElementById('hist-addr').textContent = job.address || '—';
+  document.getElementById('hist-meta').textContent =
+    [job.date, job.technician, job.subdivision, job.builder].filter(Boolean).join(' · ');
+  document.getElementById('hist-body').innerHTML =
+    '<div style="text-align:center;color:var(--text-dim);padding:28px">Loading...</div>';
+  document.getElementById('hist-detail-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    // All service records for this address, newest first
+    const related = _histAllJobs
+      .filter(j => j.address === job.address)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const historyData = await Promise.all(related.map(async j => {
+      const res   = await fetch(`${API_BASE}/jobs/${j.id}/items`);
+      const items = await res.json();
+      return { ...j, items };
+    }));
+
+    let html = '';
+    historyData.forEach(record => {
+      const total   = record.total_price ||
+        record.items.reduce((s, i) => s + (i.price || 0), 0);
+      const billable = record.items.filter(i => i.category !== 'Refrigerant');
+      const ref      = record.items.filter(i => i.category === 'Refrigerant');
+      const dateStr  = new Date(record.date).toLocaleDateString('en-US', {
+        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+      });
+
+      html += `
+        <div style="background:var(--bg3);border:1px solid var(--border);
+                    border-radius:4px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+            <span style="font-family:var(--head);font-size:14px;font-weight:700;
+                         color:var(--amber)">${esc(dateStr)}</span>
+            <span style="font-size:11px;color:var(--text-dim)">◎ ${esc(record.technician || '—')}</span>
+          </div>
+          ${record.notes ? `
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;
+                        line-height:1.6;white-space:pre-wrap">${esc(record.notes)}</div>
+          ` : ''}
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+            ${billable.map(i => `
+              <span style="background:var(--bg2);border:1px solid var(--border2);
+                           border-radius:2px;padding:2px 8px;font-size:11px">
+                ${i.quantity > 1 ? `${i.quantity}× ` : ''}${esc(i.item_name)}
+                ${i.price ? `<span style="color:var(--amber)"> $${i.price}</span>` : ''}
+              </span>
+            `).join('')}
+            ${ref.map(r => `
+              <span style="background:var(--ice-dim);border:1px solid var(--ice-dim);
+                           border-radius:2px;padding:2px 8px;font-size:11px;color:var(--ice)">
+                ❄ ${esc(r.item_name)} ${r.quantity} oz
+              </span>
+            `).join('')}
+          </div>
+          <div style="font-family:var(--head);font-size:16px;font-weight:700;
+                      color:var(--green)">Total: $${total}</div>
+        </div>`;
+    });
+
+    document.getElementById('hist-body').innerHTML = html ||
+      '<div style="color:var(--text-dim);padding:24px;text-align:center">No service records found</div>';
+
+  } catch(e) {
+    document.getElementById('hist-body').innerHTML =
+      `<div style="color:var(--red);padding:20px">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+function closeHistDetail() {
+  document.getElementById('hist-detail-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Escape closes inventory adjust or history modal
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('inv-adjust-modal').classList.contains('open')) closeInvAdjust();
+  else if (document.getElementById('hist-detail-modal').classList.contains('open')) closeHistDetail();
+});
 </script>
 </body>
 </html>
