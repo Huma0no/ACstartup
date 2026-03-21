@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Completion Dashboard</title>
+    <style>
+      :root {
+        --bg-color: #f0f2f5;
+        --card-bg: #ffffff;
+        --text-color: #1f2937;
+        --primary: #2563eb;
+        --danger: #dc2626;
+        --success: #16a34a;
+        --warning: #d97706;
+      }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      h1,
+      h2 {
+        margin-top: 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 0.9em;
+      }
+      .btn:hover {
+        opacity: 0.9;
+      }
+
+      /* Refrigerant Cards */
+      .ref-card {
+        border: 1px solid #e5e7eb;
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+        background: #fafafa;
+      }
+      .ref-card.alert {
+        border-color: var(--danger);
+        background-color: #fef2f2;
+        box-shadow: 0 0 5px rgba(220, 38, 38, 0.2);
+      }
+      .ref-value {
+        font-size: 1.4em;
+        font-weight: 800;
+        margin: 10px 0;
+        color: var(--text-color);
+      }
+      .ref-used {
+        font-size: 0.85em;
+        color: #6b7280;
+      }
+
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 0.9em;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      th {
+        background-color: #f9fafb;
+        font-weight: 600;
+      }
+
+      /* Import Section */
+      .import-area {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #eff6ff;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px dashed var(--primary);
+      }
+
+      /* Animation for Detail View */
+      .fade-in-up {
+        animation: fadeInUp 0.3s ease-out forwards;
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        "
+      >
+        <h1>📊 Service Dashboard</h1>
+        <div style="display: flex; gap: 10px">
+          <button
+            class="btn"
+            style="background-color: var(--success)"
+            onclick="openNewJobModal()"
+          >
+            ➕ New
+          </button>
+          <input
+            type="file"
+            id="jsonFile"
+            accept=".json"
+            style="display: none"
+            onchange="uploadData()"
+          />
+          <button
+            class="btn"
+            style="background-color: #6b7280"
+            onclick="document.getElementById('jsonFile').click()"
+          >
+            📥 Import DB
+          </button>
+          <button class="btn" onclick="loadData()">🔄 Refresh Data</button>
+        </div>
+      </div>
+
+      <!-- Datasheet (Moved to Top) -->
+      <div class="card" style="margin-bottom: 20px">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h2>📋 Job Datasheet</h2>
+          <span
+            id="importStatus"
+            style="font-size: 0.9em; font-weight: bold; color: var(--success)"
+          ></span>
+        </div>
+
+        <!-- LIST VIEW -->
+        <div id="datasheet-list-view">
+          <!-- Filtro Dinámico -->
+          <div style="margin-bottom: 15px">
+            <input
+              type="text"
+              id="datasheet-filter"
+              placeholder="Type to filter by Address, Tech or Notes..."
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 1em;
+              "
+              onkeyup="filterDatasheet()"
+            />
+          </div>
+
+          <div style="overflow-x: auto; max-height: 600px">
+            <table id="datasheet-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Address</th>
+                  <th>Technician</th>
+                  <th>Notes</th>
+                  <th>Created At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DETAIL VIEW (Hidden by default) -->
+        <div
+          id="datasheet-detail-view"
+          class="fade-in-up"
+          style="display: none"
+        >
+          <button
+            class="btn"
+            onclick="closeJobDetails()"
+            style="margin-bottom: 15px; background-color: #6b7280"
+          >
+            ⬅ Back to List
+          </button>
+          <div id="job-detail-content"></div>
+        </div>
+      </div>
+
+      <!-- Refrigerant Report -->
+      <div class="card" style="margin-bottom: 20px">
+        <h2>❄️ Refrigerant Levels</h2>
+        <div
+          id="refrigerant-grid"
+          class="grid"
+          style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"
+        >
+          <!-- Populated by JS -->
+          <div style="text-align: center; color: #666">Loading...</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- Inventory Table -->
+        <div class="card">
+          <h2>📦 Inventory Status</h2>
+          <div style="overflow-x: auto; max-height: 500px">
+            <table id="inventory-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Job Modal -->
+    <div id="newJobModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          "
+        >
+          <h2 style="margin: 0" id="modal-title">➕ New Manual Record</h2>
+          <span
+            style="cursor: pointer; font-size: 1.5em"
+            onclick="closeNewJobModal()"
+            >&times;</span
+          >
+        </div>
+        <form id="newJobForm" onsubmit="saveNewJob(event)">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="new-date" required />
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input
+              type="text"
+              id="new-address"
+              required
+              placeholder="123 Main St"
+            />
+          </div>
+          <div class="form-group">
+            <label>Technician</label>
+            <input type="text" id="new-tech" placeholder="Name" />
+          </div>
+          <div
+            class="form-group"
+            id="existing-notes-container"
+            style="display: none"
+          >
+            <label>History / Existing Notes</label>
+            <div
+              id="existing-notes"
+              style="
+                background: #f9fafb;
+                border: 1px solid #ddd;
+                padding: 8px;
+                border-radius: 4px;
+                max-height: 100px;
+                overflow-y: auto;
+                font-size: 0.9em;
+                color: #555;
+                white-space: pre-wrap;
+              "
+            ></div>
+          </div>
+          <div style="display: flex; gap: 10px" id="price-container">
+            <div class="form-group" style="flex: 1">
+              <label>Total Price ($)</label>
+              <input
+                type="number"
+                id="new-price"
+                placeholder="0.00"
+                step="0.01"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label id="notes-label">Notes</label>
+            <textarea
+              id="new-notes"
+              rows="3"
+              placeholder="Enter job notes..."
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="btn"
+            style="width: 100%; margin-top: 10px"
+          >
+            Save Record
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:3000/api";
+      let allJobsData = []; // Store jobs locally for fast filtering
+
+      async function loadData() {
+        loadRefrigerant();
+        loadInventory();
+        loadDatasheet();
+      }
+
+      async function loadRefrigerant() {
+        try {
+          const res = await fetch(`${API_URL}/reports/refrigerant`);
+          const data = await res.json();
+          const container = document.getElementById("refrigerant-grid");
+          container.innerHTML = "";
+
+          data.forEach((item) => {
+            const div = document.createElement("div");
+            div.className = `ref-card ${item.alert ? "alert" : ""}`;
+            div.innerHTML = `
+            <div style="font-weight:bold; font-size:1.1em;">${item.type}</div>
+            <div class="ref-value">${item.stock_display}</div>
+            <div class="ref-used">Total Used: ${(item.used_oz / 16).toFixed(
+              1
+            )} lbs</div>
+            ${
+              item.alert
+                ? '<div style="color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ LOW STOCK</div>'
+                : ""
+            }
+          `;
+            container.appendChild(div);
+          });
+        } catch (e) {
+          console.error(e);
+          document.getElementById("refrigerant-grid").innerHTML =
+            '<div style="color:red">Error loading data. Is server.js running?</div>';
+        }
+      }
+
+      async function loadInventory() {
+        try {
+          const res = await fetch(`${API_URL}/inventory`);
+          const data = await res.json();
+          const tbody = document.querySelector("#inventory-table tbody");
+          tbody.innerHTML = "";
+
+          data.forEach((item) => {
+            // Skip refrigerants in general table to avoid clutter, or keep them if preferred
+            if (item.category === "Refrigerant") return;
+
+            const tr = document.createElement("tr");
+            const isLow = item.quantity <= item.min_threshold;
+            tr.innerHTML = `
+            <td>${item.item_name}</td>
+            <td><span style="font-size:0.8em; background:#eee; padding:2px 6px; border-radius:4px;">${
+              item.category
+            }</span></td>
+            <td style="${
+              isLow ? "color:var(--danger); font-weight:bold;" : ""
+            }">
+              ${item.quantity} ${item.unit || "ea"}
+            </td>
+            <td>${isLow ? "⚠️ Restock" : "✅ OK"}</td>
+          `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function loadDatasheet() {
+        try {
+          const res = await fetch(`${API_URL}/jobs`);
+          if (!res.ok) {
+            throw new Error(
+              `API Error ${res.status}. Please restart 'node server.js'`
+            );
+          }
+          allJobsData = await res.json(); // Guardar en variable global
+          renderDatasheetTable(allJobsData); // Renderizar inicial
+        } catch (e) {
+          console.error("Error loading datasheet:", e);
+        }
+      }
+
+      function renderDatasheetTable(jobs) {
+        const tbody = document.querySelector("#datasheet-table tbody");
+        tbody.innerHTML = "";
+
+        if (jobs.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="6" style="text-align:center; padding:20px;">No matching records found</td></tr>';
+          return;
+        }
+
+        jobs.forEach((job) => {
+          const tr = document.createElement("tr");
+          const createdDate = job.created_at
+            ? new Date(job.created_at).toLocaleDateString()
+            : "-";
+
+          tr.innerHTML = `
+            <td style="white-space: nowrap;">${job.date}</td>
+            <td style="font-weight:bold;">${job.address}</td>
+            <td>${job.technician || "Default"}</td>
+            <td style="font-size:0.9em; color:#555; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${
+              job.notes || ""
+            }</td>
+            <td style="font-size:0.8em; color:#888;">${createdDate}</td>
+            <td>
+              <div style="display:flex; gap:5px;">
+                <button class="btn" style="padding: 4px 8px; font-size: 0.8em;" onclick="showJobDetails(${
+                  job.id
+                })">View</button>
+                <button class="btn" style="padding: 4px 8px; font-size: 0.8em; background-color:var(--danger);" onclick="deleteJob(${
+                  job.id
+                }, event)">🗑️</button>
+              </div>
+            </td>
+          `;
+          // Hacer que toda la fila sea clickeable (opcional, pero buena UX)
+          tr.style.cursor = "pointer";
+          tr.onclick = (e) => {
+            // Evitar doble disparo si se hace click en el botón
+            if (e.target.tagName !== "BUTTON") showJobDetails(job.id);
+          };
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      function filterDatasheet() {
+        const input = document.getElementById("datasheet-filter");
+        const filter = input.value.toLowerCase();
+
+        const filtered = allJobsData.filter((job) => {
+          const text =
+            `${job.address} ${job.technician} ${job.notes} ${job.date}`.toLowerCase();
+          return text.includes(filter);
+        });
+
+        renderDatasheetTable(filtered);
+      }
+
+      async function showJobDetails(jobId) {
+        const job = allJobsData.find((j) => j.id === jobId);
+        if (!job) return;
+
+        // Switch Views
+        document.getElementById("datasheet-list-view").style.display = "none";
+        const detailView = document.getElementById("datasheet-detail-view");
+        detailView.style.display = "block";
+
+        const container = document.getElementById("job-detail-content");
+        container.innerHTML =
+          '<div style="text-align:center">Loading items...</div>';
+
+        try {
+          // 1. Encontrar TODOS los trabajos para esta dirección (Historial)
+          const relatedJobs = allJobsData
+            .filter((j) => j.address === job.address)
+            .sort((a, b) => new Date(b.date) - new Date(a.date)); // Más reciente primero
+
+          // 2. Obtener los ítems de CADA trabajo
+          const historyData = await Promise.all(
+            relatedJobs.map(async (j) => {
+              const res = await fetch(`${API_URL}/jobs/${j.id}/items`);
+              const items = await res.json();
+              return { ...j, items };
+            })
+          );
+
+          // 3. Construir el HTML del Historial
+          let html = `
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 6px solid var(--primary);">
+                <h1 style="margin: 0; color: var(--text-color); font-size: 1.8em;">${
+                  job.address
+                }</h1>
+                <div style="display:flex; gap: 20px; margin-top: 8px; color: #666; font-size: 0.95em;">
+                    <span><strong>Subdivision:</strong> ${
+                      job.subdivision || "N/A"
+                    }</span>
+                    <span><strong>Builder:</strong> ${
+                      job.builder || "N/A"
+                    }</span>
+                </div>
+                <div style="color: #999; font-size: 0.8em; margin-top: 5px;">
+                    History: ${historyData.length} Service Record(s)
+                </div>
+            </div>
+          `;
+
+          // Helper para renderizar tarjeta técnica
+          const renderTechCard = (jsonStr, indoor, outdoor, title) => {
+            if (!jsonStr || jsonStr === "{}") return "";
+            let data;
+            try {
+              data = JSON.parse(jsonStr);
+            } catch (e) {
+              return "";
+            }
+
+            // Verificar si hay datos reales
+            const hasData = Object.values(data).some(
+              (v) => v && v.toString().trim() !== ""
+            );
+            if (!hasData) return "";
+
+            const fields = [
+              { l: "Line Config", v: data.factoryLineConfig },
+              {
+                l: "Factory Chg",
+                v: data.factoryChargeOz ? `${data.factoryChargeOz} oz` : "",
+              },
+              {
+                l: "Lineset Len",
+                v: data.linesetLength ? `${data.linesetLength} ft` : "",
+              },
+              {
+                l: "Ref to Add",
+                v: data.approxAdjustOz ? `${data.approxAdjustOz} oz` : "",
+              },
+              {
+                l: "Ref Added",
+                v: data.adjustedOz ? `${data.adjustedOz} oz` : "",
+              },
+              {
+                l: "Fan Speed",
+                v: data.fanSpeedCfm ? `${data.fanSpeedCfm} CFM` : "",
+              },
+              {
+                l: "Liquid Temp",
+                v: data.liquidLineTemp ? `${data.liquidLineTemp}°` : "",
+              },
+              {
+                l: "Suction Temp",
+                v: data.suctionLineTemp ? `${data.suctionLineTemp}°` : "",
+              },
+              {
+                l: "Sat Temp",
+                v: data.condenserSatTemp ? `${data.condenserSatTemp}°` : "",
+              },
+              {
+                l: "Subcooling",
+                v: data.subcoolingValue ? `${data.subcoolingValue}°` : "",
+              },
+              {
+                l: "SC Goal",
+                v: data.oemSubcoolingGoal ? `${data.oemSubcoolingGoal}°` : "",
+              },
+              {
+                l: "SC Dev",
+                v: data.subcoolingDeviation
+                  ? `${data.subcoolingDeviation}°`
+                  : "",
+              },
+            ].filter((f) => f.v);
+
+            return `
+              <div class="tech-card">
+                <div class="tech-header">
+                  ${title} 
+                  <span style="font-weight:normal; color:#666; font-size:0.9em; margin-left:5px;">
+                    ${outdoor || ""} ${indoor ? `/ ${indoor}` : ""}
+                  </span>
+                </div>
+                <div class="tech-grid">
+                  ${fields
+                    .map(
+                      (f) => `
+                    <div class="tech-item">
+                      <span class="tech-label">${f.l}</span>
+                      <span class="tech-value">${f.v}</span>
+                    </div>
+                  `
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `;
+          };
+
+          historyData.forEach((record) => {
+            // Construir narrativa (Texto plano)
+            // Filtrar items que no son refrigerante para la lista de cobro
+            const billableItems = record.items.filter(
+              (i) => i.category !== "Refrigerant"
+            );
+
+            // Crear string: "Service $X, Item $Y..."
+            const narrativeParts = billableItems.map((i) => {
+              const qtyStr = i.quantity > 1 ? `${i.quantity}x ` : "";
+              return `${qtyStr}${i.item_name} $${i.price}`;
+            });
+
+            // Calcular total
+            const total =
+              record.total_price ||
+              record.items.reduce((sum, i) => sum + (i.price || 0), 0);
+            narrativeParts.push(`<strong>Total $${total}</strong>`);
+
+            const narrativeText = narrativeParts.join(", ");
+
+            // Datos Técnicos
+            const tech1 = renderTechCard(
+              record.weight_in_json,
+              record.indoor_model,
+              record.outdoor_model,
+              "System 1"
+            );
+            const tech2 = renderTechCard(
+              record.weight_in_2_json,
+              "",
+              "",
+              "System 2"
+            );
+
+            // Formatear fecha
+            const dateObj = new Date(record.date);
+            const dateStr = isNaN(dateObj)
+              ? record.date
+              : dateObj.toLocaleDateString(undefined, {
+                  weekday: "short",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                });
+
+            html += `
+              <div class="card" style="margin-bottom: 25px; position: relative; overflow: hidden;">
+                  <!-- Header del Trabajo -->
+                  <div style="background: #f3f4f6; margin: -20px -20px 15px -20px; padding: 12px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                          <span style="font-weight: bold; font-size: 1.1em; color: var(--text-color);">📅 ${dateStr}</span>
+                          <span style="margin-left: 10px; font-size: 0.9em; color: #666;">👤 ${
+                            record.technician || "Default"
+                          }</span>
+                      </div>
+                      <div style="font-size: 0.8em; color: #999;">ID: #${
+                        record.id
+                      } <span style="margin-left:5px;">${
+              record.created_at
+                ? new Date(record.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : ""
+            }</span></div>
+                  </div>
+
+                  <!-- Notas -->
+                  <div style="margin-bottom: 15px;">
+                      <div style="font-size: 0.85em; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 4px;">Notes</div>
+                      <div style="background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 4px; color: #333; white-space: pre-wrap;">${
+                        record.notes || "No notes recorded."
+                      }</div>
+                  </div>
+
+                  <!-- Grid Dividido: Narrativa vs Técnica -->
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; align-items: start;">
+                      
+                      <!-- Columna Izquierda: Narrativa -->
+                      <div style="background: #fff; padding: 15px; border: 1px solid #e5e7eb; border-radius: 6px;">
+                          <h3 style="margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 8px; font-size: 1em; color: var(--primary);">📄 Service Record</h3>
+                          <div style="line-height: 1.6; color: #333;">
+                            ${narrativeText}
+                          </div>
+                      </div>
+
+                      <!-- Columna Derecha: Datos Técnicos -->
+                      <div>
+                          ${
+                            tech1 || tech2
+                              ? tech1 + tech2
+                              : '<div style="color:#999; font-style:italic; padding:10px; border:1px dashed #ccc; border-radius:6px;">No technical data recorded.</div>'
+                          }
+                      </div>
+                  </div>
+              </div>
+            `;
+          });
+
+          container.innerHTML = html;
+        } catch (e) {
+          container.innerHTML = `<p style="color:red">Error loading details: ${e.message}</p>`;
+        }
+      }
+
+      function closeJobDetails() {
+        document.getElementById("datasheet-detail-view").style.display = "none";
+        document.getElementById("datasheet-list-view").style.display = "block";
+      }
+
+      // --- Manual Entry Logic ---
+      let editingJobId = null;
+
+      function openNewJobModal() {
+        editingJobId = null;
+        document.getElementById("modal-title").textContent =
+          "➕ New Manual Record";
+        document.getElementById("price-container").style.display = "flex"; // Mostrar precio al crear
+        document.getElementById("existing-notes-container").style.display =
+          "none";
+        document.getElementById("notes-label").textContent = "Notes";
+
+        // Habilitar campos
+        document.getElementById("new-date").disabled = false;
+        document.getElementById("new-address").disabled = false;
+        document.getElementById("new-tech").disabled = false;
+
+        document.getElementById("newJobModal").style.display = "flex";
+        document.getElementById("new-date").valueAsDate = new Date();
+        document.getElementById("new-address").focus();
+      }
+
+      function editJob(id, event) {
+        if (event) event.stopPropagation();
+        const job = allJobsData.find((j) => j.id === id);
+        if (!job) return;
+
+        editingJobId = id;
+        document.getElementById("modal-title").textContent =
+          "📝 Add Info to Record";
+
+        // Poblar campos (Solo lectura)
+        document.getElementById("new-date").value = job.date;
+        document.getElementById("new-address").value = job.address;
+        document.getElementById("new-tech").value = job.technician;
+
+        // Bloquear campos para evitar modificación de datos existentes
+        document.getElementById("new-date").disabled = true;
+        document.getElementById("new-address").disabled = true;
+        document.getElementById("new-tech").disabled = true;
+
+        // Mostrar notas existentes y limpiar campo de nuevas notas
+        document.getElementById("existing-notes-container").style.display =
+          "block";
+        document.getElementById("existing-notes").textContent =
+          job.notes || "No previous notes.";
+        document.getElementById("new-notes").value = "";
+        document.getElementById("notes-label").textContent =
+          "Add New Info / Notes";
+
+        // Ocultar precio al editar para evitar desincronización con los ítems
+        document.getElementById("price-container").style.display = "none";
+
+        document.getElementById("newJobModal").style.display = "flex";
+        document.getElementById("new-notes").focus();
+      }
+
+      function closeNewJobModal() {
+        document.getElementById("newJobModal").style.display = "none";
+        document.getElementById("newJobForm").reset();
+        editingJobId = null;
+      }
+
+      async function saveNewJob(e) {
+        e.preventDefault();
+
+        const price =
+          parseFloat(document.getElementById("new-price").value) || 0;
+        const services = [];
+
+        // Si se ingresa precio, creamos un item "Manual Entry" para que cuadren los totales
+        if (price > 0) {
+          services.push({ name: "Manual Entry", basePrice: price });
+        }
+
+        // Lógica de EDICIÓN
+        if (editingJobId) {
+          const newNotes = document.getElementById("new-notes").value;
+          if (!newNotes.trim()) {
+            closeNewJobModal();
+            return;
+          }
+
+          try {
+            const res = await fetch(`${API_URL}/jobs/${editingJobId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                newNotes: newNotes,
+              }),
+            });
+            if (res.ok) {
+              closeNewJobModal();
+              loadData();
+            } else alert("Error updating job");
+          } catch (err) {
+            alert(err.message);
+          }
+          return;
+        }
+
+        // Lógica de CREACIÓN (Existente)
+        const jobData = {
+          address: document.getElementById("new-address").value,
+          technician: document.getElementById("new-tech").value,
+          savedState: {
+            date: document.getElementById("new-date").value,
+            notes: document.getElementById("new-notes").value,
+            selectedServices: services,
+          },
+        };
+
+        // Usamos la misma API de importación, enviando un array con 1 elemento
+        const fileMock = { target: { result: JSON.stringify([jobData]) } };
+
+        // Reutilizamos la lógica de uploadData simulando un evento de lectura de archivo
+        // O llamamos directamente a fetch
+        const blob = new Blob([JSON.stringify([jobData])], {
+          type: "application/json",
+        });
+        const file = new File([blob], "manual_entry.json");
+
+        // Manually trigger upload logic logic or just fetch directly:
+        try {
+          const response = await fetch(`${API_URL}/import`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([jobData]),
+          });
+          const result = await response.json();
+          if (result.imported > 0) {
+            closeNewJobModal();
+            loadData(); // Refresh
+          } else {
+            alert(
+              "Error: Record might already exist (Duplicate Address + Date)"
+            );
+          }
+        } catch (err) {
+          alert("Error saving: " + err.message);
+        }
+      }
+
+      // Close modal on outside click
+      window.onclick = function (event) {
+        const modal = document.getElementById("newJobModal");
+        if (event.target == modal) {
+          closeNewJobModal();
+        }
+      };
+
+      async function deleteJob(id, event) {
+        if (event) event.stopPropagation(); // Evitar abrir el detalle al hacer click
+        if (!confirm("Are you sure you want to delete this record?")) return;
+
+        try {
+          const res = await fetch(`${API_URL}/jobs/${id}`, {
+            method: "DELETE",
+          });
+          if (res.ok) {
+            loadData(); // Recargar tabla
+          } else {
+            alert("Error deleting job");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function uploadData() {
+        const fileInput = document.getElementById("jsonFile");
+        const status = document.getElementById("importStatus") || {
+          textContent: "",
+        };
+
+        if (!fileInput.files[0]) {
+          alert("Select a file first");
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async function (e) {
+          try {
+            if (status.textContent !== undefined)
+              status.textContent = "⏳ Uploading...";
+            const jsonData = JSON.parse(e.target.result);
+
+            const response = await fetch(`${API_URL}/import`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(jsonData),
+            });
+
+            const result = await response.json();
+            status.textContent = `✅ Success: ${result.imported} imported, ${result.skipped} skipped.`;
+            loadData(); // Refresh dashboard
+          } catch (err) {
+            status.textContent = "❌ Error: " + err.message;
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // Initial load
+      loadData();
+    </script>
+  </body>
+</html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="pill-style">
+<html lang="en" data-theme="paper">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,182 +11,50 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap"
       rel="stylesheet"
     />
-    <style>
-      main.container {
-        padding-bottom: 80px; /* Ensure content is not hidden behind FAB */
-      }
-      /* Modal Styles */
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s, visibility 0.3s;
-      }
-      .modal-overlay.active {
-        opacity: 1;
-        visibility: visible;
-      }
-      .modal-content {
-        background-color: var(--bg-color, #fff);
-        color: var(--text-color, #000);
-        padding: 20px;
-        border-radius: 8px;
-        width: 90%;
-        max-width: 400px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        display: flex;
-        flex-direction: column;
-      }
-      .modal-header {
-        font-size: 1.2em;
-        font-weight: bold;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 10px;
-      }
-      .model-list-item {
-        padding: 12px;
-        border-bottom: 1px solid #eee;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      .model-list-item:hover {
-        background-color: rgba(0, 0, 0, 0.05);
-      }
-      .model-list-item:last-child {
-        border-bottom: none;
-      }
-      /* Floating Action Button (FAB) Styles */
-      .fab-container {
-        position: fixed;
-        bottom: 80px; /* Adjusted to avoid overlap with bottom nav */
-        right: 20px;
-        z-index: 999;
-      }
-      .fab-btn {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background-color: var(--button-bg-active, #3b82f6);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        font-size: 24px;
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        transition: transform 0.2s;
-      }
-      .fab-btn:hover {
-        transform: scale(1.1);
-      }
-      /* Side Navigation Bar */
-      .side-nav {
-        position: fixed;
-        top: 50%;
-        right: 10px;
-        transform: translateY(-50%);
-        width: 50px;
-        background-color: var(--bg-color, #fff);
-        border: 1px solid var(--border-color, #ccc);
-        border-radius: 25px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 15px 0;
-        gap: 15px;
-        z-index: 998;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: transform 0.3s ease-in-out, opacity 0.3s;
-      }
-      .side-nav.hidden {
-        transform: translateY(-50%) translateX(200%);
-        opacity: 0;
-        pointer-events: none;
-      }
-      .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.6em;
-        color: var(--text-color);
-        opacity: 0.6;
-        cursor: pointer;
-        background: none;
-        border: none;
-        padding: 0;
-        width: 100%;
-      }
-      .nav-item:hover,
-      .nav-item.active {
-        opacity: 1;
-        color: var(--button-bg-active, #3b82f6);
-      }
-      .nav-icon {
-        font-size: 1.4em;
-        margin-bottom: 2px;
-      }
-
-      /* --- THEME COHERENCE & CONTRAST FIXES --- */
-
-      /* Tell browser to adapt native controls based on theme */
-      :root {
-        color-scheme: light;
-      }
-
-      /* Force form elements to use theme variables */
-      input,
-      select,
-      textarea,
-      button.input-select {
-        background-color: var(--input-bg, var(--bg-color, #fff)) !important;
-        color: var(--text-color, #000) !important;
-        border: 1px solid var(--border-color, #ccc) !important;
-      }
-
-      /* Fix for select dropdown options */
-      select option,
-      select optgroup {
-        background-color: var(--bg-color, #fff);
-        color: var(--text-color, #000);
-      }
-
-      /* Modal Specific Overrides */
-      .modal-content {
-        background-color: var(--bg-color, #fff) !important;
-        color: var(--text-color, #000) !important;
-        border: 1px solid var(--border-color, #ccc);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      }
-
-      .model-list-item:hover {
-        background-color: var(--hover-bg, rgba(127, 127, 127, 0.1));
-      }
-
-      /* Result Box Contrast */
-      .result-box {
-        background-color: var(--hover-bg, rgba(127, 127, 127, 0.1));
-        color: var(--text-color, #000);
-      }
-    </style>
   </head>
   <body>
     <main class="container">
-      <form id="report-form">
+      <div class="app-header">
+        <div class="app-title">Service Call Report Generator</div>
+        <div class="app-header-controls">
+          <label class="theme-switch" title="Toggle Dark Mode">
+            <input type="checkbox" id="theme-toggle" />
+            <span class="slider"></span>
+          </label>
+          <button
+            type="button"
+            id="btn-open-quick-calc"
+            class="btn btn-icon"
+            title="Quick Charge Calculator"
+          >
+            🧮
+          </button>
+          <button
+            type="button"
+            id="btn-open-troubleshoot"
+            class="btn btn-icon"
+            title="Troubleshooting Engine"
+          >
+            🔧
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <nav class="tabs-nav" aria-label="Main navigation">
+        <button type="button" class="tab-btn active" data-tab="jobs">
+          Jobs
+        </button>
+        <button type="button" class="tab-btn" data-tab="workspace">
+          Workspace
+        </button>
+        <button type="button" class="tab-btn" data-tab="reports">
+          Reports
+        </button>
+      </nav>
+
+      <!-- TAB 1: JOBS -->
+      <div id="tab-jobs" class="tab-panel active">
         <section class="section" id="address-section">
           <h2>Address</h2>
           <label for="address">Service Address:</label>
@@ -199,26 +67,64 @@
           <label for="address-details" class="block mt-2">
             Details (optional):
           </label>
+          <div class="input-row">
+            <!-- Campo para Subdivision -->
+            <div class="input-group flex-1">
+              <label for="subdivision">Subdivision</label>
+              <input
+                type="text"
+                id="subdivision"
+                placeholder="Enter Subdivision"
+              />
+            </div>
+
+            <!-- Campo para Builder con Datalist (Lista + Texto libre) -->
+            <div class="input-group flex-1">
+              <label for="builder">Builder</label>
+              <input
+                type="text"
+                id="builder"
+                list="builder-options"
+                placeholder="Enter Builder"
+              />
+
+              <!-- Lista de opciones predefinidas -->
+              <datalist id="builder-options">
+                <option value="Chesmar"></option>
+                <option value="Lennar"></option>
+                <option value="Highland"></option>
+                <option value="Castle Rock"></option>
+                <option value="First America"></option>
+                <option value="D. R. Horton"></option>
+              </datalist>
+            </div>
+          </div>
+
           <textarea
             id="address-details"
             placeholder="Extra notes for this address (first line shows in list)"
-            class="min-h-60"
+            class="min-h-60 mt-2"
           ></textarea>
 
           <div id="weighin-section">
-            <label class="sub-label block mt-2">
-              Indoor/Outdoor Units (Optional):
-            </label>
-            <div id="equipment-selection-container">
+            <!-- Toggle 2 Systems -->
+            <div class="two-systems-wrap">
+              <label class="toggle-label">
+                <input type="checkbox" id="job-two-systems-toggle" />
+                <span class="toggle-label-text">2 Systems</span>
+              </label>
+            </div>
+
+            <div id="equipment-selection-container" class="flex-row flex-top">
               <!-- Heater Selection -->
-              <div class="mb-2">
-                <div class="flex-row">
+              <div class="flex-1">
+                <div class="flex-row model-selection-row">
                   <select
                     id="job-heater-series"
                     class="input-select flex-1"
-                    aria-label="Select Heater Series"
+                    aria-label="Select Indoor Series"
                   >
-                    <option value="">Select Heater Series</option>
+                    <option value="">Select Indoor Series</option>
                   </select>
                   <select id="job-heater-model" class="hidden"></select>
                   <button
@@ -226,8 +132,18 @@
                     id="btn-heater-model"
                     class="input-select flex-1 text-left text-ellipsis"
                     disabled
+                    style="display: none"
                   >
                     Select Model
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-reset-heater"
+                    class="btn btn-reset-integrated"
+                    style="display: none"
+                    title="Change Series"
+                  >
+                    ↺
                   </button>
                 </div>
                 <div
@@ -236,8 +152,8 @@
                 ></div>
               </div>
               <!-- Outdoor Unit Selection -->
-              <div>
-                <div class="flex-row">
+              <div class="flex-1">
+                <div class="flex-row model-selection-row">
                   <select
                     id="job-outdoor-series"
                     class="input-select flex-1"
@@ -251,8 +167,18 @@
                     id="btn-outdoor-model"
                     class="input-select flex-1 text-left text-ellipsis"
                     disabled
+                    style="display: none"
                   >
                     Select Model
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-reset-outdoor"
+                    class="btn btn-reset-integrated"
+                    style="display: none"
+                    title="Change Series"
+                  >
+                    ↺
                   </button>
                 </div>
                 <div
@@ -261,26 +187,179 @@
                 ></div>
               </div>
             </div>
+
+            <!-- System 2 Container -->
+            <div
+              id="job-system-2-container"
+              class="hidden system-2-divider"
+            >
+              <div class="sys2-label">System 2</div>
+              <div class="flex-row flex-top">
+                <!-- Heater Selection 2 -->
+                <div class="flex-1">
+                  <div class="flex-row model-selection-row">
+                    <select
+                      id="job-heater-series-2"
+                      class="input-select flex-1"
+                      aria-label="Select Indoor Series"
+                    >
+                      <option value="">Select Indoor Series</option>
+                    </select>
+                    <select id="job-heater-model-2" class="hidden"></select>
+                    <button
+                      type="button"
+                      id="btn-heater-model-2"
+                      class="input-select flex-1 text-left text-ellipsis"
+                      disabled
+                      style="display: none"
+                    >
+                      Select Model
+                    </button>
+                    <button
+                      type="button"
+                      id="btn-reset-heater-2"
+                      class="btn btn-reset-integrated"
+                      style="display: none"
+                      title="Change Series"
+                    >
+                      ↺
+                    </button>
+                  </div>
+                  <div
+                    id="job-heater-links-2"
+                    class="text-small mt-1 min-h-text"
+                  ></div>
+                </div>
+                <!-- Outdoor Unit Selection 2 -->
+                <div class="flex-1">
+                  <div class="flex-row model-selection-row">
+                    <select
+                      id="job-outdoor-series-2"
+                      class="input-select flex-1"
+                      aria-label="Select Outdoor Series"
+                    >
+                      <option value="">Select Outdoor Series</option>
+                    </select>
+                    <select id="job-outdoor-model-2" class="hidden"></select>
+                    <button
+                      type="button"
+                      id="btn-outdoor-model-2"
+                      class="input-select flex-1 text-left text-ellipsis"
+                      disabled
+                      style="display: none"
+                    >
+                      Select Model
+                    </button>
+                    <button
+                      type="button"
+                      id="btn-reset-outdoor-2"
+                      class="btn btn-reset-integrated"
+                      style="display: none"
+                      title="Change Series"
+                    >
+                      ↺
+                    </button>
+                  </div>
+                  <div
+                    id="job-outdoor-links-2"
+                    class="text-small mt-1 min-h-text"
+                  ></div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- Compact Job Config: Tstat | Qty | +Acc -->
+          <div class="job-config-row">
+            <select id="job-tstat" class="input-select flex-2">
+              <option value="">Tstat</option>
+              <option value="T-4">T-4</option>
+              <option value="T-6">T-6</option>
+              <option value="T-10">T-10</option>
+              <option value="T-8321">T-8321</option>
+              <option value="Ecobee">Ecobee</option>
+              <option value="Daikin One">Daikin One</option>
+              <option value="TH2110">TH2110</option>
+              <option value="Otro">Other</option>
+            </select>
+            <select id="job-tstat-qty" class="input-select select-qty">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+
+            <select id="job-acc" class="input-select flex-2">
+              <option value="">+ Acc</option>
+              <option value="Float Switch">Float Switch</option>
+              <option value="Zoning">Zone</option>
+              <option value="HZ322">HZ322</option>
+              <option value="UT3000">UT-3000</option>
+              <option value="DAPC">DAPC</option>
+              <option value="Harmony">Harmony</option>
+              <option value="RDS">RDS</option>
+              <option
+                value="Add New"
+                style="font-weight: bold; color: var(--button-bg-active)"
+              >
+                + New...
+              </option>
+            </select>
+          </div>
+          <!-- Selected Accessories Chips Container -->
+          <div id="job-acc-chips" class="chip-group mt-1"></div>
 
           <button type="button" class="btn mt-2" id="add-jobs-btn">
             Add Jobs
           </button>
-          <div class="mt-2">
-            <label for="pdf-upload" class="block mb-1">
-              Upload PDF with addresses:
-            </label>
-            <input type="file" id="pdf-upload" accept="application/pdf" />
-            <div id="pdf-status" class="text-small mt-1">
-              Extract addresses automatically from a PDF.
-            </div>
-          </div>
 
           <div id="jobs-list-container" class="hidden mt-3">
             <div data-testid="jobs-list" class="jobs-list-spacer"></div>
             <div id="jobs-list"></div>
           </div>
+
+          <div class="text-right mt-2">
+            <button
+              type="button"
+              class="btn btn-route hidden"
+              id="btn-route-all"
+              title="Create Route in Maps"
+            >
+              🗺️ Route
+            </button>
+          </div>
         </section>
+      </div>
+
+      <!-- TAB 2: WORKSPACE -->
+      <div id="tab-workspace" class="tab-panel">
+        <div class="section workspace-header">
+          <span class="label-bold">Active Job: </span>
+          <span id="active-job-display">None</span>
+        </div>
+
+        <!-- Stepper Navigation (Diagonal) -->
+        <div class="stepper-nav">
+          <div class="step-item active" data-target="service-section">
+            <span class="step-content">Srv</span>
+          </div>
+          <div class="step-item" data-target="thermostat-section">
+            <span class="step-content">Tstat</span>
+          </div>
+          <div class="step-item" data-target="accessory-section">
+            <span class="step-content">Acc</span>
+          </div>
+          <div class="step-item" data-target="fixes-section">
+            <span class="step-content">Fix</span>
+          </div>
+          <div class="step-item" data-target="weight-in-data-section">
+            <span class="step-content">Wght</span>
+          </div>
+          <div class="step-item" data-target="notes-section">
+            <span class="step-content">Note</span>
+          </div>
+        </div>
 
         <section class="section" id="service-section">
           <h2>Service</h2>
@@ -333,15 +412,21 @@
           <div id="ac-heat-options" class="hidden">
             <div class="button-group">
               <button type="button" class="btn" data-option="Temporary">
-                Temporary
+                Temporarily
               </button>
               <button type="button" class="btn" data-option="2 Systems">
                 2 Systems
               </button>
-              <button type="button" class="btn" data-option="2 Stage">
-                2 Stage
-              </button>
             </div>
+          </div>
+          <div class="text-right mt-2">
+            <button
+              type="button"
+              class="btn btn-next"
+              data-next="thermostat-section"
+            >
+              Next ➔
+            </button>
           </div>
         </section>
 
@@ -356,96 +441,142 @@
             <button type="button" class="btn" data-thermostat="T-8321">
               T-8321
             </button>
+            <button type="button" class="btn" data-thermostat="Daikin One">
+              Daikin One
+            </button>
+            <button type="button" class="btn" data-thermostat="TH2110">
+              TH2110
+            </button>
             <button type="button" class="btn" data-thermostat="Ecobee">
               Ecobee
             </button>
             <button type="button" class="btn" data-thermostat="Otro">
-              Otro
+              + Add New
             </button>
           </div>
-          <div id="thermostat-quantity" class="hidden">
-            <label for="quantity-slider">Amount:</label>
+          <div id="thermostat-otro" class="hidden mt-2">
             <input
-              type="range"
-              id="quantity-slider"
-              min="1"
-              max="4"
-              value="1"
+              type="text"
+              id="thermostat-otro-name"
+              placeholder="Enter Thermostat Name"
             />
-            <span id="quantity-value">1</span>
+          </div>
+          <div id="thermostat-quantity" class="hidden">
+            <label class="block mb-1 font-bold text-small mt-2">Quantity:</label>
+            <div class="quantity-selector" id="quantity-selector">
+              <button type="button" class="btn qty-btn active" data-qty="1">
+                1
+              </button>
+              <button type="button" class="btn qty-btn" data-qty="2">2</button>
+              <button type="button" class="btn qty-btn" data-qty="3">3</button>
+              <button type="button" class="btn qty-btn" data-qty="4">4+</button>
+            </div>
+          </div>
+          <div class="text-right mt-2">
+            <button
+              type="button"
+              class="btn btn-next"
+              data-next="accessory-section"
+            >
+              Next ➔
+            </button>
           </div>
         </section>
 
         <section class="section" id="accessory-section">
           <h2>Accessories</h2>
           <div class="button-group" id="accessory-buttons">
-            <button
-              type="button"
-              class="btn"
-              data-accessory="Zoning"
-              data-price="30"
-              data-toggle-target="#zoning-options"
-            >
-              🧩 Zoning
-            </button>
-            <div id="zoning-options" class="hidden accessory-subgroup">
-              <div class="button-group">
+            <div class="accessories-split-layout">
+              <div id="zoning-options" class="visible-panel zoning-core-grid">
+                <!-- UT3000 (El Gigante) -->
                 <button
                   type="button"
-                  class="btn"
+                  class="btn zone-ut3000"
+                  data-accessory="UT3000"
+                  data-price="30"
+                >
+                  UT3000
+                </button>
+                <!-- DAPC (La Base) -->
+                <button
+                  type="button"
+                  class="btn zone-dapc"
+                  data-accessory="DAPC"
+                  data-price="10"
+                >
+                  DAPC
+                </button>
+                <!-- HZ322 (La Torre) -->
+                <button
+                  type="button"
+                  class="btn zone-hz322"
+                  data-accessory="HZ322"
+                  data-price="30"
+                >
+                  HZ322
+                </button>
+                <!-- Bypass (El Satélite) -->
+                <button
+                  type="button"
+                  class="btn zone-bypass"
+                  data-accessory="Bypass"
+                  data-price="5"
+                >
+                  Bypass
+                </button>
+                <!-- Harmony (El Maestro) -->
+                <button
+                  type="button"
+                  class="btn zone-harmony"
                   data-accessory="Harmony"
                   data-price="40"
                 >
                   🎛️ Harmony
                 </button>
-                <button
-                  type="button"
-                  class="btn"
-                  data-accessory="Bypass Control"
-                  data-price="5"
-                >
-                  🔁 Bypass Control
-                </button>
               </div>
-            </div>
-            <button
-              type="button"
-              class="btn"
-              data-accessory="FreshAir"
-              data-price="0"
-              data-toggle-target="#freshair-options"
-            >
-              🍃 FreshAir
-            </button>
-            <div id="freshair-options" class="hidden accessory-subgroup">
-              <div class="button-group">
+
+              <!-- AIR MODULE (Stacked Layout) -->
+              <div id="freshair-options" class="visible-panel air-core-stack">
+                <!-- 1. FIN180P -->
                 <button
                   type="button"
-                  class="btn"
+                  class="btn air-btn"
                   data-accessory="FIN180P"
                   data-price="10"
                 >
-                  🔧 FIN180P
+                  FIN180P
                 </button>
+                <!-- 2. Dehum -->
                 <button
                   type="button"
-                  class="btn"
+                  class="btn air-btn"
                   data-accessory="Dehum"
                   data-price="10"
                 >
                   💧 Dehum
                 </button>
+                <!-- 3. AprilAir (New) -->
                 <button
                   type="button"
-                  class="btn"
+                  class="btn air-btn"
+                  data-accessory="AprilAir"
+                  data-price="10"
+                >
+                  AprilAir
+                </button>
+                <!-- 4. F/A Intake -->
+                <button
+                  type="button"
+                  class="btn air-btn"
                   data-accessory="F/A"
                   data-price="10"
                 >
                   F/A Intake
                 </button>
+                <!-- 5. FIN6-MD -->
                 <button
                   type="button"
-                  class="btn"
+                  class="btn air-btn"
                   data-accessory="FIN6-MD"
                   data-price="10"
                 >
@@ -454,75 +585,86 @@
               </div>
             </div>
 
-            <button
-              type="button"
-              class="btn"
-              data-accessory="A2L"
-              data-price="0"
-              data-toggle-target="#a2l-options"
-            >
-              🧪 A2L
-            </button>
-            <div id="a2l-options" class="hidden accessory-subgroup">
-              <div class="button-group">
-                <button
-                  type="button"
-                  class="btn"
-                  data-accessory="Weight-In-Data"
-                  data-price="10"
-                >
-                  📝 Weight-In-Data
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  data-accessory="Trane Harness"
-                  data-price="10"
-                >
-                  🧰 Trane Harness
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  data-accessory="DragonFly"
-                  data-price="10"
-                >
-                  🐉 DragonFly
-                </button>
-              </div>
+            <!-- A2L MODULE (Standard Layout) -->
+            <div id="a2l-options" class="accessory-subgroup expanded a2l-group">
+              <button
+                type="button"
+                class="btn a2l-rds"
+                data-accessory="RDS"
+                data-price="10"
+              >
+                🐉 RDS
+              </button>
+              <button
+                type="button"
+                class="btn a2l-weight"
+                data-accessory="Weight-In-Data"
+                data-price="10"
+              >
+                📝 Weight-In-Data
+              </button>
+              <button
+                type="button"
+                class="btn a2l-harness"
+                data-accessory="Trane Harness"
+                data-price="10"
+              >
+                Trane Harness
+              </button>
+              <button
+                type="button"
+                class="btn a2l-ecoil"
+                data-accessory="Ecoil Wire"
+                data-price="10"
+              >
+                Ecoil Wire
+              </button>
             </div>
 
-            <button
-              type="button"
-              class="btn"
-              data-accessory="Float Switch"
-              data-price="5"
-            >
-              🛟 Float
-            </button>
-            <button
-              type="button"
-              class="btn"
-              data-accessory="LP Kit"
-              data-price="20"
-            >
-              🧯 L.P. Kit
-            </button>
-            <button type="button" class="btn" data-accessory="Otro">
-              ➕ Other
-            </button>
+            <!-- MISC MODULE (Compact Row) -->
+            <div class="accessory-subgroup misc-core-grid expanded">
+              <button
+                type="button"
+                class="btn"
+                data-accessory="Float Switch"
+                data-price="5"
+              >
+                🛟 Float
+              </button>
+              <button
+                type="button"
+                class="btn"
+                data-accessory="LP Kit"
+                data-price="20"
+              >
+                🧯 L.P. Kit
+              </button>
+              <button type="button" class="btn" data-accessory="Otro">
+                ➕ Other
+              </button>
+            </div>
           </div>
           <div id="accessory-otro" class="hidden">
-            <label for="otro-name">Nombre:</label>
-            <input type="text" id="otro-name" placeholder="Accessory name" />
-            <label for="otro-price">Precio ($):</label>
-            <input type="number" id="otro-price" min="0" placeholder="Price" />
+            <div class="custom-item-row">
+              <input type="text" id="otro-name" placeholder="Item Name" class="flex-2" />
+              <input type="number" id="otro-price" min="0" placeholder="$" class="flex-1" />
+              <button type="button" id="btn-add-otro-accessory" class="btn btn-add-icon">+</button>
+            </div>
+            <div id="custom-accessories-list" class="chip-group mt-2"></div>
+          </div>
+          <div class="text-right mt-2">
+            <button
+              type="button"
+              class="btn btn-next"
+              data-next="fixes-section"
+            >
+              Next ➔
+            </button>
           </div>
         </section>
 
-        <section class="section" id="common-fixes-section">
-          <h2>Common Fixes</h2>
-          <div class="button-group" id="common-fixes-buttons">
+        <section class="section" id="fixes-section">
+          <div class="button-group" id="fixes-buttons">
             <button
               type="button"
               class="btn"
@@ -531,17 +673,16 @@
             >
               🧪 Pressure Test
             </button>
-            <button type="button" class="btn" data-fix="Leaks" data-price="20">
-              💧Leaks
-            </button>
-            <div id="leaks-options" class="leaks-subgroup hidden">
-              <div class="button-group">
-                <button type="button" class="btn" data-leak-option="Ecoil">
-                  Ecoil
-                </button>
-                <button type="button" class="btn" data-leak-option="Cunit">
-                  Cunit
-                </button>
+            <div class="fix-group">
+              <button type="button" class="btn btn-fix-group" data-fix-group="leaks">
+                <span class="preset-icon">💧</span>
+                <span class="preset-label">Leaks</span>
+                <span class="preset-arrow">▾</span>
+              </button>
+              <div class="fix-suboptions hidden" id="fix-group-leaks">
+                <button type="button" class="btn" data-fix="Leaks Ecoil" data-price="20">Ecoil</button>
+                <button type="button" class="btn" data-fix="Leaks Cunit" data-price="20">Cunit</button>
+                <button type="button" class="btn" data-fix="Leaks Wall" data-price="50">Wall</button>
               </div>
             </div>
             <button
@@ -552,79 +693,71 @@
             >
               🌀Open Ecoil
             </button>
+            <button
+              type="button"
+              class="btn"
+              data-fix="Wires Jammed"
+              data-price="5"
+            >
+              🔌Wires Jammed
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-fix="Stuck Blower"
+              data-price="20"
+            >
+              ✳️ Stuck Blower
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-fix="Cut Sheetrock"
+              data-price="15"
+            >
+              🪚Cut Sheetrock
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-fix="Extended Wire"
+              data-price="5"
+            >
+              Extended Wire
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-fix="PVC Work"
+              data-price="15"
+            >
+              🧰 PVC Work
+            </button>
+            <button type="button" class="btn" data-fix="Otro">➕ Other</button>
           </div>
 
-          <button type="button" class="btn" id="common-fixes-toggle">
-            More ▼
-          </button>
-          <div id="common-fixes-extra" class="collapsible">
-            <div class="button-group">
-              <button
-                type="button"
-                class="btn"
-                data-fix="Wires Jammed"
-                data-price="5"
-              >
-                🔌Wires Jammed
-              </button>
-              <button
-                type="button"
-                class="btn"
-                data-fix="Stuck Blower"
-                data-price="20"
-              >
-                ✳️ Stuck Blower
-              </button>
-              <button
-                type="button"
-                class="btn"
-                data-fix="Cut Sheetrock"
-                data-price="15"
-              >
-                🪚Cut Sheetrock
-              </button>
-              <button
-                type="button"
-                class="btn"
-                data-fix="Extended Wire"
-                data-price="5"
-              >
-                Extended Wire
-              </button>
-              <button
-                type="button"
-                class="btn"
-                data-fix="PVC Work"
-                data-price="15"
-              >
-                🧰 PVC Work
-              </button>
-              <button type="button" class="btn" data-fix="Otro">
-                ➕ Other
-              </button>
-            </div>
-          </div>
           <div id="fix-otro" class="hidden">
-            <label for="fix-otro-name">Nombre:</label>
-            <input type="text" id="fix-otro-name" placeholder="Fix name" />
-            <label for="fix-otro-price">Precio ($):</label>
-            <input
-              type="number"
-              id="fix-otro-price"
-              min="0"
-              placeholder="Price"
-            />
+            <div class="custom-item-row">
+              <input type="text" id="fix-otro-name" placeholder="Fix Name" class="flex-2" />
+              <input type="number" id="fix-otro-price" min="0" placeholder="$" class="flex-1" />
+              <button type="button" id="btn-add-otro-fix" class="btn btn-add-icon">+</button>
+            </div>
+            <div id="custom-fixes-list" class="chip-group mt-2"></div>
+          </div>
+          <div class="text-right mt-2">
+            <button
+              type="button"
+              class="btn btn-next"
+              data-next="weight-in-data-section"
+            >
+              Next ➔
+            </button>
           </div>
         </section>
 
         <section class="section" id="weight-in-data-section">
-          <div class="section-title-row">
-            <h2>Weight-In Data</h2>
-            <button type="button" class="btn" id="weight-in-toggle">
-              Expand ▼
-            </button>
-          </div>
-          <div id="weight-in-content" class="collapsible-panel">
+          <h2>Weight-In Data</h2>
+          <div id="weight-in-content">
             <div class="weight-in-grid">
               <label class="weight-in-field" for="weight-lineset-length">
                 <span>Length of Lineset</span>
@@ -644,9 +777,10 @@
                   <option value="25ft-trane-overcharged">
                     25 ft. (Trane Overcharged)
                   </option>
-                  <option value="15ft-lennox-goodman">
-                    15 ft. (Lennox, Goodman)
-                  </option>
+                  <option value="15ft-daikin">15 ft. (Daikin)</option>
+                  <option value="15ft-goodman">15 ft. (Goodman)</option>
+
+                  <option value="15ft-lennox">15 ft. (Lennox)</option>
                   <option value="30ft-lennox-overcharged">
                     30 ft. (Lennox Overcharged)
                   </option>
@@ -754,38 +888,255 @@
               </label>
             </div>
           </div>
+          <div id="weight-in-system-2" class="hidden weightin-sys2">
+            <h3 class="section-subheading section-subheading--accent">System 2 Weight-In</h3>
+            <div class="weight-in-grid">
+              <label class="weight-in-field" for="weight-lineset-length-2">
+                <span>Length of Lineset</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-lineset-length-2"
+                  placeholder="Enter length"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-liquid-diameter-2">
+                <span>Factory supplied liquid line length</span>
+                <select id="weight-liquid-diameter-2">
+                  <option value="">Select an option</option>
+                  <option value="10ft-trane">10 ft. (Trane)</option>
+                  <option value="25ft-trane-overcharged">
+                    25 ft. (Trane Overcharged)
+                  </option>
+                  <option value="15ft-daikin">15 ft. (Daikin)</option>
+                  <option value="15ft-goodman">15 ft. (Goodman)</option>
+                  <option value="15ft-lennox">15 ft. (Lennox)</option>
+                  <option value="30ft-lennox-overcharged">
+                    30 ft. (Lennox Overcharged)
+                  </option>
+                </select>
+              </label>
+              <label class="weight-in-field" for="weight-factory-charge-2">
+                <span>Weight of factory supplied refrigerant (oz)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-factory-charge-2"
+                  placeholder="Factory charge"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-approx-adjust-2">
+                <span>Approx weight of refrigerant to add/remove (oz)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-approx-adjust-2"
+                  placeholder="Approximate oz to adjust"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-adjusted-2">
+                <span>Weight of refrigerant added/removed (oz)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-adjusted-2"
+                  placeholder="Actual oz adjusted"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-fan-speed-2">
+                <span>Fan speed setting (CFM)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-fan-speed-2"
+                  placeholder="e.g. 1200 CFM"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-liquid-temp-2">
+                <span>Liquid line temp. (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-liquid-temp-2"
+                  placeholder="Temperature"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-suction-temp-2">
+                <span>Suction line temp. (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-suction-temp-2"
+                  placeholder="Temperature"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-condenser-temp-2">
+                <span>Condenser saturation temp. (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-condenser-temp-2"
+                  placeholder="Temperature"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-subcooling-value-2">
+                <span>Subcooling value (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-subcooling-value-2"
+                  placeholder="Subcooling"
+                />
+              </label>
+              <label class="weight-in-field" for="weight-oem-goal-2">
+                <span>OEM subcooling goal (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-oem-goal-2"
+                  placeholder="Goal"
+                />
+              </label>
+              <label
+                class="weight-in-field"
+                for="weight-subcooling-deviation-2"
+              >
+                <span>Subcooling deviation (*F)</span>
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  id="weight-subcooling-deviation-2"
+                  placeholder="Deviation"
+                />
+              </label>
+            </div>
+          </div>
+          <div class="text-right mt-2">
+            <button
+              type="button"
+              class="btn btn-next"
+              data-next="notes-section"
+            >
+              Next ➔
+            </button>
+          </div>
         </section>
 
         <section class="section" id="notes-section">
           <h2>Notes</h2>
           <textarea id="notes" placeholder="Enter additional notes"></textarea>
+
+          <!-- Extra Photos Section -->
+          <div id="extra-photos-section" class="mt-2 section-divider">
+            <h3 class="section-subheading">📷 Site Photos (Issues/Conditions)</h3>
+            <div id="extra-photos-list" class="photo-list"></div>
+            <div id="extra-photos-options" class="photo-options">
+              <!-- No P-Drain -->
+              <button type="button" class="btn btn-photo-preset" data-label="No P-Drain">
+                <span class="preset-icon">📸</span>
+                <span>No P-Drain</span>
+              </button>
+
+              <!-- Gas group -->
+              <div class="photo-preset-group">
+                <button type="button" class="btn btn-photo-preset-group" data-group="gas">
+                  <span class="preset-icon">🔴</span>
+                  <span class="preset-label">Gas</span>
+                  <span class="preset-arrow">▾</span>
+                </button>
+                <div class="photo-preset-suboptions hidden" id="group-gas">
+                  <button type="button" class="btn btn-photo-preset" data-label="No Gas Meter">
+                    📸 No Gas Meter
+                  </button>
+                  <button type="button" class="btn btn-photo-preset" data-label="Gas Closed">
+                    📸 Gas Closed
+                  </button>
+                </div>
+              </div>
+
+              <!-- Electric group -->
+              <div class="photo-preset-group">
+                <button type="button" class="btn btn-photo-preset-group" data-group="electric">
+                  <span class="preset-icon">⚡</span>
+                  <span class="preset-label">Electric</span>
+                  <span class="preset-arrow">▾</span>
+                </button>
+                <div class="photo-preset-suboptions hidden" id="group-electric">
+                  <button type="button" class="btn btn-photo-preset" data-label="No Electric Meter">
+                    📸 No Electric Meter
+                  </button>
+                  <button type="button" class="btn btn-photo-preset" data-label="No Breakers at Main Panel">
+                    📸 No Breakers at Main Panel
+                  </button>
+                </div>
+              </div>
+
+              <!-- Other -->
+              <button type="button" class="btn btn-photo-preset" data-label="Other">
+                <span class="preset-icon">➕</span>
+                <span>Other</span>
+              </button>
+            </div>
+          </div>
+          <!-- No Next button here, Generate Report is below -->
         </section>
 
         <button type="submit" class="btn" id="generate-report">
           Generate Report
         </button>
-      </form>
+      </div>
 
-      <section class="section hidden" id="report-container">
-        <h2>Completion Report</h2>
-        <div id="report-content"></div>
-        <div id="report-actions" class="hidden">
-          <button type="button" class="btn" id="report-edit">Edit</button>
-          <button type="button" class="btn" id="report-delete">Delete</button>
-          <button type="button" class="btn" id="report-share">Share</button>
-          <button type="button" class="btn" id="report-export-csv">
-            📊 CSV
-          </button>
-        </div>
-        <div id="share-options" class="hidden">
-          <button type="button" class="btn" id="share-whatsapp">
-            WhatsApp
-          </button>
-          <button type="button" class="btn" id="share-sms">SMS</button>
-          <button type="button" class="btn" id="share-email">Email</button>
-          <button type="button" class="btn" id="share-copy">Copy</button>
-        </div>
-      </section>
+      <!-- TAB 3: REPORTS -->
+      <div id="tab-reports" class="tab-panel">
+        <section class="section" id="report-container">
+          <div class="report-header">
+            <h2>Completion Report</h2>
+            <div class="report-header-actions">
+              <button
+                type="button"
+                class="btn"
+                id="btn-export-db"
+                title="Export data for Local Dashboard"
+              >
+                📤 DB
+              </button>
+              <button
+                type="button"
+                class="btn hidden"
+                id="report-export-csv"
+                title="Export all reports to CSV"
+              >
+                📊 CSV
+              </button>
+            </div>
+          </div>
+          <div id="report-content"></div>
+          <div id="report-actions" class="hidden">
+            <button type="button" class="btn" id="report-edit">Edit</button>
+            <button type="button" class="btn" id="report-delete">Delete</button>
+            <button type="button" class="btn" id="report-share">Share</button>
+          </div>
+          <div id="share-options" class="hidden">
+            <button type="button" class="btn" id="share-whatsapp">
+              WhatsApp
+            </button>
+            <button type="button" class="btn" id="share-sms">SMS</button>
+            <button type="button" class="btn" id="share-email">Email</button>
+            <button type="button" class="btn" id="share-copy">Copy</button>
+          </div>
+        </section>
+      </div>
 
       <div id="error-dialog" class="section hidden">
         <h2>Error</h2>
@@ -795,7 +1146,7 @@
     </main>
 
     <!-- Model Selection Modal -->
-    <div id="model-selection-modal" class="modal-overlay">
+    <div id="model-selection-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-content">
         <div class="modal-header" id="modal-title">Select Model</div>
         <div id="modal-list" class="modal-list-container"></div>
@@ -805,21 +1156,10 @@
       </div>
     </div>
 
-    <!-- Quick Charge Calculator FAB -->
-    <div class="fab-container">
-      <button
-        id="quick-calc-fab"
-        class="fab-btn"
-        title="Quick Charge Calculator"
-      >
-        🧮
-      </button>
-    </div>
-
     <!-- Quick Charge Calculator Modal -->
-    <div id="quick-calc-modal" class="modal-overlay">
+    <div id="quick-calc-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quick-calc-title">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header" id="quick-calc-title">
           Quick Charge Calculator
           <button
             type="button"
@@ -831,7 +1171,7 @@
         </div>
         <div class="quick-calc-wrapper">
           <div class="quick-calc-flex">
-            <label style="display: flex; flex-direction: column">
+            <label class="quick-calc-label">
               <span class="text-small mb-1">Total Line set length (ft)</span>
               <input
                 type="number"
@@ -845,7 +1185,7 @@
             <div class="brand-selector-container">
               <!-- Brand Selector -->
               <select id="quick-brand" class="select-brand">
-                <option value="standard">Standard (Lennox/Goodman)</option>
+                <option value="standard">Lennox/Goodman</option>
                 <option value="trane">Trane</option>
                 <option value="daikin">Daikin Fit</option>
               </select>
@@ -880,41 +1220,118 @@
       </div>
     </div>
 
-    <!-- Side Navigation Bar -->
-    <nav id="side-nav" class="side-nav hidden">
-      <button type="button" class="nav-item" data-target="service-section">
-        <span class="nav-icon">❄️</span>
-        <span>Service</span>
-      </button>
-      <button type="button" class="nav-item" data-target="thermostat-section">
-        <span class="nav-icon">🌡️</span>
-        <span>Tstat</span>
-      </button>
-      <button type="button" class="nav-item" data-target="accessory-section">
-        <span class="nav-icon">📦</span>
-        <span>Acc</span>
-      </button>
-      <button type="button" class="nav-item" data-target="common-fixes-section">
-        <span class="nav-icon">🔧</span>
-        <span>Fixes</span>
-      </button>
-      <button
-        type="button"
-        class="nav-item"
-        data-target="weight-in-data-section"
-      >
-        <span class="nav-icon">⚖️</span>
-        <span>Weight</span>
-      </button>
-      <button type="button" class="nav-item" data-target="notes-section">
-        <span class="nav-icon">📝</span>
-        <span>Notes</span>
-      </button>
-    </nav>
+    <!-- ════════════════════════════════════════════════
+         TROUBLESHOOTING DRAWER
+         ════════════════════════════════════════════════ -->
+    <div id="ts-overlay" class="ts-overlay" aria-hidden="true"></div>
+
+    <div id="ts-drawer" class="ts-drawer" role="dialog" aria-modal="true" aria-label="Troubleshooting Engine" aria-hidden="true">
+
+      <!-- Header -->
+      <div class="ts-drawer-header">
+        <div class="ts-drawer-title">
+          <span>🔧 Troubleshooting</span>
+          <div id="ts-context-chips" class="ts-context-chips"></div>
+        </div>
+        <button type="button" id="ts-drawer-close" class="ts-close-btn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div class="ts-drawer-body">
+
+        <!-- SECTION 0: Job Context -->
+        <div class="ts-section" id="ts-job-section">
+          <p class="ts-section-label">Job actual:</p>
+          <div id="ts-job-display"></div>
+        </div>
+
+        <!-- SECTION 1: Symptom Selection -->
+        <div class="ts-section" id="ts-symptom-section">
+          <p class="ts-section-label">¿Cuál es el síntoma?</p>
+          <div class="ts-symptom-grid" id="ts-symptom-btns">
+            <button type="button" class="ts-symptom-btn" data-symptom="no_cooling">❄️ No Enfría</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="no_heating">🔥 No Calienta</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="fault_code">⚠️ Fault Code</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="no_fan">💨 Fan No Arranca</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="float_switch">💧 Float Switch</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="zoning">🏠 Zoning Issue</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="a2l_safety">🔐 A2L Safety</button>
+            <button type="button" class="ts-symptom-btn" data-symptom="tstat">🌡️ Tstat Issue</button>
+          </div>
+
+          <!-- Fault code sub-input (shown when fault_code selected) -->
+          <div id="ts-fault-input" class="ts-fault-input hidden">
+            <input
+              type="text"
+              id="ts-fault-code-value"
+              class="ts-fault-code-field"
+              placeholder="Código: E6 / 4f / 6 ..."
+              autocapitalize="characters"
+              maxlength="5"
+            />
+            <button type="button" id="ts-lookup-btn" class="btn">Buscar</button>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Level 1 Results -->
+        <div class="ts-section hidden" id="ts-results-section">
+          <div class="ts-results-header">
+            <div class="ts-results-title-row">
+              <h3 id="ts-result-title" class="ts-result-title"></h3>
+              <span id="ts-severity-badge" class="ts-severity-badge"></span>
+            </div>
+            <p id="ts-result-summary" class="ts-result-summary"></p>
+          </div>
+
+          <div id="ts-steps-list" class="ts-steps-list"></div>
+
+          <div id="ts-equipment-notes" class="ts-equipment-notes"></div>
+
+          <button type="button" id="ts-reset-btn" class="ts-reset-btn">← Cambiar síntoma</button>
+        </div>
+
+        <!-- SECTION 3: Claude Assist (Level 2) -->
+        <div class="ts-section hidden" id="ts-claude-section">
+          <div class="ts-claude-header">
+            <div class="ts-claude-title">✨ Nivel 2 — Ask Claude</div>
+            <button type="button" id="ts-api-key-toggle" class="ts-key-btn" title="Configurar API Key">🔑</button>
+          </div>
+
+          <!-- API key panel (collapsible) -->
+          <div id="ts-api-key-panel" class="ts-api-key-panel hidden">
+            <input
+              type="password"
+              id="ts-api-key-input"
+              class="ts-api-key-field"
+              placeholder="sk-ant-api03-..."
+              autocomplete="off"
+            />
+            <div class="ts-api-key-actions">
+              <button type="button" id="ts-save-key-btn" class="btn">Guardar</button>
+              <button type="button" id="ts-clear-key-btn" class="btn">Limpiar</button>
+            </div>
+            <p class="ts-api-key-note">
+              ⚠️ La API key se guarda en localStorage de este dispositivo.
+              No la compartas en dispositivos públicos.
+            </p>
+          </div>
+
+          <!-- Ask Claude button -->
+          <button type="button" id="ts-ask-claude-btn" class="ts-ask-claude-btn">
+            <span id="ts-claude-btn-text">✨ Consultar Claude</span>
+            <span id="ts-claude-spinner" class="ts-spinner hidden"></span>
+          </button>
+
+          <!-- Streaming response area -->
+          <div id="ts-claude-response" class="ts-claude-response hidden"></div>
+        </div>
+
+      </div><!-- /ts-drawer-body -->
+    </div><!-- /ts-drawer -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="weightInData.js" defer></script>
-    <script src="dropdowns.js" defer></script>
+    <script type="module" src="dropdowns.js"></script>
     <script type="module" src="script.js"></script>
+    <script type="module" src="troubleshootingPanel.js"></script>
   </body>
 </html>

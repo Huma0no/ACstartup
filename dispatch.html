@@ -1,0 +1,2997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BIG TEX DISPATCH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   DISPATCH TERMINAL — DESIGN SYSTEM
+═══════════════════════════════════════ */
+:root {
+  --bg:         #07080f;
+  --bg2:        #0e0f1a;
+  --bg3:        #161724;
+  --border:     #1c1d2e;
+  --border2:    #262840;
+  --amber:      #f5a623;
+  --amber-dim:  #7a5212;
+  --amber-glow: rgba(245,166,35,0.12);
+  --ice:        #7eb8d4;
+  --ice-dim:    #1e3d4f;
+  --red:        #e8472a;
+  --red-dim:    #3d150a;
+  --green:      #3ddc84;
+  --green-dim:  #0a2e18;
+  --purple:     #a78bfa;
+  --purple-dim: #2d1f5e;
+  --text:       #b8b9d0;
+  --text-dim:   #50516a;
+  --text-bright:#eeeeff;
+  --mono:       'DM Mono', monospace;
+  --head:       'Barlow Condensed', sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;
+  z-index:9999;
+}
+
+/* ═══ LAYOUT ═══ */
+.app {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: 52px 1fr;
+  height: 100vh;
+}
+
+/* ═══ TOPBAR ═══ */
+.topbar {
+  grid-column: 1/-1;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 14px;
+  position: relative;
+}
+.topbar::after {
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;height:2px;
+  background: linear-gradient(90deg,var(--amber) 0%,var(--red) 50%,transparent 100%);
+}
+.topbar-logo {
+  font-family: var(--head);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: var(--amber);
+  text-transform: uppercase;
+}
+.topbar-logo span { color: var(--text-dim); font-weight: 400; }
+.topbar-date {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-left: 8px;
+}
+.topbar-stats {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  align-items: center;
+}
+.tstat {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.tstat b { font-weight: 500; }
+.tstat.amber b { color: var(--amber); }
+.tstat.green  b { color: var(--green); }
+.tstat.red    b { color: var(--red); }
+.tstat.ice    b { color: var(--ice); }
+.pulse {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ═══ SIDEBAR ═══ */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+}
+.sidebar-sec {
+  padding: 8px 14px 2px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  transition: all 0.12s;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--amber-glow); color: var(--amber); border-left-color: var(--amber); }
+.nav-icon { width: 16px; text-align: center; font-size: 13px; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--amber-dim);
+  color: var(--amber);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+
+/* ═══ MAIN ═══ */
+.main {
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--bg);
+}
+.panel { display: none; }
+.panel.active { display: block; animation: fadein .2s ease-out; }
+@keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ═══ SECTION HEADER ═══ */
+.sec-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sec-title {
+  font-family: var(--head);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--text-bright);
+  text-transform: uppercase;
+}
+.sec-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ═══ CARDS ═══ */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-family: var(--head);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.card-title::before { content:''; width:3px; height:12px; background:var(--amber); border-radius:1px; display:inline-block; }
+
+/* ═══ BUTTONS ═══ */
+.btn {
+  padding: 6px 12px;
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-primary { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+.btn-primary:hover { background: #ffc14d; box-shadow: 0 0 10px var(--amber-glow); }
+.btn-outline { background: transparent; color: var(--amber); border-color: var(--amber-dim); }
+.btn-outline:hover { border-color: var(--amber); background: var(--amber-glow); }
+.btn-ice { background: transparent; color: var(--ice); border-color: var(--ice-dim); }
+.btn-ice:hover { border-color: var(--ice); background: rgba(126,184,212,0.08); }
+.btn-green { background: var(--green); color: var(--bg); border-color: var(--green); }
+.btn-green:hover { background: #5dff9e; }
+.btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border2); }
+.btn-ghost:hover { color: var(--text); background: var(--bg3); }
+.btn-red { background: transparent; color: var(--red); border-color: var(--red-dim); }
+.btn-red:hover { border-color: var(--red); background: rgba(232,71,42,0.08); }
+.btn-sm { padding: 3px 8px; font-size: 10px; }
+
+/* ═══ DROP ZONE ═══ */
+.drop-zone {
+  border: 2px dashed var(--border2);
+  border-radius: 5px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.drop-zone:hover, .drop-zone.over { border-color: var(--amber); background: var(--amber-glow); }
+.drop-zone input { display: none; }
+.drop-icon { font-size: 28px; margin-bottom: 8px; }
+.drop-text { color: var(--text-dim); font-size: 12px; letter-spacing: 0.5px; }
+.drop-text b { color: var(--amber); }
+
+/* ═══ KANBAN BOARD ═══ */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.kanban-col {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-height: 200px;
+}
+.kanban-col-header {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.col-title {
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.col-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-dim);
+  background: var(--bg3);
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+.col-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-pending   { background: var(--text-dim); }
+.dot-assigned  { background: var(--amber); box-shadow: 0 0 6px var(--amber-glow); }
+.dot-progress  { background: var(--ice); box-shadow: 0 0 6px rgba(126,184,212,0.3); }
+.dot-done      { background: var(--green); box-shadow: 0 0 6px rgba(61,220,132,0.3); }
+.dot-cancelled { background: var(--red); }
+.kanban-cards {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 80px;
+}
+.kanban-col.drag-target { background: rgba(245,166,35,0.04); border-color: var(--amber-dim); }
+
+/* ═══ JOB CARD ═══ */
+.job-card {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+  position: relative;
+  user-select: none;
+}
+.job-card:hover { border-color: var(--amber-dim); background: rgba(245,166,35,0.05); }
+.job-card.dragging { opacity: 0.4; }
+.job-card.priority-urgent { border-left: 3px solid var(--red); }
+.job-card.priority-normal { border-left: 3px solid var(--border2); }
+
+.job-card-time {
+  font-family: var(--head);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1;
+}
+.job-card-order {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-top: 1px;
+}
+.job-card-addr {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-bright);
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.job-card-meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.job-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+.jtag {
+  font-family: var(--head);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.jtag-warranty { background: var(--amber-dim); color: var(--amber); }
+.jtag-builder  { background: var(--bg2); color: var(--text-dim); border: 1px solid var(--border2); }
+.jtag-service  { background: var(--ice-dim); color: var(--ice); }
+.jtag-urgent   { background: var(--red-dim); color: var(--red); }
+.jtag-tech     { background: var(--purple-dim); color: var(--purple); }
+.jtag-hint     { background: var(--green-dim); color: var(--green); }
+.job-card-tech {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ═══ JOB DETAIL MODAL ═══ */
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  width: 100%;
+  max-width: 680px;
+  position: relative;
+  animation: fadein .2s ease-out;
+}
+.modal-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border2);
+  background: var(--bg3);
+  border-radius: 6px 6px 0 0;
+}
+.modal-addr {
+  font-family: var(--head);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--text-bright);
+  text-transform: uppercase;
+}
+.modal-meta { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.modal-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: none; border: none;
+  color: var(--text-dim); font-size: 18px;
+  cursor: pointer; padding: 4px;
+}
+.modal-close:hover { color: var(--red); }
+.modal-body { padding: 18px 20px; }
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border2);
+  background: var(--bg3);
+  border-radius: 0 0 6px 6px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ═══ DETAIL SECTIONS ═══ */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.detail-block { display: flex; flex-direction: column; gap: 4px; }
+.detail-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.detail-val {
+  font-size: 13px;
+  color: var(--text-bright);
+  font-weight: 500;
+}
+.detail-val.amber { color: var(--amber); font-family: var(--head); font-size: 16px; font-weight: 700; }
+.detail-val.ice   { color: var(--ice); }
+.detail-val.dim   { color: var(--text-dim); font-size: 11px; }
+
+.history-row {
+  display: flex;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--bg3);
+  border-radius: 3px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.history-type {
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  width: 50px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+}
+.history-name { color: var(--text); flex: 1; }
+.history-date { color: var(--amber); font-size: 11px; white-space: nowrap; }
+
+.hints-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.hint-tag {
+  background: var(--green-dim);
+  color: var(--green);
+  font-family: var(--head);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.notes-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.whatsapp-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-family: var(--mono);
+}
+
+/* ═══ STATUS SELECTOR ═══ */
+.status-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.status-btn {
+  padding: 4px 10px;
+  font-family: var(--head);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.12s;
+}
+.status-btn:hover { color: var(--text); border-color: var(--text-dim); }
+.status-btn.active-pending   { background: var(--bg3); color: var(--text-dim); border-color: var(--border2); }
+.status-btn.active-assigned  { background: var(--amber-glow); color: var(--amber); border-color: var(--amber); }
+.status-btn.active-progress  { background: rgba(126,184,212,0.1); color: var(--ice); border-color: var(--ice); }
+.status-btn.active-done      { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+.status-btn.active-cancelled { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+
+/* ═══ TECH ASSIGN ═══ */
+.tech-assign {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.tech-assign select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  outline: none;
+}
+.tech-assign select:focus { border-color: var(--amber); }
+
+/* ═══ INPUT ═══ */
+input[type=text], input[type=date], textarea, select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber-glow); }
+textarea { resize: vertical; width: 100%; min-height: 60px; }
+
+/* ═══ TABLE ═══ */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  background: var(--bg3);
+  color: var(--text-dim);
+  font-family: var(--head);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border2);
+  text-align: left;
+}
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:hover { background: rgba(245,166,35,0.03); }
+tbody td { padding: 8px 10px; }
+td.amber { color: var(--amber); font-family: var(--head); font-size: 14px; font-weight: 700; }
+td.dim   { color: var(--text-dim); font-size: 11px; }
+td.bright { color: var(--text-bright); font-weight: 500; }
+
+/* ═══ EMPTY STATE ═══ */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+}
+.empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.4; }
+.empty-text { font-size: 12px; letter-spacing: 1px; }
+
+/* ═══ DIVIDER ═══ */
+hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+.label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ═══ PAYMENTS ═══ */
+.pay-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto auto auto;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  font-size: 12px;
+}
+.pay-week { font-family: var(--head); font-weight: 700; color: var(--amber); font-size: 13px; }
+.pay-total { font-family: var(--head); font-size: 18px; font-weight: 700; color: var(--green); }
+.pay-status-paid   { color: var(--green); font-size: 10px; letter-spacing: 1px; }
+.pay-status-pending { color: var(--amber); font-size: 10px; letter-spacing: 1px; }
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--amber-dim); }
+
+@media(max-width:700px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 52px auto 1fr; }
+  .sidebar { flex-direction: row; overflow-x: auto; }
+  .kanban { grid-template-columns: repeat(2,1fr); }
+}
+
+/* ═══ EDIT MODE ═══ */
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.edit-field label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.edit-field input,
+.edit-field textarea,
+.edit-field select {
+  width: 100%;
+}
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+.edit-grid .edit-field.full { grid-column: 1 / -1; }
+
+/* Edit mode toggle button in modal header */
+.modal-edit-toggle {
+  position: absolute;
+  top: 12px; right: 50px;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: var(--head);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 2px;
+  transition: all .12s;
+}
+.modal-edit-toggle:hover { color: var(--amber); border-color: var(--amber); }
+.modal-edit-toggle.active { background: var(--amber-glow); color: var(--amber); border-color: var(--amber); }
+
+/* New job form */
+.new-job-form {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 18px;
+  margin-top: 14px;
+}
+.new-job-form .form-section-title {
+  font-family: var(--head);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 14px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--amber-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.new-job-form .form-section-title:first-child { margin-top: 0; }
+
+/* Accessory hint chips in edit mode — clickable to toggle */
+.hint-chip {
+  cursor: pointer;
+  user-select: none;
+  transition: all .12s;
+  border: 1px solid var(--green-dim);
+}
+.hint-chip:hover { border-color: var(--green); }
+.hint-chip.off {
+  background: var(--bg3) !important;
+  color: var(--text-dim) !important;
+  border-color: var(--border2) !important;
+}
+
+/* ═══ EQUIPMENT COMBO DROPDOWN ═══ */
+.combo-wrap {
+  position: relative;
+}
+.combo-input-row {
+  display: flex;
+  gap: 0;
+}
+.combo-input {
+  flex: 1;
+  border-radius: 3px 0 0 3px !important;
+  border-right: none !important;
+}
+.combo-clear {
+  padding: 0 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-left: none;
+  border-radius: 0 3px 3px 0;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: color .12s;
+}
+.combo-clear:hover { color: var(--red); }
+.combo-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--amber-dim);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  z-index: 500;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.combo-dropdown.open { display: block; }
+.combo-group-label {
+  padding: 5px 10px 3px;
+  font-family: var(--head);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.combo-option {
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background .08s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.combo-option:hover,
+.combo-option.highlighted { background: var(--amber-glow); color: var(--amber); }
+.combo-option.add-new {
+  color: var(--green);
+  border-top: 1px solid var(--border);
+  font-style: italic;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg2);
+}
+.combo-option.add-new:hover { background: var(--green-dim); color: var(--green); }
+.combo-no-results {
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ PWA EXPORT ═══ */
+.export-job-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  transition: background .1s;
+}
+.export-job-row:hover { background: rgba(245,166,35,0.03); }
+.export-job-row input[type=checkbox] {
+  width: 15px; height: 15px;
+  accent-color: var(--amber);
+  cursor: pointer;
+  padding: 0;
+}
+.export-job-addr {
+  color: var(--text-bright);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.export-job-meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.export-job-models {
+  font-size: 10px;
+  color: var(--ice);
+  white-space: nowrap;
+}
+.export-missing {
+  color: var(--red);
+  font-size: 10px;
+}
+.export-summary {
+  display: flex;
+  gap: 14px;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.export-summary-stat { color: var(--text-dim); }
+.export-summary-stat b { color: var(--text-bright); }
+.export-summary-stat.warn b { color: var(--amber); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-logo">Big Tex <span>Dispatch</span></div>
+  <div class="topbar-date" id="topbar-date"></div>
+  <div class="topbar-stats">
+    <div class="tstat"><span class="pulse"></span></div>
+    <div class="tstat amber">PENDING <b id="st-pending">0</b></div>
+    <div class="tstat ice">ASSIGNED <b id="st-assigned">0</b></div>
+    <div class="tstat green">DONE <b id="st-done">0</b></div>
+    <div class="tstat red">CANCELLED <b id="st-cancelled">0</b></div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-sec">Dispatch</div>
+  <div class="nav-item active" data-panel="board">
+    <span class="nav-icon">▦</span> Job Board
+  </div>
+  <div class="nav-item" data-panel="intake">
+    <span class="nav-icon">＋</span> New Job
+  </div>
+  <div class="sidebar-sec">End of Day</div>
+  <div class="nav-item" data-panel="export">
+    <span class="nav-icon">📲</span> Export → PWA
+  </div>
+  <div class="nav-item" data-panel="completion">
+    <span class="nav-icon">✓</span> Completion
+  </div>
+  <div class="sidebar-sec">Admin</div>
+  <div class="nav-item" data-panel="techs">
+    <span class="nav-icon">◎</span> Technicians
+  </div>
+  <div class="nav-item" data-panel="payments">
+    <span class="nav-icon">$</span> Payments
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ══════════ PANEL: JOB BOARD ══════════ -->
+  <div class="panel active" id="panel-board">
+    <div class="sec-header">
+      <div class="sec-title">Job Board</div>
+      <div class="sec-sub" id="board-date-label">Today's route</div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="clearAllJobs()">✕ Clear Day</button>
+        <button class="btn btn-outline btn-sm" onclick="switchPanel('intake')">⬆ Import PDF</button>
+      </div>
+    </div>
+
+    <div class="kanban" id="kanban-board">
+      <div class="kanban-col" id="col-pending" data-status="pending"
+           ondragover="onDragOver(event)" ondrop="onDrop(event,'pending')" ondragleave="onDragLeave(event)">
+        <div class="kanban-col-header">
+          <span class="col-dot dot-pending"></span>
+          <span class="col-title">Pending</span>
+          <span class="col-count" id="cnt-pending">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-pending"></div>
+      </div>
+      <div class="kanban-col" id="col-assigned" data-status="assigned"
+           ondragover="onDragOver(event)" ondrop="onDrop(event,'assigned')" ondragleave="onDragLeave(event)">
+        <div class="kanban-col-header">
+          <span class="col-dot dot-assigned"></span>
+          <span class="col-title">Assigned</span>
+          <span class="col-count" id="cnt-assigned">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-assigned"></div>
+      </div>
+      <div class="kanban-col" id="col-progress" data-status="progress"
+           ondragover="onDragOver(event)" ondrop="onDrop(event,'progress')" ondragleave="onDragLeave(event)">
+        <div class="kanban-col-header">
+          <span class="col-dot dot-progress"></span>
+          <span class="col-title">In Progress</span>
+          <span class="col-count" id="cnt-progress">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-progress"></div>
+      </div>
+      <div class="kanban-col" id="col-done" data-status="done"
+           ondragover="onDragOver(event)" ondrop="onDrop(event,'done')" ondragleave="onDragLeave(event)">
+        <div class="kanban-col-header">
+          <span class="col-dot dot-done"></span>
+          <span class="col-title">Done</span>
+          <span class="col-count" id="cnt-done">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-done"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PANEL: INTAKE ══════════ -->
+  <div class="panel" id="panel-intake">
+    <div class="sec-header">
+      <div class="sec-title">New Job</div>
+      <div class="sec-sub">Manual entry or PDF import</div>
+    </div>
+
+    <!-- Manual New Job Form -->
+    <div class="new-job-form" id="new-job-form">
+
+      <div class="form-section-title">📋 Dispatch Info</div>
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>Order #</label>
+          <input type="text" id="nj-order" placeholder="1663445"/>
+        </div>
+        <div class="edit-field">
+          <label>Scheduled Time</label>
+          <input type="text" id="nj-time" placeholder="8:00 AM"/>
+        </div>
+        <div class="edit-field full">
+          <label>Address</label>
+          <input type="text" id="nj-address" placeholder="32122 WATERLILY VIEW COURT"/>
+        </div>
+        <div class="edit-field">
+          <label>Subdivision</label>
+          <input type="text" id="nj-subdivision" placeholder="DELLROSE"/>
+        </div>
+        <div class="edit-field">
+          <label>City / State / Zip</label>
+          <input type="text" id="nj-city" placeholder="HOCKLEY TX 77447"/>
+        </div>
+        <div class="edit-field">
+          <label>Builder</label>
+          <input type="text" id="nj-builder" placeholder="LENNAR / MHI / HIGHLAND"/>
+        </div>
+        <div class="edit-field">
+          <label>Service Type</label>
+          <select id="nj-service">
+            <option value="">Select service...</option>
+            <option value="AC STARTUP">AC Startup</option>
+            <option value="HEAT STARTUP">Heat Startup</option>
+            <option value="AC & HEAT">AC &amp; Heat Startup</option>
+            <option value="PRESTART">Prestart</option>
+            <option value="FINISH">Finish</option>
+            <option value="DRIVE RUN">Drive Run</option>
+            <option value="SERVICE CALL">Service Call</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>Priority</label>
+          <select id="nj-priority">
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section-title">👤 Contact</div>
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>Contact Name</label>
+          <input type="text" id="nj-contact-name" placeholder="BRENT ANDERSON"/>
+        </div>
+        <div class="edit-field">
+          <label>Contact Phone</label>
+          <input type="text" id="nj-contact-phone" placeholder="281 831 3102"/>
+        </div>
+        <div class="edit-field full">
+          <label>Called In By</label>
+          <input type="text" id="nj-called-by" placeholder="BRENT ANDERSON / SUPPLY PRO"/>
+        </div>
+      </div>
+
+      <div class="form-section-title">🔧 Equipment</div>
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>Furnace / AHU Model</label>
+          <div class="combo-wrap" id="combo-nj-furnace">
+            <div class="combo-input-row">
+              <input class="combo-input" type="text" id="nj-furnace" placeholder="Type to search or enter model..."
+                autocomplete="off"
+                oninput="comboFilter('nj-furnace','indoor',this.value)"
+                onfocus="comboOpen('nj-furnace')"
+                onkeydown="comboKey(event,'nj-furnace')"/>
+              <button class="combo-clear" type="button" onclick="comboClear('nj-furnace')" title="Clear">✕</button>
+            </div>
+            <div class="combo-dropdown" id="combo-dd-nj-furnace"></div>
+          </div>
+        </div>
+        <div class="edit-field">
+          <label>Outdoor Unit Model</label>
+          <div class="combo-wrap" id="combo-nj-outdoor">
+            <div class="combo-input-row">
+              <input class="combo-input" type="text" id="nj-outdoor" placeholder="Type to search or enter model..."
+                autocomplete="off"
+                oninput="comboFilter('nj-outdoor','outdoor',this.value)"
+                onfocus="comboOpen('nj-outdoor')"
+                onkeydown="comboKey(event,'nj-outdoor')"/>
+              <button class="combo-clear" type="button" onclick="comboClear('nj-outdoor')" title="Clear">✕</button>
+            </div>
+            <div class="combo-dropdown" id="combo-dd-nj-outdoor"></div>
+          </div>
+        </div>
+        <div class="edit-field">
+          <label>Coil Model</label>
+          <input type="text" id="nj-coil" placeholder="CHPTA4830C*3"/>
+        </div>
+        <div class="edit-field">
+          <label>Evap / Other</label>
+          <input type="text" id="nj-evap" placeholder="CHPEA4830C3"/>
+        </div>
+        <div class="edit-field">
+          <label>Lineset Length</label>
+          <input type="text" id="nj-lineset" placeholder="50ft"/>
+        </div>
+        <div class="edit-field">
+          <label>Warranty</label>
+          <select id="nj-warranty">
+            <option value="true">Yes — WARRANTY</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section-title">📋 Accessory Hints</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px" id="nj-hint-chips">
+        <!-- rendered by JS -->
+      </div>
+      <div class="edit-field">
+        <label>Add Custom Hint</label>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="nj-hint-custom" placeholder="Custom accessory..." style="flex:1"/>
+          <button class="btn btn-ghost btn-sm" onclick="addCustomHint()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="form-section-title">🏗 Service History</div>
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>Rough</label>
+          <input type="text" id="nj-rough" placeholder="JOSE LOPEZ 11/2/25"/>
+        </div>
+        <div class="edit-field">
+          <label>Trim</label>
+          <input type="text" id="nj-trim" placeholder="ROBERTO MARTINEZ 12/31/25"/>
+        </div>
+        <div class="edit-field full">
+          <label>Set</label>
+          <input type="text" id="nj-set" placeholder="EVER GUTIERREZ 12/31/25"/>
+        </div>
+      </div>
+
+      <div class="form-section-title">📝 Notes</div>
+      <div class="edit-field">
+        <label>Important Notes (from PDF)</label>
+        <textarea id="nj-notes" rows="3" placeholder="Paste important notes from PDF here..."></textarea>
+      </div>
+      <div class="edit-field">
+        <label>Dispatch Notes (internal)</label>
+        <textarea id="nj-dispatch-notes" rows="2" placeholder="Your internal notes..."></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-primary" onclick="saveNewJob()">+ Add to Board</button>
+        <button class="btn btn-ghost" onclick="clearNewJobForm()">↺ Clear</button>
+      </div>
+    </div>
+
+    <!-- PDF Import section -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">PDF Import (experimental)</div>
+      <div class="drop-zone" id="pdf-drop" onclick="document.getElementById('pdf-file').click()" style="padding:16px">
+        <input type="file" id="pdf-file" accept=".pdf" onchange="handlePDFFile(this.files[0])"/>
+        <div class="drop-text"><b>Drop Big Tex PDF</b> — parser will attempt to extract jobs for review</div>
+      </div>
+      <div id="parse-status" style="margin-top:8px"></div>
+      <div id="parsed-preview"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ PANEL: EXPORT → PWA ══════════ -->
+  <div class="panel" id="panel-export">
+    <div class="sec-header">
+      <div class="sec-title">Export → PWA</div>
+      <div class="sec-sub">Send today's route to technician's PWA</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">How it works</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.7">
+        1. Select the jobs to send below<br>
+        2. Click <b style="color:var(--amber)">Download Route JSON</b><br>
+        3. Send the file to the technician (WhatsApp, email, AirDrop)<br>
+        4. Tech opens PWA → taps <b style="color:var(--ice)">RESTORE</b> → selects the file<br>
+        5. All addresses load in the Jobs tab with equipment pre-filled
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Select Jobs to Export</div>
+      <div class="export-summary" id="export-summary">
+        <span class="export-summary-stat">Load the board to see jobs</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-ghost btn-sm" onclick="exportSelectAll(true)">☑ Select All</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportSelectAll(false)">☐ Deselect All</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportSelectStatus('pending,assigned,progress')">Only Active</button>
+      </div>
+      <div id="export-job-list"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-primary" onclick="doExportPWA()">📲 Download Route JSON</button>
+      <button class="btn btn-ice" onclick="exportCopyAddresses()">📋 Copy Addresses Only</button>
+    </div>
+    <div id="export-status" style="margin-top:10px"></div>
+  </div>
+
+  <!-- ══════════ PANEL: COMPLETION ══════════ -->
+  <div class="panel" id="panel-completion">
+    <div class="sec-header">
+      <div class="sec-title">Completion</div>
+      <div class="sec-sub">End of day · generate completion text for Big Tex</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Import Tech JSON</div>
+      <div class="drop-zone" id="json-drop" onclick="document.getElementById('json-file').click()" style="padding:16px">
+        <input type="file" id="json-file" accept=".json" onchange="handleJSONImport(this.files[0])"/>
+        <div class="drop-text"><b>Drop tech JSON</b> or click to select</div>
+      </div>
+    </div>
+    <div id="completion-output">
+      <div class="empty"><div class="empty-icon">✓</div><div class="empty-text">Import a JSON to generate completions</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════ PANEL: TECHNICIANS ══════════ -->
+  <div class="panel" id="panel-techs">
+    <div class="sec-header">
+      <div class="sec-title">Technicians</div>
+      <div class="sec-sub">Manage team</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Add Technician</div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div style="flex:1">
+          <span class="label">Name</span>
+          <input type="text" id="tech-name-input" placeholder="Full name" style="width:100%"/>
+        </div>
+        <div style="flex:1">
+          <span class="label">Phone</span>
+          <input type="text" id="tech-phone-input" placeholder="WhatsApp number"/>
+        </div>
+        <button class="btn btn-primary" onclick="addTech()">+ Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Team</div>
+      <div id="tech-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ PANEL: PAYMENTS ══════════ -->
+  <div class="panel" id="panel-payments">
+    <div class="sec-header">
+      <div class="sec-title">Payments</div>
+      <div class="sec-sub">Weekly tracking · subcontractor 80%</div>
+    </div>
+    <div id="payments-output">
+      <div class="empty"><div class="empty-icon">$</div><div class="empty-text">Payments will appear as jobs are completed</div></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="modal-bg" id="job-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-addr" id="m-addr"></div>
+      <div class="modal-meta" id="m-meta"></div>
+      <button class="modal-edit-toggle" id="modal-edit-btn" onclick="toggleEditMode()">✎ Edit</button>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-footer" id="m-footer"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// STORE
+// ═══════════════════════════════════════
+const STORE = 'dispatch_v1';
+const TECH_STORE = 'dispatch_techs_v1';
+
+let jobs = [];   // all jobs for the day
+let techs = [];  // technicians
+let _dragId = null;
+
+function save() { try { localStorage.setItem(STORE, JSON.stringify(jobs)); } catch(e){} }
+function load() {
+  try {
+    const r = localStorage.getItem(STORE);
+    if (r) jobs = JSON.parse(r);
+  } catch(e){ jobs = []; }
+  try {
+    const r = localStorage.getItem(TECH_STORE);
+    if (r) techs = JSON.parse(r);
+  } catch(e){ techs = []; }
+}
+function saveTechs() { try { localStorage.setItem(TECH_STORE, JSON.stringify(techs)); } catch(e){} }
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function switchPanel(name) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const navEl = document.querySelector(`[data-panel="${name}"]`);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('panel-' + name)?.classList.add('active');
+  if (name === 'export') renderExportPanel();
+}
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => switchPanel(item.dataset.panel));
+});
+
+// ═══════════════════════════════════════
+// PDF PARSER (pdf.js + OCR-style regex)
+// ═══════════════════════════════════════
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const STREET_SFXS = new Set([
+  'COURT','LANE','DRIVE','WAY','ROAD','BOULEVARD','AVENUE','STREET',
+  'TRAIL','CIRCLE','PLACE','LOOP','PATH','RUN','BEND','CROSSING',
+  'CT','LN','DR','RD','BLVD','AVE','ST','TR','CIR','PL','PKWY',
+]);
+
+const DROP = document.getElementById('pdf-drop');
+DROP.addEventListener('dragover', e => { e.preventDefault(); DROP.classList.add('over'); });
+DROP.addEventListener('dragleave', () => DROP.classList.remove('over'));
+DROP.addEventListener('drop', e => {
+  e.preventDefault(); DROP.classList.remove('over');
+  if (e.dataTransfer.files[0]) handlePDFFile(e.dataTransfer.files[0]);
+});
+
+async function handlePDFFile(file) {
+  if (!file) return;
+  const status = document.getElementById('parse-status');
+  status.innerHTML = `<div style="color:var(--amber);font-size:12px;padding:8px">⟳ Reading PDF...</div>`;
+
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n';
+  }
+
+  // pdf.js joins items with spaces — normalize line breaks
+  // Key pattern: time blocks start with digits followed by : and AM/PM
+  fullText = fullText
+    .replace(/\s{3,}/g, '\n')
+    .replace(/(\d{1,2}:\d{2}\s*[AP]M)/g, '\n$1');
+
+  const { header, parsedJobs } = parsePDFText(fullText, file.name);
+  showParsedPreview(header, parsedJobs, file.name);
+}
+
+function parsePDFText(text, filename) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Header
+  const header = {};
+  for (const line of lines.slice(0, 6)) {
+    const dm = line.match(/(\d{2}\/\d{2}\/\d{4})/);
+    if (dm && !header.date) header.date = dm[1];
+    const tm = line.match(/([A-Z][A-Z ]+)'S ROUTE for (.+)/);
+    if (tm) { header.tech = tm[1].trim(); header.day = tm[2].trim(); }
+  }
+  // Fallback: try to get date from filename
+  if (!header.date) {
+    const fm = filename.match(/(\d{2})(\d{2})(\d{2,4})/);
+    if (fm) header.date = `${fm[1]}/${fm[2]}/${fm[3].length===2?'20'+fm[3]:fm[3]}`;
+  }
+
+  // Join full text for regex sweeps
+  const full = lines.join('\n');
+
+  // Split into job blocks — each block starts with a time pattern
+  const blockRx = /(\d{1,2}:\d{2}\s*[AP]M)/g;
+  const blockStarts = [];
+  let m;
+  while ((m = blockRx.exec(full)) !== null) blockStarts.push(m.index);
+
+  const parsedJobs = [];
+  for (let i = 0; i < blockStarts.length; i++) {
+    const chunk = full.slice(blockStarts[i], blockStarts[i+1] || full.length);
+    const job = parseJobChunk(chunk);
+    if (job) parsedJobs.push(job);
+  }
+
+  return { header, parsedJobs };
+}
+
+function parseJobChunk(chunk) {
+  const job = { id: genId(), status: 'pending', priority: 'normal', assignedTech: '', dispatchNotes: '' };
+  const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+
+  // Line 0: "8:00 AM LENNAR RESIDENTIAL AC STARTUP"
+  const timeM = lines[0].match(/^(\d{1,2}:\d{2}\s*[AP]M)/i);
+  if (timeM) job.scheduledTime = timeM[1].trim();
+  const builderM = lines[0].match(/[AP]M\s+([A-Z]+)\s+/i);
+  if (builderM) job.builder = builderM[1];
+  const svcM = lines[0].match(/(AC STARTUP|HEAT STARTUP|PRESTART|FINISH|DRIVE RUN|AC & HEAT)/i);
+  if (svcM) job.serviceType = svcM[1].toUpperCase();
+
+  // Order number — look for 6-7 digit number prefixed by #
+  const ordM = chunk.match(/#\s*(\d{5,8})/);
+  if (ordM) job.orderNumber = ordM[1];
+
+  // Address line — line containing order number
+  const addrLineM = chunk.match(/#\s*\d{5,8}[^A-Z]*?(\d{3,5}\s+[A-Z].+)/);
+  if (addrLineM) {
+    const raw = addrLineM[1].replace(/WARRANTY.*$/, '').replace(/\.\.\./g, '').trim();
+    const { addr, sub } = splitAddrSub(raw);
+    job.address = addr;
+    job.subdivision = sub;
+  }
+
+  // City/state/zip
+  const cityM = chunk.match(/([A-Z][A-Z ]+TX\s+\d{5})/);
+  if (cityM) job.cityState = cityM[1].trim();
+
+  // Contact
+  const phoneM = chunk.match(/(\d{3}\s+\d{3}\s+\d{4})/);
+  if (phoneM) job.contactPhone = phoneM[1];
+  const contactM = chunk.match(/\d{5}\s+\S+\s+([A-Z ]+)\s+\d{3}/);
+  if (contactM) job.contactName = contactM[1].trim();
+
+  // Called in by
+  const calledM = chunk.match(/Called In By:\s*(.+)/i);
+  if (calledM) job.calledInBy = calledM[1].trim();
+
+  // Problem
+  const probM = chunk.match(/PROBLEM:\s*(.+)/i);
+  if (probM) job.problem = probM[1].trim();
+
+  // Important notes
+  const notesM = chunk.match(/IMPORTANT NOTES:\s*([\s\S]+?)(?=(?:FURN|HEATER|ROUGH|TRIM|SET)\s*#?|\n\n)/i);
+  if (notesM) job.importantNotes = notesM[1].replace(/\s+/g, ' ').trim();
+
+  // Equipment
+  const furnM = chunk.match(/(?:FURN|FURNACE)\s*#\s*([A-Z0-9]+)/i);
+  const heatM = chunk.match(/HEATER\s*#\s*([A-Z0-9]+)/i);
+  if (furnM) job.furnaceModel = furnM[1];
+  else if (heatM) job.furnaceModel = heatM[1];
+  const coilM = chunk.match(/COIL\s*#\s*([A-Z0-9\-]+)/i);
+  if (coilM) job.coilModel = coilM[1];
+  const unitM = chunk.match(/UNIT\s*#\s*([A-Z0-9]+)/i);
+  if (unitM) job.outdoorModel = unitM[1];
+  const evapM = chunk.match(/EVAP\s*#\s*([A-Z0-9]+)/i);
+  if (evapM) job.evapModel = evapM[1];
+
+  // History
+  const roughM = chunk.match(/ROUGH\s+(.+?)\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+  const trimM  = chunk.match(/TRIM\s+(.+?)\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+  const setM   = chunk.match(/SET\s+(.+?)\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+  if (roughM) job.historyRough = roughM[1].trim() + ' · ' + roughM[2];
+  if (trimM)  job.historyTrim  = trimM[1].trim()  + ' · ' + trimM[2];
+  if (setM)   job.historySet   = setM[1].trim()   + ' · ' + setM[2];
+
+  // Accessory hints from notes
+  const nl = (job.importantNotes || '').toLowerCase();
+  const HINT_MAP = {
+    'fin180p':'FIN180P', 'float switch':'Float Switch', 'ecobee':'Ecobee',
+    'daikin one':'Daikin One', 'th6220':'T-6 tstat', 'vent hood':'Vent Hood',
+    'media filter':'Media Filter', 'dryer vent':'Dryer Vent',
+    'secondary r/a':'Sec. Return', 'ecoil':'Ecoil Wire',
+  };
+  job.accessoryHints = Object.entries(HINT_MAP)
+    .filter(([kw]) => nl.includes(kw))
+    .map(([,label]) => label);
+
+  // Lineset hint
+  const lsM = (job.importantNotes||'').match(/(\d{2,3})'\s*7\/8/);
+  if (lsM) job.linesetHint = lsM[1] + "ft";
+
+  job.isWarranty = /WARRANTY/i.test(chunk);
+  job.createdAt = new Date().toISOString();
+
+  return job;
+}
+
+function splitAddrSub(raw) {
+  const tokens = raw.split(/\s+/);
+  let addrEnd = tokens.length;
+  for (let i = 2; i < tokens.length; i++) {
+    const clean = tokens[i].replace(/[.,;]/g,'');
+    if (STREET_SFXS.has(clean)) {
+      const next = tokens[i+1] ? tokens[i+1].replace(/[.,;]/g,'') : '';
+      if (!STREET_SFXS.has(next)) { addrEnd = i + 1; break; }
+    }
+  }
+  return {
+    addr: tokens.slice(0, addrEnd).join(' '),
+    sub:  tokens.slice(addrEnd).join(' '),
+  };
+}
+
+// ═══════════════════════════════════════
+// PARSED PREVIEW
+// ═══════════════════════════════════════
+function showParsedPreview(header, parsedJobs, filename) {
+  const status = document.getElementById('parse-status');
+  const preview = document.getElementById('parsed-preview');
+
+  if (parsedJobs.length === 0) {
+    status.innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px">⚠ No jobs found. Check PDF format.</div>`;
+    return;
+  }
+
+  status.innerHTML = `<div style="color:var(--green);font-size:12px;padding:8px;margin-bottom:8px">
+    ✓ Found <b>${parsedJobs.length} jobs</b> for <b>${header.tech||'Unknown Tech'}</b> · ${header.date||filename}
+  </div>`;
+
+  let html = `<div class="card">
+    <div class="card-title">Parsed Jobs — Review before importing</div>`;
+
+  parsedJobs.forEach((j, i) => {
+    html += `
+    <div style="padding:10px;border:1px solid var(--border);border-radius:3px;margin-bottom:8px;background:var(--bg3)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div style="font-family:var(--head);font-size:18px;font-weight:800;color:var(--amber)">${esc(j.scheduledTime||'?')}</div>
+        <div style="font-family:var(--head);font-size:13px;font-weight:700;color:var(--text-bright);flex:1">${esc(j.address||'No address')}</div>
+        <span class="jtag jtag-builder">${esc(j.builder||'?')}</span>
+        ${j.isWarranty ? '<span class="jtag jtag-warranty">WARRANTY</span>' : ''}
+        ${j.orderNumber ? `<span style="font-size:10px;color:var(--text-dim)">#${j.orderNumber}</span>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text-dim)">
+        ${j.subdivision ? `<span>📍 ${esc(j.subdivision)}</span>` : ''}
+        ${j.cityState   ? `<span>${esc(j.cityState)}</span>` : ''}
+        ${j.problem     ? `<span style="color:var(--ice)">⚡ ${esc(j.problem)}</span>` : ''}
+        ${j.furnaceModel ? `<span>FURN: ${esc(j.furnaceModel)}</span>` : ''}
+        ${j.outdoorModel ? `<span>UNIT: ${esc(j.outdoorModel)}</span>` : ''}
+      </div>
+      ${j.accessoryHints.length ? `
+      <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">
+        ${j.accessoryHints.map(h=>`<span class="jtag jtag-hint">${esc(h)}</span>`).join('')}
+        ${j.linesetHint ? `<span class="jtag" style="background:var(--ice-dim);color:var(--ice)">${j.linesetHint}</span>` : ''}
+      </div>` : ''}
+      ${j.historyRough||j.historyTrim||j.historySet ? `
+      <div style="margin-top:5px;font-size:10px;color:var(--text-dim)">
+        ${j.historyRough?`ROUGH: ${esc(j.historyRough)} · `:''}
+        ${j.historyTrim ?`TRIM: ${esc(j.historyTrim)} · `:''}
+        ${j.historySet  ?`SET: ${esc(j.historySet)}`:''}
+      </div>` : ''}
+    </div>`;
+  });
+
+  html += `</div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn btn-primary" onclick="importJobsToBoard(${JSON.stringify(parsedJobs).replace(/"/g,'&quot;')}, '${esc(header.date||'')}')">
+      ▦ Add to Job Board (${parsedJobs.length} jobs)
+    </button>
+    <button class="btn btn-ghost" onclick="document.getElementById('parsed-preview').innerHTML='';document.getElementById('parse-status').innerHTML=''">
+      ✕ Discard
+    </button>
+  </div>`;
+
+  preview.innerHTML = html;
+}
+
+function importJobsToBoard(newJobs, date) {
+  // Assign default tech from header if set
+  jobs = [...jobs, ...newJobs.map(j => ({...j, routeDate: date}))];
+  save();
+  renderBoard();
+  updateStats();
+  switchPanel('board');
+  document.getElementById('board-date-label').textContent = date || 'Today';
+  document.getElementById('parsed-preview').innerHTML = '';
+  document.getElementById('parse-status').innerHTML = `<div style="color:var(--green);font-size:12px;padding:8px">✓ ${newJobs.length} jobs added to board</div>`;
+}
+
+// ═══════════════════════════════════════
+// KANBAN BOARD
+// ═══════════════════════════════════════
+const STATUSES = ['pending','assigned','progress','done','cancelled'];
+
+function renderBoard() {
+  STATUSES.forEach(s => {
+    const col = document.getElementById('cards-' + s);
+    if (!col) return;
+    const sJobs = jobs.filter(j => j.status === s);
+    const cnt = document.getElementById('cnt-' + s);
+    if (cnt) cnt.textContent = sJobs.length;
+
+    if (sJobs.length === 0) {
+      col.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:11px">Empty</div>`;
+      return;
+    }
+    col.innerHTML = sJobs
+      .sort((a,b) => (a.scheduledTime||'').localeCompare(b.scheduledTime||''))
+      .map(j => buildCard(j)).join('');
+
+    // Re-attach drag listeners
+    col.querySelectorAll('.job-card').forEach(card => {
+      card.addEventListener('dragstart', e => {
+        _dragId = card.dataset.id;
+        setTimeout(() => card.classList.add('dragging'), 0);
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+  });
+}
+
+function buildCard(j) {
+  const tech = techs.find(t => t.id === j.assignedTech);
+  return `<div class="job-card priority-${j.priority||'normal'}"
+    data-id="${j.id}"
+    draggable="true"
+    onclick="openJob('${j.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="job-card-time">${esc(j.scheduledTime||'—')}</div>
+      <div class="job-card-order">#${esc(j.orderNumber||'—')}</div>
+    </div>
+    <div class="job-card-addr" title="${esc(j.address)}">${esc(j.address||'No address')}</div>
+    <div class="job-card-meta">${esc(j.subdivision||'')}${j.cityState?' · '+j.cityState.split(' ')[0]:''}</div>
+    <div class="job-card-tags">
+      ${j.builder   ? `<span class="jtag jtag-builder">${esc(j.builder)}</span>` : ''}
+      ${j.isWarranty ? `<span class="jtag jtag-warranty">W</span>` : ''}
+      ${j.serviceType ? `<span class="jtag jtag-service">${esc(j.serviceType.replace(' STARTUP',''))}</span>` : ''}
+      ${j.priority==='urgent' ? `<span class="jtag jtag-urgent">URGENT</span>` : ''}
+    </div>
+    ${tech ? `<div class="job-card-tech">◎ ${esc(tech.name)}</div>` : ''}
+  </div>`;
+}
+
+// Drag & Drop
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-target');
+}
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-target'); }
+function onDrop(e, status) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-target');
+  if (!_dragId) return;
+  const job = jobs.find(j => j.id === _dragId);
+  if (job) { job.status = status; save(); renderBoard(); updateStats(); }
+  _dragId = null;
+}
+
+// ═══════════════════════════════════════
+// JOB DETAIL MODAL — VIEW + EDIT MODES
+// ═══════════════════════════════════════
+let _currentJobId = null;
+let _editMode = false;
+
+const ALL_HINTS = [
+  'FIN180P','Float Switch','Ecobee','T-6 tstat','T-10 tstat','T-4 tstat',
+  'Daikin One','Daikin One Touch','HZ322','UT3000','Harmony',
+  'Vent Hood','Media Filter','Dryer Vent','Secondary Return Air',
+  'Bypass Damper','Dehum','Ecoil Wire','Trane Harness','Harness',
+  'LP Kit','RDS','Float Switch','A2L Kit'
+];
+
+function openJob(id) {
+  _currentJobId = id;
+  _editMode = false;
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  document.getElementById('modal-edit-btn').classList.remove('active');
+  document.getElementById('modal-edit-btn').textContent = '✎ Edit';
+  renderModalView(j);
+  document.getElementById('job-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function toggleEditMode() {
+  _editMode = !_editMode;
+  const j = jobs.find(j => j.id === _currentJobId);
+  if (!j) return;
+  const btn = document.getElementById('modal-edit-btn');
+  btn.classList.toggle('active', _editMode);
+  btn.textContent = _editMode ? '✎ Editing' : '✎ Edit';
+  if (_editMode) renderModalEdit(j);
+  else renderModalView(j);
+}
+
+function renderModalView(j) {
+  document.getElementById('m-addr').textContent = j.address || 'No address';
+  document.getElementById('m-meta').textContent =
+    [j.scheduledTime, j.builder, j.subdivision, j.cityState].filter(Boolean).join(' · ');
+
+  const wa = buildWhatsApp(j);
+  document.getElementById('m-body').innerHTML = `
+    <span class="label">Status</span>
+    <div class="status-row">
+      ${STATUSES.map(s => `<button class="status-btn ${j.status===s?'active-'+s:''}"
+        onclick="setJobStatus('${j.id}','${s}')">${s.toUpperCase()}</button>`).join('')}
+    </div>
+    <hr>
+    <div class="detail-grid">
+      <div class="detail-block">
+        <span class="detail-label">Order #</span>
+        <span class="detail-val amber">#${esc(j.orderNumber||'—')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Scheduled</span>
+        <span class="detail-val">${esc(j.scheduledTime||'—')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Service</span>
+        <span class="detail-val ice">${esc(j.problem||j.serviceType||'—')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Builder</span>
+        <span class="detail-val">${esc(j.builder||'—')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Subdivision</span>
+        <span class="detail-val">${esc(j.subdivision||'—')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Contact</span>
+        <span class="detail-val">${esc(j.contactName||'—')}</span>
+        <span class="detail-val dim">${esc(j.contactPhone||'')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Called In By</span>
+        <span class="detail-val dim">${esc(j.calledInBy||'—')}</span>
+      </div>
+      <div class="detail-block">
+        <span class="detail-label">Priority</span>
+        <div style="display:flex;gap:5px;margin-top:3px">
+          <button class="btn btn-sm ${j.priority==='normal'?'btn-outline':'btn-ghost'}"
+            onclick="setJobPriority('${j.id}','normal')">Normal</button>
+          <button class="btn btn-sm ${j.priority==='urgent'?'btn-red':'btn-ghost'}"
+            onclick="setJobPriority('${j.id}','urgent')">Urgent</button>
+        </div>
+      </div>
+    </div>
+    ${j.furnaceModel||j.outdoorModel||j.coilModel||j.evapModel||j.linesetHint ? `
+    <hr>
+    <span class="label">Equipment</span>
+    <div class="detail-grid" style="margin-bottom:0">
+      ${j.furnaceModel ? `<div class="detail-block"><span class="detail-label">Furnace/AHU</span><span class="detail-val">${esc(j.furnaceModel)}</span></div>` : ''}
+      ${j.outdoorModel ? `<div class="detail-block"><span class="detail-label">Outdoor Unit</span><span class="detail-val">${esc(j.outdoorModel)}</span></div>` : ''}
+      ${j.coilModel    ? `<div class="detail-block"><span class="detail-label">Coil</span><span class="detail-val dim">${esc(j.coilModel)}</span></div>` : ''}
+      ${j.evapModel    ? `<div class="detail-block"><span class="detail-label">Evap</span><span class="detail-val dim">${esc(j.evapModel)}</span></div>` : ''}
+      ${j.linesetHint  ? `<div class="detail-block"><span class="detail-label">Lineset</span><span class="detail-val">${esc(j.linesetHint)}</span></div>` : ''}
+    </div>` : ''}
+    ${(j.accessoryHints||[]).length ? `
+    <hr>
+    <span class="label">Accessory Hints</span>
+    <div class="hints-wrap">${(j.accessoryHints||[]).map(h=>`<span class="hint-tag">${esc(h)}</span>`).join('')}</div>` : ''}
+    ${j.historyRough||j.historyTrim||j.historySet ? `
+    <hr>
+    <span class="label">Service History</span>
+    ${j.historyRough ? `<div class="history-row"><span class="history-type">ROUGH</span><span class="history-name">${esc(j.historyRough.split(' · ')[0])}</span><span class="history-date">${esc(j.historyRough.split(' · ')[1]||'')}</span></div>` : ''}
+    ${j.historyTrim  ? `<div class="history-row"><span class="history-type">TRIM</span><span class="history-name">${esc(j.historyTrim.split(' · ')[0])}</span><span class="history-date">${esc(j.historyTrim.split(' · ')[1]||'')}</span></div>` : ''}
+    ${j.historySet   ? `<div class="history-row"><span class="history-type">SET</span><span class="history-name">${esc(j.historySet.split(' · ')[0])}</span><span class="history-date">${esc(j.historySet.split(' · ')[1]||'')}</span></div>` : ''}
+    ` : ''}
+    ${j.importantNotes ? `
+    <hr>
+    <span class="label">Important Notes</span>
+    <div class="notes-box">${esc(j.importantNotes)}</div>` : ''}
+    <hr>
+    <span class="label">Assign Technician</span>
+    <div class="tech-assign">
+      <select onchange="assignTech('${j.id}', this.value)">
+        <option value="">— Unassigned —</option>
+        ${techs.map(t=>`<option value="${t.id}" ${j.assignedTech===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}
+      </select>
+    </div>
+    <hr>
+    <span class="label">Dispatch Notes</span>
+    <textarea placeholder="Internal notes..." onchange="setDispatchNotes('${j.id}',this.value)">${esc(j.dispatchNotes||'')}</textarea>
+    <hr>
+    <span class="label">Message for Technician</span>
+    <div class="whatsapp-box" id="wa-box">${esc(wa)}</div>
+  `;
+
+  document.getElementById('m-footer').innerHTML = `
+    <button class="btn btn-green" onclick="copyWA()">📋 Copy Message</button>
+    <button class="btn btn-ice" onclick="openWA('${j.id}')">💬 WhatsApp</button>
+    <button class="btn btn-red btn-sm" onclick="deleteJob('${j.id}')" style="margin-left:auto">🗑 Delete</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal()">Close</button>
+  `;
+}
+
+function renderModalEdit(j) {
+  document.getElementById('m-addr').textContent = j.address || 'No address';
+  document.getElementById('m-meta').textContent = 'Edit mode — changes save immediately';
+
+  const hintList = ALL_HINTS.map(h => {
+    const active = (j.accessoryHints||[]).includes(h);
+    return `<span class="hint-tag hint-chip ${active?'':'off'}"
+      onclick="toggleHint('${j.id}','${h}',this)">${esc(h)}</span>`;
+  }).join('');
+
+  document.getElementById('m-body').innerHTML = `
+    <div class="edit-grid">
+      <div class="edit-field">
+        <label>Order #</label>
+        <input type="text" value="${esc(j.orderNumber||'')}" oninput="patchJob('${j.id}','orderNumber',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Scheduled Time</label>
+        <input type="text" value="${esc(j.scheduledTime||'')}" oninput="patchJob('${j.id}','scheduledTime',this.value)"/>
+      </div>
+      <div class="edit-field full">
+        <label>Address</label>
+        <input type="text" value="${esc(j.address||'')}" oninput="patchJob('${j.id}','address',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Subdivision</label>
+        <input type="text" value="${esc(j.subdivision||'')}" oninput="patchJob('${j.id}','subdivision',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>City / State / Zip</label>
+        <input type="text" value="${esc(j.cityState||'')}" oninput="patchJob('${j.id}','cityState',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Builder</label>
+        <input type="text" value="${esc(j.builder||'')}" oninput="patchJob('${j.id}','builder',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Service Type</label>
+        <select onchange="patchJob('${j.id}','serviceType',this.value)">
+          ${['AC STARTUP','HEAT STARTUP','AC & HEAT','PRESTART','FINISH','DRIVE RUN','SERVICE CALL'].map(s=>
+            `<option value="${s}" ${j.serviceType===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="edit-field">
+        <label>Problem / Description</label>
+        <input type="text" value="${esc(j.problem||'')}" oninput="patchJob('${j.id}','problem',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Contact Name</label>
+        <input type="text" value="${esc(j.contactName||'')}" oninput="patchJob('${j.id}','contactName',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Contact Phone</label>
+        <input type="text" value="${esc(j.contactPhone||'')}" oninput="patchJob('${j.id}','contactPhone',this.value)"/>
+      </div>
+      <div class="edit-field full">
+        <label>Called In By</label>
+        <input type="text" value="${esc(j.calledInBy||'')}" oninput="patchJob('${j.id}','calledInBy',this.value)"/>
+      </div>
+    </div>
+
+    <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--amber-dim)">Equipment</div>
+    <div class="edit-grid">
+      <div class="edit-field">
+        <label>Furnace / AHU</label>
+        <div class="combo-wrap" id="combo-edit-furnace-${j.id}">
+          <div class="combo-input-row">
+            <input class="combo-input" type="text" id="edit-furnace-${j.id}"
+              value="${esc(j.furnaceModel||'')}"
+              placeholder="Search or type model..."
+              autocomplete="off"
+              oninput="comboFilterPatch('edit-furnace-${j.id}','indoor',this.value,'${j.id}','furnaceModel')"
+              onfocus="comboOpen('edit-furnace-${j.id}')"
+              onkeydown="comboKey(event,'edit-furnace-${j.id}')"/>
+            <button class="combo-clear" type="button"
+              onclick="comboClearPatch('edit-furnace-${j.id}','${j.id}','furnaceModel')" title="Clear">✕</button>
+          </div>
+          <div class="combo-dropdown" id="combo-dd-edit-furnace-${j.id}"></div>
+        </div>
+      </div>
+      <div class="edit-field">
+        <label>Outdoor Unit</label>
+        <div class="combo-wrap" id="combo-edit-outdoor-${j.id}">
+          <div class="combo-input-row">
+            <input class="combo-input" type="text" id="edit-outdoor-${j.id}"
+              value="${esc(j.outdoorModel||'')}"
+              placeholder="Search or type model..."
+              autocomplete="off"
+              oninput="comboFilterPatch('edit-outdoor-${j.id}','outdoor',this.value,'${j.id}','outdoorModel')"
+              onfocus="comboOpen('edit-outdoor-${j.id}')"
+              onkeydown="comboKey(event,'edit-outdoor-${j.id}')"/>
+            <button class="combo-clear" type="button"
+              onclick="comboClearPatch('edit-outdoor-${j.id}','${j.id}','outdoorModel')" title="Clear">✕</button>
+          </div>
+          <div class="combo-dropdown" id="combo-dd-edit-outdoor-${j.id}"></div>
+        </div>
+      </div>
+      <div class="edit-field">
+        <label>Coil</label>
+        <input type="text" value="${esc(j.coilModel||'')}" oninput="patchJob('${j.id}','coilModel',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Evap</label>
+        <input type="text" value="${esc(j.evapModel||'')}" oninput="patchJob('${j.id}','evapModel',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Lineset</label>
+        <input type="text" value="${esc(j.linesetHint||'')}" oninput="patchJob('${j.id}','linesetHint',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Warranty</label>
+        <select onchange="patchJob('${j.id}','isWarranty',this.value==='true')">
+          <option value="true" ${j.isWarranty?'selected':''}>Yes — WARRANTY</option>
+          <option value="false" ${!j.isWarranty?'selected':''}>No</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--amber-dim)">Accessory Hints <span style="font-size:9px;color:var(--text-dim);font-weight:400">click to toggle</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${hintList}</div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <input type="text" id="edit-hint-custom" placeholder="Custom hint..." style="flex:1"/>
+      <button class="btn btn-ghost btn-sm" onclick="addEditHint('${j.id}')">+ Add</button>
+    </div>
+
+    <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--amber-dim)">Service History</div>
+    <div class="edit-grid">
+      <div class="edit-field">
+        <label>Rough</label>
+        <input type="text" value="${esc(j.historyRough||'')}" oninput="patchJob('${j.id}','historyRough',this.value)"/>
+      </div>
+      <div class="edit-field">
+        <label>Trim</label>
+        <input type="text" value="${esc(j.historyTrim||'')}" oninput="patchJob('${j.id}','historyTrim',this.value)"/>
+      </div>
+      <div class="edit-field full">
+        <label>Set</label>
+        <input type="text" value="${esc(j.historySet||'')}" oninput="patchJob('${j.id}','historySet',this.value)"/>
+      </div>
+    </div>
+
+    <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--amber-dim)">Notes</div>
+    <div class="edit-field">
+      <label>Important Notes (PDF)</label>
+      <textarea rows="3" oninput="patchJob('${j.id}','importantNotes',this.value)">${esc(j.importantNotes||'')}</textarea>
+    </div>
+    <div class="edit-field">
+      <label>Dispatch Notes (internal)</label>
+      <textarea rows="2" oninput="patchJob('${j.id}','dispatchNotes',this.value)">${esc(j.dispatchNotes||'')}</textarea>
+    </div>
+  `;
+
+  document.getElementById('m-footer').innerHTML = `
+    <span style="font-size:11px;color:var(--green)">✓ All changes save instantly</span>
+    <button class="btn btn-primary btn-sm" onclick="toggleEditMode()" style="margin-left:auto">← Back to View</button>
+    <button class="btn btn-red btn-sm" onclick="deleteJob('${j.id}')">🗑 Delete</button>
+  `;
+}
+
+// Patch a single field on a job — saves and refreshes board card
+function patchJob(id, field, value) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  j[field] = value;
+  save();
+  // Refresh board card without closing modal
+  renderBoard();
+  // Update modal header if address changed
+  if (field === 'address') {
+    document.getElementById('m-addr').textContent = value || 'No address';
+  }
+}
+
+function toggleHint(id, hint, el) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  if (!j.accessoryHints) j.accessoryHints = [];
+  const idx = j.accessoryHints.indexOf(hint);
+  if (idx === -1) {
+    j.accessoryHints.push(hint);
+    el.classList.remove('off');
+  } else {
+    j.accessoryHints.splice(idx, 1);
+    el.classList.add('off');
+  }
+  save(); renderBoard();
+}
+
+function addEditHint(id) {
+  const input = document.getElementById('edit-hint-custom');
+  const val = input?.value.trim();
+  if (!val) return;
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  if (!j.accessoryHints) j.accessoryHints = [];
+  if (!j.accessoryHints.includes(val)) {
+    j.accessoryHints.push(val);
+    save(); renderBoard();
+    // Add chip to the list
+    const wrap = document.querySelector('#m-body .hints-wrap, #m-body [style*="flex-wrap"]');
+    if (wrap) {
+      const chip = document.createElement('span');
+      chip.className = 'hint-tag hint-chip';
+      chip.textContent = val;
+      chip.onclick = () => toggleHint(id, val, chip);
+      wrap.appendChild(chip);
+    }
+  }
+  input.value = '';
+}
+
+
+
+function closeModal() {
+  document.getElementById('job-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
+
+function setJobStatus(id, status) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  j.status = status;
+  save(); renderBoard(); updateStats();
+  // Refresh only the status row in the modal (no full re-render)
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    const s = btn.textContent.toLowerCase();
+    btn.className = 'status-btn' + (s===status?' active-'+status:'');
+  });
+}
+
+function setJobPriority(id, priority) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  j.priority = priority;
+  save(); renderBoard();
+  if (_editMode) renderModalEdit(j);
+  else renderModalView(j);
+}
+
+function assignTech(id, techId) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  j.assignedTech = techId;
+  // Auto-move to assigned if still pending
+  if (j.status === 'pending' && techId) j.status = 'assigned';
+  if (!techId) j.status = 'pending';
+  save(); renderBoard(); updateStats();
+}
+
+function setDispatchNotes(id, notes) {
+  const j = jobs.find(j => j.id === id);
+  if (j) { j.dispatchNotes = notes; save(); }
+}
+
+function deleteJob(id) {
+  if (!confirm('Delete this job?')) return;
+  jobs = jobs.filter(j => j.id !== id);
+  save(); renderBoard(); updateStats(); closeModal();
+}
+
+function clearAllJobs() {
+  if (!confirm('Clear all jobs from the board?')) return;
+  jobs = [];
+  save(); renderBoard(); updateStats();
+}
+
+// ═══════════════════════════════════════
+// WHATSAPP MESSAGE BUILDER
+// ═══════════════════════════════════════
+function buildWhatsApp(j) {
+  const lines = [];
+  lines.push(`📋 ORDER #${j.orderNumber||'—'} · ${j.builder||''}`);
+  lines.push(`📍 ${j.address||''}${j.subdivision?' — '+j.subdivision:''}`);
+  if (j.cityState) lines.push(`   ${j.cityState}`);
+  lines.push(`⏰ ${j.scheduledTime||'—'}  |  ${j.problem||j.serviceType||''}`);
+  if (j.contactName || j.contactPhone)
+    lines.push(`📞 ${[j.contactName, j.contactPhone].filter(Boolean).join(' · ')}`);
+  if (j.furnaceModel || j.outdoorModel) {
+    lines.push('');
+    if (j.furnaceModel) lines.push(`FURN: ${j.furnaceModel}`);
+    if (j.outdoorModel) lines.push(`UNIT: ${j.outdoorModel}`);
+    if (j.linesetHint)  lines.push(`LINESET: ${j.linesetHint}`);
+  }
+  if (j.accessoryHints?.length) {
+    lines.push('');
+    lines.push('🔧 ' + j.accessoryHints.join(', '));
+  }
+  if (j.historyTrim || j.historySet) {
+    lines.push('');
+    if (j.historyTrim) lines.push(`TRIM: ${j.historyTrim}`);
+    if (j.historySet)  lines.push(`SET:  ${j.historySet}`);
+  }
+  if (j.dispatchNotes) { lines.push(''); lines.push('📝 ' + j.dispatchNotes); }
+  return lines.join('\n');
+}
+
+function copyWA() {
+  const text = document.getElementById('wa-box')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('[onclick="copyWA()"]');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(()=>btn.textContent=orig, 2000); }
+  });
+}
+
+function openWA(id) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  const tech = techs.find(t => t.id === j.assignedTech);
+  const text = buildWhatsApp(j);
+  const encoded = encodeURIComponent(text);
+  const phone = tech?.phone?.replace(/\D/g,'') || '';
+  window.open(phone
+    ? `https://wa.me/${phone}?text=${encoded}`
+    : `https://wa.me/?text=${encoded}`, '_blank');
+}
+
+// ═══════════════════════════════════════
+// COMPLETION BUILDER (JSON import)
+// ═══════════════════════════════════════
+const jsonDrop = document.getElementById('json-drop');
+jsonDrop.addEventListener('dragover', e => { e.preventDefault(); jsonDrop.classList.add('over'); });
+jsonDrop.addEventListener('dragleave', () => jsonDrop.classList.remove('over'));
+jsonDrop.addEventListener('drop', e => {
+  e.preventDefault(); jsonDrop.classList.remove('over');
+  if (e.dataTransfer.files[0]) handleJSONImport(e.dataTransfer.files[0]);
+});
+
+function handleJSONImport(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const techJobs = JSON.parse(e.target.result);
+      renderCompletion(techJobs, file.name);
+    } catch(err) { alert('Error parsing JSON: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function renderCompletion(techJobs, filename) {
+  const el = document.getElementById('completion-output');
+  let totalDay = 0;
+  let allText = [];
+  let html = '';
+
+  techJobs.forEach(j => {
+    const ss = j.savedState;
+    if (!ss) return;
+
+    // Find matching dispatch job by address
+    const dispatchJob = jobs.find(dj =>
+      (dj.address||'').toUpperCase().includes((j.address||'').toUpperCase().split(' ')[1]||'')
+      || (j.address||'').toUpperCase().includes((dj.address||'').toUpperCase().split(' ')[1]||'')
+    );
+    const orderNum = dispatchJob?.orderNumber ? `#${dispatchJob.orderNumber} · ` : '';
+
+    // Build completion text in your format
+    const parts = [j.address];
+    if (ss.notes) parts.push(ss.notes.trim());
+    (ss.selectedServices||[]).forEach(s => parts.push(`${s.name} $${s.basePrice}`));
+    (ss.selectedAccessories||[]).filter(a=>a.name!=='Weight-In-Data').forEach(a => parts.push(`${a.name} $${a.basePrice}`));
+    (ss.selectedFixes||[]).forEach(f => parts.push(`${f.name} $${f.basePrice}`));
+    const oz1 = parseFloat(ss.weightInData?.adjustedOz)||0;
+    const oz2 = parseFloat(ss.weightInData2?.adjustedOz)||0;
+    if (oz1+oz2 > 0) parts.push('weigh-in data recorded');
+
+    const total = (ss.selectedServices||[]).reduce((s,i)=>s+(i.basePrice||0),0)
+      + (ss.selectedAccessories||[]).reduce((s,i)=>s+(i.basePrice||0),0)
+      + (ss.selectedFixes||[]).reduce((s,i)=>s+(i.basePrice||0),0);
+    parts.push(`total $${total}`);
+    totalDay += total;
+
+    const text = orderNum + parts.join(', ');
+    allText.push(text);
+
+    html += `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:10px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--text);line-height:1.7;font-family:var(--mono)">${esc(text)}</div>
+    </div>`;
+  });
+
+  const fullText = allText.join('\n');
+  html = `<div class="card">
+    <div class="card-title">Day Total: $${totalDay}</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-primary" onclick="copyCompletion()">📋 Copy All</button>
+      <button class="btn btn-outline" onclick="whatsappCompletion()">💬 Send via WhatsApp</button>
+    </div>
+    ${html}
+    <textarea id="completion-text" style="display:none">${esc(fullText)}</textarea>
+  </div>`;
+
+  el.innerHTML = html;
+
+  // Mark matched jobs as done
+  techJobs.forEach(j => {
+    const dj = jobs.find(dj =>
+      (dj.address||'').toUpperCase().includes((j.address||'').toUpperCase().split(' ')[1]||'')
+    );
+    if (dj && dj.status !== 'cancelled') {
+      dj.status = 'done';
+    }
+  });
+  save(); renderBoard(); updateStats();
+}
+
+function copyCompletion() {
+  const text = document.getElementById('completion-text')?.value || '';
+  navigator.clipboard.writeText(text).then(() => alert('Completion text copied!'));
+}
+
+function whatsappCompletion() {
+  const text = document.getElementById('completion-text')?.value || '';
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+// ═══════════════════════════════════════
+// TECHNICIANS
+// ═══════════════════════════════════════
+function addTech() {
+  const name  = document.getElementById('tech-name-input').value.trim();
+  const phone = document.getElementById('tech-phone-input').value.trim();
+  if (!name) return;
+  techs.push({ id: genId(), name, phone, addedAt: new Date().toISOString() });
+  saveTechs();
+  document.getElementById('tech-name-input').value = '';
+  document.getElementById('tech-phone-input').value = '';
+  renderTechs();
+}
+
+function removeTech(id) {
+  techs = techs.filter(t => t.id !== id);
+  saveTechs(); renderTechs();
+}
+
+function renderTechs() {
+  const el = document.getElementById('tech-list');
+  if (techs.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-text">No technicians added yet</div></div>';
+    return;
+  }
+  el.innerHTML = `<table><thead><tr>
+    <th>Name</th><th>Phone</th><th>Jobs Done</th><th></th>
+  </tr></thead><tbody>` +
+  techs.map(t => {
+    const done = jobs.filter(j => j.assignedTech === t.id && j.status === 'done').length;
+    return `<tr>
+      <td class="bright">${esc(t.name)}</td>
+      <td class="dim">${esc(t.phone||'—')}</td>
+      <td class="amber">${done}</td>
+      <td><button class="btn btn-red btn-sm" onclick="removeTech('${t.id}')">✕</button></td>
+    </tr>`;
+  }).join('') + '</tbody></table>';
+}
+
+// ═══════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════
+function updateStats() {
+  const counts = { pending:0, assigned:0, progress:0, done:0, cancelled:0 };
+  jobs.forEach(j => { counts[j.status] = (counts[j.status]||0) + 1; });
+  document.getElementById('st-pending').textContent   = counts.pending || 0;
+  document.getElementById('st-assigned').textContent  = counts.assigned || 0;
+  document.getElementById('st-done').textContent      = counts.done || 0;
+  document.getElementById('st-cancelled').textContent = counts.cancelled || 0;
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+load();
+renderBoard();
+updateStats();
+renderTechs();
+
+// ═══════════════════════════════════════
+// NEW JOB FORM (manual entry)
+// ═══════════════════════════════════════
+
+// ═══════════════════════════════════════
+// EQUIPMENT COMBO DROPDOWN
+// ═══════════════════════════════════════
+const EQUIPMENT = {
+  indoor:  {"Lennox": ["AMST24BU", "AMST30BU", "AMST36BU", "AMST36CU", "AMST42CU", "AMST48CU", "AMST48DU", "AMST60DU", "CBA25UH018", "CBA25UH024", "CBA25UH030", "CBA25UH036", "CBA25UH042", "CBA25UH048", "CBA25UH060", "CBK45UHET024", "CBK45UHET030", "CBK45UHET036", "CBK45UHET042", "CBK45UHET048", "CBK45UHET060", "EL196UH030XE36BK", "EL196UH045XE36BK", "EL196UH070XE36BK", "EL196UH090XE48CK", "EL196UH110XE60CK", "ML180UH030V36A", "ML180UH045E36A", "ML180UH045V36A", "ML180UH070E36A", "ML180UH070E36B", "ML180UH070V36A", "ML180UH070V48B", "ML180UH090E48B", "ML180UH090E60C", "ML180UH090V48B", "ML180UH110E60C", "ML180UH110V60C", "ML180UH135E60D", "ML196UH030XE36B", "ML196UH045XE36B", "ML196UH070XE36B", "ML196UH070XE48B", "ML196UH090XE36C", "ML196UH090XE48C", "ML196UH090XE60C", "ML196UH110XE60C", "ML196UH135XE60D", "ML296UH045XV36B", "ML296UH070XV36B", "ML296UH090XV48C", "ML296UH110XV60C"], "Trane": ["S8X1A040M3PSC", "S8X1B040M2PSC", "S8X1B060M4PSC", "S8X1B080M4PSC", "S8X1C080M5PSC", "S8X1C100M5PSC", "S8X1D120M5PSC"], "Goodman": ["GR9S800403AU", "GR9S800603AU", "GR9S800604BU", "GR9S800804BU", "GR9S800805CU"], "Daikin": ["DD96TC0403BN", "DD96TC0603BN", "DD96TC0804CN", "DD96TC1005CN", "DD96TC1205DN", "DR96TC0403BN", "DR96TC0603BN", "DR96TC0803BN", "DR96TC0804CN", "DR96TC1005CN", "DR96TC1005DN", "DR96TC1205DN"]},
+  outdoor: {"Lennox": ["EL17XP1-18", "EL17XP1-24", "EL17XP1-30", "EL17XP1-36", "EL17XP1-42", "EL17XP1-48", "EL17XP1-60", "ML14KC1-018", "ML14KC1-024", "ML14KC1-030", "ML14KC1-036", "ML14KC1-041", "ML14KC1-042", "ML14KC1-047", "ML14KC1-048", "ML14KC1-059", "ML14KC1-060", "ML17KC2-024", "ML17KC2-036", "ML17KC2-048", "ML17KC2-060", "ML17XC1-018", "ML17XC1-024", "ML17XC1-030", "ML17XC1-036", "ML17XC1-042", "ML17XC1-047", "ML17XC1-059", "ML18XC2-036", "ML18XC2-048"], "Trane": ["4TTR6024", "4TTR6036", "4TTR6048", "4TTR6060", "5TTR5024", "5TTR5030", "5TTR5036", "5TTR5042", "5TTR5048", "5TTR5060"], "Goodman": ["GLXS4BA1810AA", "GLXS4BA2410AA", "GLXS4BA3010AA", "GLXS4BA3610AA", "GLXS4BA4210AA", "GLXS4BA4810AA", "GLXS4BA6010AA", "GLXS5BA1810A", "GLXS5BA2410AA", "GLXS5BA3610AA", "GLXS5BA4210AA", "GLZS4BA3610AA", "GLZS4BA4210AA"], "Daikin": ["DC6VSS1810", "DC6VSS2410", "DC6VSS3010", "DC6VSS3610", "DC6VSS4210", "DC6VSS4810", "DC6VSS6010"]},
+};
+
+// Custom models added by user (persisted)
+const EQ_CUSTOM_KEY = 'dispatch_custom_models_v1';
+let _customModels = { indoor: [], outdoor: [] };
+try {
+  const saved = localStorage.getItem(EQ_CUSTOM_KEY);
+  if (saved) _customModels = JSON.parse(saved);
+} catch(e) {}
+
+function saveCustomModels() {
+  localStorage.setItem(EQ_CUSTOM_KEY, JSON.stringify(_customModels));
+}
+
+function getAllModels(type) {
+  const grouped = EQUIPMENT[type] || {};
+  const result = [];
+  for (const [brand, models] of Object.entries(grouped)) {
+    result.push({ type:'group', label: brand });
+    for (const m of models) result.push({ type:'option', value: m, brand });
+  }
+  if (_customModels[type]?.length) {
+    result.push({ type:'group', label: 'Custom (added by you)' });
+    for (const m of _customModels[type]) result.push({ type:'option', value: m, brand:'Custom' });
+  }
+  return result;
+}
+
+function comboFilter(inputId, eqType, query) {
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (!dd) return;
+  renderComboOptions(dd, eqType, query, (val) => comboSelect(inputId, val));
+  dd.classList.add('open');
+}
+
+function comboFilterPatch(inputId, eqType, query, jobId, field) {
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (!dd) return;
+  renderComboOptions(dd, eqType, query, (val) => {
+    document.getElementById(inputId).value = val;
+    patchJob(jobId, field, val);
+    dd.classList.remove('open');
+  });
+  dd.classList.add('open');
+}
+
+function renderComboOptions(dd, eqType, query, onSelect) {
+  const q = (query || '').toUpperCase().trim();
+  const all = getAllModels(eqType);
+  const filtered = [];
+  let lastGroup = null;
+
+  for (const item of all) {
+    if (item.type === 'group') {
+      lastGroup = item;
+    } else {
+      if (!q || item.value.toUpperCase().includes(q)) {
+        if (lastGroup && (!filtered.length || filtered[filtered.length-1].label !== lastGroup.label)) {
+          filtered.push(lastGroup);
+        }
+        filtered.push(item);
+      }
+    }
+  }
+
+  if (filtered.filter(i => i.type === 'option').length === 0) {
+    dd.innerHTML = `
+      <div class="combo-no-results">No matches for "${esc(query)}"</div>
+      <div class="combo-option add-new" onclick="comboAddNew('${eqType}','${esc(query)}',this)">
+        ＋ Add "${esc(query)}" as new model
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  for (const item of filtered) {
+    if (item.type === 'group') {
+      html += `<div class="combo-group-label">${esc(item.label)}</div>`;
+    } else {
+      html += `<div class="combo-option" data-val="${esc(item.value)}"
+        onclick="this.closest('.combo-dropdown').dataset.onselect && eval(this.closest('.combo-dropdown').dataset.onselect + '(\'${item.value}\')')"
+        >${esc(item.value)}</div>`;
+    }
+  }
+  // Add "add new" at bottom if query doesn't exactly match
+  const exactMatch = all.some(i => i.type==='option' && i.value.toUpperCase() === q);
+  if (q && !exactMatch) {
+    html += `<div class="combo-option add-new" onclick="comboAddNew('${eqType}','${esc(query)}',this)">
+      ＋ Add "${esc(query)}" as new model
+    </div>`;
+  }
+  dd.innerHTML = html;
+
+  // Attach click handlers properly (avoid eval)
+  dd.querySelectorAll('.combo-option:not(.add-new)').forEach(opt => {
+    opt.addEventListener('click', () => onSelect(opt.dataset.val));
+  });
+  // Store callback for add-new
+  dd._onSelect = onSelect;
+}
+
+function comboAddNew(eqType, model, el) {
+  const clean = model.trim().toUpperCase();
+  if (!clean) return;
+  if (!_customModels[eqType]) _customModels[eqType] = [];
+  if (!_customModels[eqType].includes(clean)) {
+    _customModels[eqType].push(clean);
+    saveCustomModels();
+  }
+  // Find the onSelect callback
+  const dd = el.closest('.combo-dropdown');
+  if (dd?._onSelect) dd._onSelect(clean);
+}
+
+function comboSelect(inputId, value) {
+  const input = document.getElementById(inputId);
+  if (input) input.value = value;
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (dd) dd.classList.remove('open');
+}
+
+function comboOpen(inputId) {
+  // Determine type from id
+  const type = inputId.includes('outdoor') ? 'outdoor' : 'indoor';
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (!dd) return;
+  const input = document.getElementById(inputId);
+  const q = input?.value || '';
+  renderComboOptions(dd, type, q, (val) => comboSelect(inputId, val));
+  dd.classList.add('open');
+}
+
+function comboClear(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) { input.value = ''; input.focus(); }
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (dd) dd.classList.remove('open');
+}
+
+function comboClearPatch(inputId, jobId, field) {
+  const input = document.getElementById(inputId);
+  if (input) { input.value = ''; input.focus(); }
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (dd) dd.classList.remove('open');
+  patchJob(jobId, field, '');
+}
+
+function comboKey(e, inputId) {
+  const dd = document.getElementById('combo-dd-' + inputId);
+  if (!dd || !dd.classList.contains('open')) return;
+  const opts = [...dd.querySelectorAll('.combo-option:not(.add-new)')];
+  const current = dd.querySelector('.combo-option.highlighted');
+  let idx = opts.indexOf(current);
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (idx < opts.length - 1) idx++;
+    opts.forEach(o => o.classList.remove('highlighted'));
+    opts[idx]?.classList.add('highlighted');
+    opts[idx]?.scrollIntoView({block:'nearest'});
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (idx > 0) idx--;
+    opts.forEach(o => o.classList.remove('highlighted'));
+    opts[idx]?.classList.add('highlighted');
+    opts[idx]?.scrollIntoView({block:'nearest'});
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (current) current.click();
+    else dd.classList.remove('open');
+  } else if (e.key === 'Escape') {
+    dd.classList.remove('open');
+  }
+}
+
+// Close all combos when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.combo-wrap')) {
+    document.querySelectorAll('.combo-dropdown.open').forEach(dd => dd.classList.remove('open'));
+  }
+});
+
+const NJ_HINTS = [
+  'FIN180P','Float Switch','Ecobee','T-6 tstat','T-10 tstat','T-4 tstat',
+  'Daikin One','Daikin One Touch','HZ322','UT3000','Harmony','Bypass Damper',
+  'Vent Hood','Media Filter','Dryer Vent','Secondary Return Air',
+  'Dehum','Ecoil Wire','Trane Harness','LP Kit','RDS','A2L Kit'
+];
+let _njHints = [];
+
+function renderNJHintChips() {
+  const wrap = document.getElementById('nj-hint-chips');
+  if (!wrap) return;
+  wrap.innerHTML = NJ_HINTS.map(h => {
+    const on = _njHints.includes(h);
+    return `<span class="hint-tag hint-chip ${on?'':'off'}" onclick="toggleNJHint('${h}',this)">${h}</span>`;
+  }).join('');
+}
+
+function toggleNJHint(hint, el) {
+  const idx = _njHints.indexOf(hint);
+  if (idx === -1) { _njHints.push(hint); el.classList.remove('off'); }
+  else            { _njHints.splice(idx,1); el.classList.add('off'); }
+}
+
+function addCustomHint() {
+  const input = document.getElementById('nj-hint-custom');
+  const val = input?.value.trim();
+  if (!val || _njHints.includes(val)) return;
+  _njHints.push(val);
+  input.value = '';
+  const wrap = document.getElementById('nj-hint-chips');
+  if (wrap) {
+    const chip = document.createElement('span');
+    chip.className = 'hint-tag hint-chip';
+    chip.textContent = val;
+    const v = val;
+    chip.onclick = () => {
+      const i = _njHints.indexOf(v);
+      if (i !== -1) { _njHints.splice(i,1); chip.classList.add('off'); }
+      else          { _njHints.push(v);     chip.classList.remove('off'); }
+    };
+    wrap.appendChild(chip);
+  }
+}
+
+function saveNewJob() {
+  const addr = document.getElementById('nj-address')?.value.trim();
+  if (!addr) { alert('Address is required'); return; }
+  const job = {
+    id:             genId(),
+    status:         'pending',
+    priority:       document.getElementById('nj-priority')?.value || 'normal',
+    orderNumber:    document.getElementById('nj-order')?.value.trim()         || '',
+    scheduledTime:  document.getElementById('nj-time')?.value.trim()          || '',
+    address:        addr,
+    subdivision:    document.getElementById('nj-subdivision')?.value.trim()   || '',
+    cityState:      document.getElementById('nj-city')?.value.trim()          || '',
+    builder:        document.getElementById('nj-builder')?.value.trim()       || '',
+    serviceType:    document.getElementById('nj-service')?.value              || '',
+    problem:        document.getElementById('nj-service')?.value              || '',
+    contactName:    document.getElementById('nj-contact-name')?.value.trim()  || '',
+    contactPhone:   document.getElementById('nj-contact-phone')?.value.trim() || '',
+    calledInBy:     document.getElementById('nj-called-by')?.value.trim()     || '',
+    furnaceModel:   document.getElementById('nj-furnace')?.value.trim()       || '',
+    outdoorModel:   document.getElementById('nj-outdoor')?.value.trim()       || '',
+    coilModel:      document.getElementById('nj-coil')?.value.trim()          || '',
+    evapModel:      document.getElementById('nj-evap')?.value.trim()          || '',
+    linesetHint:    document.getElementById('nj-lineset')?.value.trim()       || '',
+    isWarranty:     document.getElementById('nj-warranty')?.value === 'true',
+    accessoryHints: [..._njHints],
+    historyRough:   document.getElementById('nj-rough')?.value.trim()         || '',
+    historyTrim:    document.getElementById('nj-trim')?.value.trim()          || '',
+    historySet:     document.getElementById('nj-set')?.value.trim()           || '',
+    importantNotes: document.getElementById('nj-notes')?.value.trim()         || '',
+    dispatchNotes:  document.getElementById('nj-dispatch-notes')?.value.trim()|| '',
+    createdAt:      new Date().toISOString(),
+    routeDate:      new Date().toISOString().split('T')[0],
+  };
+  jobs.push(job);
+  save(); renderBoard(); updateStats();
+  clearNewJobForm();
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0a2e18;border:1px solid #3ddc84;border-radius:4px;padding:10px 16px;color:#3ddc84;font-size:12px;z-index:9999;display:flex;align-items:center;gap:10px;white-space:nowrap';
+  toast.innerHTML = `<span>✓ <b>${addr.substring(0,30)}</b> added</span>
+    <button onclick="switchPanel('board');this.parentNode.remove()" style="background:none;border:1px solid #3ddc84;color:#3ddc84;cursor:pointer;padding:2px 8px;border-radius:2px;font-size:11px">→ Board</button>
+    <button onclick="this.parentNode.remove()" style="background:none;border:none;color:#3ddc84;cursor:pointer;font-size:14px">✕</button>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.parentNode && toast.remove(), 5000);
+}
+
+function clearNewJobForm() {
+  ['nj-order','nj-time','nj-address','nj-subdivision','nj-city','nj-builder',
+   'nj-contact-name','nj-contact-phone','nj-called-by',
+   'nj-furnace','nj-outdoor','nj-coil','nj-evap','nj-lineset',
+   'nj-rough','nj-trim','nj-set','nj-notes','nj-dispatch-notes','nj-hint-custom'
+  ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const svc = document.getElementById('nj-service');
+  if (svc) svc.selectedIndex = 0;
+  const pri = document.getElementById('nj-priority');
+  if (pri) pri.value = 'normal';
+  const war = document.getElementById('nj-warranty');
+  if (war) war.value = 'true';
+  _njHints = [];
+  
+// ═══════════════════════════════════════
+// EXPORT → PWA
+// ═══════════════════════════════════════
+
+// Render the export job list whenever the export panel is opened
+// Hook into switchPanel
+const _origSwitchPanel = switchPanel;
+// We'll override switchPanel inline below after definition
+
+function renderExportPanel() {
+  const listEl    = document.getElementById('export-job-list');
+  const summaryEl = document.getElementById('export-summary');
+  if (!listEl) return;
+
+  // Show all non-cancelled jobs
+  const exportable = jobs.filter(j => j.status !== 'cancelled');
+
+  if (exportable.length === 0) {
+    listEl.innerHTML = '<div class="empty"><div class="empty-text">No jobs on the board</div></div>';
+    summaryEl.innerHTML = '<span class="export-summary-stat">No jobs to export</span>';
+    return;
+  }
+
+  // Summary counts
+  const noFurn    = exportable.filter(j => !j.furnaceModel).length;
+  const noOutdoor = exportable.filter(j => !j.outdoorModel).length;
+  summaryEl.innerHTML = `
+    <span class="export-summary-stat"><b>${exportable.length}</b> jobs</span>
+    <span class="export-summary-stat"><b>${exportable.filter(j=>j.status==='done').length}</b> done</span>
+    ${noFurn    ? `<span class="export-summary-stat warn"><b>${noFurn}</b> missing furnace model</span>`    : ''}
+    ${noOutdoor ? `<span class="export-summary-stat warn"><b>${noOutdoor}</b> missing outdoor model</span>` : ''}
+  `;
+
+  // Job rows sorted by scheduled time
+  const sorted = [...exportable].sort((a,b) =>
+    (a.scheduledTime||'99:99').localeCompare(b.scheduledTime||'99:99')
+  );
+
+  // Status color
+  const statusColor = { pending:'var(--text-dim)', assigned:'var(--amber)',
+    progress:'var(--ice)', done:'var(--green)', cancelled:'var(--red)' };
+
+  listEl.innerHTML = sorted.map(j => {
+    const hasFurn    = !!j.furnaceModel;
+    const hasOutdoor = !!j.outdoorModel;
+    const modelsStr  = [j.furnaceModel, j.outdoorModel].filter(Boolean).join(' / ');
+    return `
+    <div class="export-job-row">
+      <input type="checkbox" class="export-chk" data-id="${j.id}" checked/>
+      <div>
+        <div class="export-job-addr">${esc(j.address||'No address')}</div>
+        <div class="export-job-meta">
+          ${j.scheduledTime ? `<b>${esc(j.scheduledTime)}</b> · ` : ''}
+          ${esc(j.builder||'')}
+          ${j.subdivision ? ' · ' + esc(j.subdivision) : ''}
+          · <span style="color:${statusColor[j.status]||'var(--text-dim)'}">${j.status.toUpperCase()}</span>
+          ${j.orderNumber ? ` · #${esc(j.orderNumber)}` : ''}
+        </div>
+      </div>
+      <div>
+        ${modelsStr
+          ? `<div class="export-job-models">${esc(modelsStr)}</div>`
+          : `<div class="export-missing">⚠ No models</div>`}
+        ${!hasFurn    ? '<div class="export-missing" style="font-size:9px">Missing FURN</div>'    : ''}
+        ${!hasOutdoor ? '<div class="export-missing" style="font-size:9px">Missing UNIT</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportSelectAll(checked) {
+  document.querySelectorAll('.export-chk').forEach(chk => chk.checked = checked);
+}
+
+function exportSelectStatus(statuses) {
+  const allowed = statuses.split(',');
+  document.querySelectorAll('.export-chk').forEach(chk => {
+    const j = jobs.find(j => j.id === chk.dataset.id);
+    if (j) chk.checked = allowed.includes(j.status);
+  });
+}
+
+function getSelectedExportJobs() {
+  const ids = [...document.querySelectorAll('.export-chk:checked')].map(c => c.dataset.id);
+  return jobs.filter(j => ids.includes(j.id));
+}
+
+function doExportPWA() {
+  const selected = getSelectedExportJobs();
+  if (selected.length === 0) {
+    showExportStatus('⚠ Select at least one job', 'var(--amber)');
+    return;
+  }
+
+  // Build the PWA-compatible jobsArray format
+  // This is what the RESTORE button expects:
+  // Each entry: { address, subdivision, builder, heaterModel, outdoorModel,
+  //               refrigerant, orderNumber, scheduledTime, contactPhone }
+  // The PWA's addJob() spreads all fields onto the job object
+  // Map dispatch hint names to PWA accessory names
+  // PWA matches by name against UI button data-accessory attributes
+  const HINT_TO_ACC = {
+    'FIN180P':            'FIN180P',
+    'Float Switch':       'Float Switch',
+    'Ecobee':             'Ecobee',
+    'T-6 tstat':          'T-6',
+    'T-10 tstat':         'T-10',
+    'T-4 tstat':          'T-4',
+    'Daikin One':         'Daikin One',
+    'Daikin One Touch':   'Daikin One',
+    'HZ322':              'HZ322',
+    'UT3000':             'UT3000',
+    'Harmony':            'Harmony',
+    'Bypass Damper':      'Bypass',
+    'Dehum':              'Dehum',
+    'Ecoil Wire':         'Ecoil Wire',
+    'Trane Harness':      'Trane Harness',
+    'LP Kit':             'LP Kit',
+    'RDS':                'RDS',
+  };
+
+  // Tstat hint names for thermostat field
+  const TSTAT_HINTS = ['Ecobee','T-6 tstat','T-10 tstat','T-4 tstat','Daikin One','Daikin One Touch','T-8321'];
+  const TSTAT_NAME_MAP = {
+    'Ecobee': 'Ecobee', 'T-6 tstat': 'T-6', 'T-10 tstat': 'T-10',
+    'T-4 tstat': 'T-4', 'Daikin One': 'Daikin One', 'Daikin One Touch': 'Daikin One',
+  };
+
+  const pwaJobs = selected.map(j => {
+    // Extract thermostat from accessory hints (if any)
+    const hints = j.accessoryHints || [];
+    const tstatHint = hints.find(h => TSTAT_HINTS.includes(h));
+    const thermostat = tstatHint
+      ? { type: TSTAT_NAME_MAP[tstatHint] || tstatHint, qty: '1' }
+      : null;
+
+    // Map hints → PWA accessory names (exclude tstat hints — they go in thermostat field)
+    const extractedAccessories = hints
+      .filter(h => !TSTAT_HINTS.includes(h))
+      .map(h => HINT_TO_ACC[h] || h);
+
+    return {
+      // ── Core fields (PWA loadJobsFromLocalStorage uses these) ──
+      address:              (j.address || '').toUpperCase().trim(),
+      details:              j.importantNotes || '',
+      subdivision:          j.subdivision    || '',
+      builder:              j.builder        || '',
+      heaterModel:          j.furnaceModel   || '',
+      outdoorModel:         j.outdoorModel   || '',
+      heaterModel2:         '',
+      outdoorModel2:        '',
+      isTwoSystems:         false,
+      thermostat:           thermostat,
+      extractedAccessories: extractedAccessories,
+      allHeaters:           [],
+      allUnits:             [],
+      savedState:           null,
+      // ── Extra dispatch fields (PWA stores but ignores) ──
+      orderNumber:          j.orderNumber    || '',
+      scheduledTime:        j.scheduledTime  || '',
+      contactName:          j.contactName    || '',
+      contactPhone:         j.contactPhone   || '',
+      cityState:            j.cityState      || '',
+      dispatchNotes:        j.dispatchNotes  || '',
+      routeDate:            j.routeDate      || new Date().toISOString().split('T')[0],
+    };
+  });
+
+  // File name: route_YYYY-MM-DD.json
+  const dateStr = (selected[0]?.routeDate || new Date().toISOString().split('T')[0]);
+  const filename = 'route_' + dateStr + '.json';
+
+  const blob = new Blob([JSON.stringify(pwaJobs, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  showExportStatus(
+    `✓ Downloaded <b>${filename}</b> — ${selected.length} jobs · Send to tech via WhatsApp or email`,
+    'var(--green)'
+  );
+}
+
+function exportCopyAddresses() {
+  const selected = getSelectedExportJobs();
+  if (selected.length === 0) { showExportStatus('⚠ Select at least one job', 'var(--amber)'); return; }
+
+  const sorted = [...selected].sort((a,b) =>
+    (a.scheduledTime||'99:99').localeCompare(b.scheduledTime||'99:99')
+  );
+
+  const text = sorted.map((j,i) => {
+    const parts = [`${i+1}. ${j.address || ''}`, j.scheduledTime, j.orderNumber ? '#'+j.orderNumber : ''].filter(Boolean);
+    return parts.join(' · ');
+  }).join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    showExportStatus(`✓ ${selected.length} addresses copied to clipboard`, 'var(--green)');
+  });
+}
+
+function showExportStatus(msg, color) {
+  const el = document.getElementById('export-status');
+  if (!el) return;
+  el.innerHTML = `<div style="font-size:12px;color:${color};padding:8px 0">${msg}</div>`;
+  setTimeout(() => { if (el) el.innerHTML = ''; }, 6000);
+}
+
+renderNJHintChips();
+}
+
+
+// ═══════════════════════════════════════
+// EXPORT → PWA
+// ═══════════════════════════════════════
+
+// Render the export job list whenever the export panel is opened
+// Hook into switchPanel
+const _origSwitchPanel = switchPanel;
+// We'll override switchPanel inline below after definition
+
+function renderExportPanel() {
+  const listEl    = document.getElementById('export-job-list');
+  const summaryEl = document.getElementById('export-summary');
+  if (!listEl) return;
+
+  // Show all non-cancelled jobs
+  const exportable = jobs.filter(j => j.status !== 'cancelled');
+
+  if (exportable.length === 0) {
+    listEl.innerHTML = '<div class="empty"><div class="empty-text">No jobs on the board</div></div>';
+    summaryEl.innerHTML = '<span class="export-summary-stat">No jobs to export</span>';
+    return;
+  }
+
+  // Summary counts
+  const noFurn    = exportable.filter(j => !j.furnaceModel).length;
+  const noOutdoor = exportable.filter(j => !j.outdoorModel).length;
+  summaryEl.innerHTML = `
+    <span class="export-summary-stat"><b>${exportable.length}</b> jobs</span>
+    <span class="export-summary-stat"><b>${exportable.filter(j=>j.status==='done').length}</b> done</span>
+    ${noFurn    ? `<span class="export-summary-stat warn"><b>${noFurn}</b> missing furnace model</span>`    : ''}
+    ${noOutdoor ? `<span class="export-summary-stat warn"><b>${noOutdoor}</b> missing outdoor model</span>` : ''}
+  `;
+
+  // Job rows sorted by scheduled time
+  const sorted = [...exportable].sort((a,b) =>
+    (a.scheduledTime||'99:99').localeCompare(b.scheduledTime||'99:99')
+  );
+
+  // Status color
+  const statusColor = { pending:'var(--text-dim)', assigned:'var(--amber)',
+    progress:'var(--ice)', done:'var(--green)', cancelled:'var(--red)' };
+
+  listEl.innerHTML = sorted.map(j => {
+    const hasFurn    = !!j.furnaceModel;
+    const hasOutdoor = !!j.outdoorModel;
+    const modelsStr  = [j.furnaceModel, j.outdoorModel].filter(Boolean).join(' / ');
+    return `
+    <div class="export-job-row">
+      <input type="checkbox" class="export-chk" data-id="${j.id}" checked/>
+      <div>
+        <div class="export-job-addr">${esc(j.address||'No address')}</div>
+        <div class="export-job-meta">
+          ${j.scheduledTime ? `<b>${esc(j.scheduledTime)}</b> · ` : ''}
+          ${esc(j.builder||'')}
+          ${j.subdivision ? ' · ' + esc(j.subdivision) : ''}
+          · <span style="color:${statusColor[j.status]||'var(--text-dim)'}">${j.status.toUpperCase()}</span>
+          ${j.orderNumber ? ` · #${esc(j.orderNumber)}` : ''}
+        </div>
+      </div>
+      <div>
+        ${modelsStr
+          ? `<div class="export-job-models">${esc(modelsStr)}</div>`
+          : `<div class="export-missing">⚠ No models</div>`}
+        ${!hasFurn    ? '<div class="export-missing" style="font-size:9px">Missing FURN</div>'    : ''}
+        ${!hasOutdoor ? '<div class="export-missing" style="font-size:9px">Missing UNIT</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportSelectAll(checked) {
+  document.querySelectorAll('.export-chk').forEach(chk => chk.checked = checked);
+}
+
+function exportSelectStatus(statuses) {
+  const allowed = statuses.split(',');
+  document.querySelectorAll('.export-chk').forEach(chk => {
+    const j = jobs.find(j => j.id === chk.dataset.id);
+    if (j) chk.checked = allowed.includes(j.status);
+  });
+}
+
+function getSelectedExportJobs() {
+  const ids = [...document.querySelectorAll('.export-chk:checked')].map(c => c.dataset.id);
+  return jobs.filter(j => ids.includes(j.id));
+}
+
+function doExportPWA() {
+  const selected = getSelectedExportJobs();
+  if (selected.length === 0) {
+    showExportStatus('⚠ Select at least one job', 'var(--amber)');
+    return;
+  }
+
+  // Build the PWA-compatible jobsArray format
+  // This is what the RESTORE button expects:
+  // Each entry: { address, subdivision, builder, heaterModel, outdoorModel,
+  //               refrigerant, orderNumber, scheduledTime, contactPhone }
+  // The PWA's addJob() spreads all fields onto the job object
+  // Map dispatch hint names to PWA accessory names
+  // PWA matches by name against UI button data-accessory attributes
+  const HINT_TO_ACC = {
+    'FIN180P':            'FIN180P',
+    'Float Switch':       'Float Switch',
+    'Ecobee':             'Ecobee',
+    'T-6 tstat':          'T-6',
+    'T-10 tstat':         'T-10',
+    'T-4 tstat':          'T-4',
+    'Daikin One':         'Daikin One',
+    'Daikin One Touch':   'Daikin One',
+    'HZ322':              'HZ322',
+    'UT3000':             'UT3000',
+    'Harmony':            'Harmony',
+    'Bypass Damper':      'Bypass',
+    'Dehum':              'Dehum',
+    'Ecoil Wire':         'Ecoil Wire',
+    'Trane Harness':      'Trane Harness',
+    'LP Kit':             'LP Kit',
+    'RDS':                'RDS',
+  };
+
+  // Tstat hint names for thermostat field
+  const TSTAT_HINTS = ['Ecobee','T-6 tstat','T-10 tstat','T-4 tstat','Daikin One','Daikin One Touch','T-8321'];
+  const TSTAT_NAME_MAP = {
+    'Ecobee': 'Ecobee', 'T-6 tstat': 'T-6', 'T-10 tstat': 'T-10',
+    'T-4 tstat': 'T-4', 'Daikin One': 'Daikin One', 'Daikin One Touch': 'Daikin One',
+  };
+
+  const pwaJobs = selected.map(j => {
+    // Extract thermostat from accessory hints (if any)
+    const hints = j.accessoryHints || [];
+    const tstatHint = hints.find(h => TSTAT_HINTS.includes(h));
+    const thermostat = tstatHint
+      ? { type: TSTAT_NAME_MAP[tstatHint] || tstatHint, qty: '1' }
+      : null;
+
+    // Map hints → PWA accessory names (exclude tstat hints — they go in thermostat field)
+    const extractedAccessories = hints
+      .filter(h => !TSTAT_HINTS.includes(h))
+      .map(h => HINT_TO_ACC[h] || h);
+
+    return {
+      // ── Core fields (PWA loadJobsFromLocalStorage uses these) ──
+      address:              (j.address || '').toUpperCase().trim(),
+      details:              j.importantNotes || '',
+      subdivision:          j.subdivision    || '',
+      builder:              j.builder        || '',
+      heaterModel:          j.furnaceModel   || '',
+      outdoorModel:         j.outdoorModel   || '',
+      heaterModel2:         '',
+      outdoorModel2:        '',
+      isTwoSystems:         false,
+      thermostat:           thermostat,
+      extractedAccessories: extractedAccessories,
+      allHeaters:           [],
+      allUnits:             [],
+      savedState:           null,
+      // ── Extra dispatch fields (PWA stores but ignores) ──
+      orderNumber:          j.orderNumber    || '',
+      scheduledTime:        j.scheduledTime  || '',
+      contactName:          j.contactName    || '',
+      contactPhone:         j.contactPhone   || '',
+      cityState:            j.cityState      || '',
+      dispatchNotes:        j.dispatchNotes  || '',
+      routeDate:            j.routeDate      || new Date().toISOString().split('T')[0],
+    };
+  });
+
+  // File name: route_YYYY-MM-DD.json
+  const dateStr = (selected[0]?.routeDate || new Date().toISOString().split('T')[0]);
+  const filename = 'route_' + dateStr + '.json';
+
+  const blob = new Blob([JSON.stringify(pwaJobs, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  showExportStatus(
+    `✓ Downloaded <b>${filename}</b> — ${selected.length} jobs · Send to tech via WhatsApp or email`,
+    'var(--green)'
+  );
+}
+
+function exportCopyAddresses() {
+  const selected = getSelectedExportJobs();
+  if (selected.length === 0) { showExportStatus('⚠ Select at least one job', 'var(--amber)'); return; }
+
+  const sorted = [...selected].sort((a,b) =>
+    (a.scheduledTime||'99:99').localeCompare(b.scheduledTime||'99:99')
+  );
+
+  const text = sorted.map((j,i) => {
+    const parts = [`${i+1}. ${j.address || ''}`, j.scheduledTime, j.orderNumber ? '#'+j.orderNumber : ''].filter(Boolean);
+    return parts.join(' · ');
+  }).join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    showExportStatus(`✓ ${selected.length} addresses copied to clipboard`, 'var(--green)');
+  });
+}
+
+function showExportStatus(msg, color) {
+  const el = document.getElementById('export-status');
+  if (!el) return;
+  el.innerHTML = `<div style="font-size:12px;color:${color};padding:8px 0">${msg}</div>`;
+  setTimeout(() => { if (el) el.innerHTML = ''; }, 6000);
+}
+
+renderNJHintChips();
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+</script>
+</body>
+</html>

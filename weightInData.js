@@ -1,4 +1,4 @@
-const heaters = {
+export const heaters = {
   ML180UH045E36A: {
     hType: "Furnace",
     pESP: 0.6,
@@ -331,59 +331,106 @@ const heaters = {
     pESP: 9.9,
     imagen: "images/AMSTU1300/AMST60DU.png",
   },
+  DR96TC0403BN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DR96TC0603BN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DR96TC0803BN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DR96TC0804CN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DR96TC1005CN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DR96TC1005DN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DR96TC1205DN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DD96TC0403BN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DD96TC0603BN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DD96TC0804CN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DD96TC1005CN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
+  DD96TC1205DN: {
+    hType: "Furnace",
+    pESP: 0.5,
+  },
 };
-window.heaters = heaters;
 
-const unidadesExteriores = {
-  "ML17XC1-018-230A02": {
+export const unidadesExteriores = {
+  "ML17XC1-018": {
     uType: "Condenser",
     btu: 18000,
     freon: "R-410A",
     FactoryCharge: 72,
   },
-  "ML17XC1-024-230A02": {
+  "ML17XC1-024": {
     uType: "Condenser",
     btu: 24000,
     freon: "R-410A",
     FactoryCharge: 82,
   },
-  "ML17XC1-030-230A02": {
+  "ML17XC1-030": {
     uType: "Condenser",
     btu: 30000,
     freon: "R-410A",
     FactoryCharge: 104,
   },
-  "ML17XC1-036-230A02": {
+  "ML17XC1-036": {
     uType: "Condenser",
     btu: 36000,
     freon: "R-410A",
     FactoryCharge: 136,
   },
-  "ML17XC1-042-230A02": {
+  "ML17XC1-042": {
     uType: "Condenser",
     btu: 42000,
     freon: "R-410A",
     FactoryCharge: 146,
   },
-  "ML17XC1-047-230A02": {
+  "ML17XC1-047": {
     uType: "Condenser",
     btu: 47000,
     freon: "R-410A",
     FactoryCharge: 157,
   },
-  "ML17XC1-059-230A02": {
+  "ML17XC1-059": {
     uType: "Condenser",
     btu: 59000,
     freon: "R-410A",
     FactoryCharge: 190,
   },
-  "ML18XC2-036-230A01": {
+  "ML18XC2-036": {
     uType: "Condenser",
     btu: 36000,
     freon: "R-410A",
     FactoryCharge: 128,
   },
-  "ML18XC2-048-230A01": {
+  "ML18XC2-048": {
     uType: "Condenser",
     btu: 48000,
     freon: "R-410A",
@@ -431,95 +478,95 @@ const unidadesExteriores = {
     freon: "R-410A",
     FactoryCharge: 158,
   },
-  "ML14KC1-018-230A02": {
+  "ML14KC1-018": {
     uType: "Condenser",
     btu: 18000,
     freon: "454B",
     FactoryCharge: 78,
     overCharged: 92,
   },
-  "ML14KC1-024-230A02": {
+  "ML14KC1-024": {
     uType: "Condenser",
     btu: 24000,
     freon: "454B",
     FactoryCharge: 78,
     overCharged: 87,
   },
-  "ML14KC1-030-230A02": {
+  "ML14KC1-030": {
     uType: "Condenser",
     btu: 30000,
     freon: "454B",
     FactoryCharge: 90,
     overCharged: 99,
   },
-  "ML14KC1-036-230A02": {
+  "ML14KC1-036": {
     uType: "Condenser",
     btu: 36000,
     freon: "454B",
     FactoryCharge: 109,
     overCharged: 118,
   },
-  "ML14KC1-041-230A02": {
+  "ML14KC1-041": {
     uType: "Condenser",
     btu: 41000,
     freon: "454B",
     FactoryCharge: 119,
     overCharged: 128,
   },
-  "ML14KC1-042-230A02": {
+  "ML14KC1-042": {
     uType: "Condenser",
     btu: 42000,
     freon: "454B",
     FactoryCharge: 114,
     overCharged: 123,
   },
-  "ML14KC1-047-230A02": {
+  "ML14KC1-047": {
     uType: "Condenser",
     btu: 47000,
     freon: "454B",
     FactoryCharge: 125,
     overCharged: 134,
   },
-  "ML14KC1-048-230A02": {
+  "ML14KC1-048": {
     uType: "Condenser",
     btu: 48000,
     freon: "454B",
     FactoryCharge: 142,
     overCharged: 151,
   },
-  "ML14KC1-059-230A02": {
+  "ML14KC1-059": {
     uType: "Condenser",
     btu: 59000,
     freon: "454B",
     FactoryCharge: 152,
     overCharged: 161,
   },
-  "ML14KC1-060-230A02": {
+  "ML14KC1-060": {
     uType: "Condenser",
     btu: 60000,
     freon: "454B",
     FactoryCharge: 142,
     overCharged: 151,
   },
-  "ML17KC2-024-230A01": {
+  "ML17KC2-024": {
     uType: "Condenser",
     btu: 24000,
     freon: "454B",
     FactoryCharge: 100,
   },
-  "ML17KC2-036-230A01": {
+  "ML17KC2-036": {
     uType: "Condenser",
     btu: 36000,
     freon: "454B",
     FactoryCharge: 104,
   },
-  "ML17KC2-048-230A01": {
+  "ML17KC2-048": {
     uType: "Condenser",
     btu: 48000,
     freon: "454B",
     FactoryCharge: 126,
   },
-  "ML17KC2-060-230A01": {
+  "ML17KC2-060": {
     uType: "Condenser",
     btu: 60000,
     freon: "454B",
@@ -641,7 +688,7 @@ const unidadesExteriores = {
     FactoryCharge: 94,
   },
 
-  GLXS5BA1810A: {
+  GLXS5BA1810AA: {
     uType: "Condenser",
     btu: 18000,
     freon: "R32",
@@ -725,6 +772,42 @@ const unidadesExteriores = {
     freon: "R32",
     FactoryCharge: 194,
   },
+  DC6VSS2410: {
+    uType: "Condenser",
+    btu: 24000,
+    freon: "R32",
+    FactoryCharge: 74,
+  },
+  DC6VSS3010: {
+    uType: "Condenser",
+    btu: 30000,
+    freon: "R32",
+    FactoryCharge: 76,
+  },
+  DC6VSS3610: {
+    uType: "Condenser",
+    btu: 36000,
+    freon: "R32",
+    FactoryCharge: 83,
+  },
+  DC6VSS4210: {
+    uType: "Condenser",
+    btu: 42000,
+    freon: "R32",
+    FactoryCharge: 100,
+  },
+  DC6VSS4810: {
+    uType: "Condenser",
+    btu: 48000,
+    freon: "R32",
+    FactoryCharge: 999,
+  },
+  DC6VSS6010: {
+    uType: "Condenser",
+    btu: 60000,
+    freon: "R32",
+    FactoryCharge: 999,
+  },
 };
 
 // Asignar subcooling predeterminado si no existe
@@ -735,10 +818,8 @@ for (const key in unidadesExteriores) {
   }
 }
 
-window.unidadesExteriores = unidadesExteriores;
-
 // Map optgroup labels to their respective links
-const seriesLinks = {
+export const seriesLinks = {
   "ML180UH SERIES": {
     serviceManual:
       "https://s7d9.scene7.com/is/content/lennoxinternational/507103-04-000",
@@ -795,11 +876,15 @@ const seriesLinks = {
     goodman: "https://www.goodmanmfg.com/",
     linkText: "Visit Goodman",
   },
+  "DR96TC/DD96TC SERIES": {
+    serviceManual: "https://daikincomfort.com/",
+    daikin: "https://daikincomfort.com/",
+    linkText: "Visit Daikin Comfort",
+  },
 };
-window.seriesLinks = seriesLinks;
 
 // Map outdoor unit optgroup labels to their respective links
-const outdoorUnitLinks = {
+export const outdoorUnitLinks = {
   ML17XC1: {
     serviceManual: "https://www.lennoxpros.com/documentlibrary",
     lennoxPros: "https://www.lennoxpros.com/documentlibrary",
@@ -845,11 +930,15 @@ const outdoorUnitLinks = {
     goodman: "https://www.goodmanmfg.com/",
     linkText: "Visit Goodman Manufacturing",
   },
+  DC6VSS: {
+    serviceManual: "https://daikincomfort.com/",
+    daikin: "https://daikincomfort.com/",
+    linkText: "Visit Daikin Comfort",
+  },
 };
-window.outdoorUnitLinks = outdoorUnitLinks;
 
 // Map specific product models to their product pages
-const productSpecificLinks = {
+export const productSpecificLinks = {
   "5TTR5018": "https://www.tranesupply.com/psearch/product/01t4w00000Nk6LzAAJ",
   "5TTR5024": "https://www.tranesupply.com/psearch/product/01t4w00000Nk6LzAAJ",
   "5TTR5030": "https://www.tranesupply.com/psearch/product/01t4w00000Nk67UAAR",
@@ -860,7 +949,7 @@ const productSpecificLinks = {
 };
 
 // Function to convert ounces to pounds and ounces
-function ouncesToPoundsAndOunces(ounces) {
+export function ouncesToPoundsAndOunces(ounces) {
   const pounds = Math.floor(ounces / 16);
   const remainingOunces = (ounces % 16).toFixed(2);
   return pounds > 0

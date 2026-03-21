@@ -1,48 +1,94 @@
-const CACHE_NAME = "report-generator-v1";
-const urlsToCache = [
-  "./", // ← Cambiado
-  "./index.html", // ← Cambiado
-  "./styles.css", // ← Cambiado
-  "./script.js", // ← Cambiado
+const CACHE_NAME = "service-call-v14";
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./script.js",
+  "./dropdowns.js",
+  "./pricing.js",
   "./weightInData.js",
-  "./weightinData.html",
-  "./icons/icon-192x192.png", // ← Cambiado
-  "./icons/icon-512x512.png", // ← Cambiado
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
-  "./manifest.json", // ← Cambiado
+  "./ui.js",
+  "./reports.js",
+  "./quickCalc.js",
+  "./jobs.js",
+  "./state.js",
+  "./weightInLogic.js",
+  "./constants.js",
+  "./utils.js",
+  "./validation.js",
+  "./components.js",
+  "./imageManager.js",
+  "./jobManager.js",
+  "./fileutils.js",
+  "./equipmentData.js",
+  "./troubleshootingEngine.js",
+  "./claudeAssist.js",
+  "./troubleshootingPanel.js",
+  "./manifest.json",
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log("Cache opened");
-      return cache.addAll(urlsToCache);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Intentamos cachear todo el grupo
+      try {
+        await cache.addAll(ASSETS);
+      } catch (e) {
+        console.warn(
+          "Falló cache.addAll, intentando cachear archivos individualmente:",
+          e
+        );
+        // Fallback: Si falla el grupo, intentamos uno por uno para identificar el error
+        // y permitir que el SW se instale con lo que sí funcione.
+        for (const url of ASSETS) {
+          try {
+            await cache.add(url);
+          } catch (err) {
+            console.warn(`No se pudo cachear: ${url}`, err);
+          }
+        }
+      }
     })
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Si está en caché, devolverlo. Si no, buscar en red.
-      return (
-        response ||
-        fetch(event.request).then((networkResponse) => {
-          // Cacheo dinámico: Si es una imagen y la descarga fue exitosa, guardarla en caché
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            event.request.url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-          ) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+  const url = new URL(event.request.url);
+
+  // Network-first para archivos propios de la app (mismo origen)
+  // → siempre carga la versión más reciente; cache solo como fallback offline
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
-          return networkResponse;
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first para recursos externos (CDN libraries)
+    event.respondWith(
+      caches.match(event.request).then((response) => response || fetch(event.request))
+    );
+  }
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
         })
       );
     })
   );
+  self.clients.claim();
 });
