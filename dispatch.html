@@ -1276,12 +1276,26 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
 // ═══════════════════════════════════════
 const STORE = 'dispatch_v1';
 const TECH_STORE = 'dispatch_techs_v1';
+const API_BASE = 'http://localhost:3000/api';
 
 let jobs = [];   // all jobs for the day
 let techs = [];  // technicians
 let _dragId = null;
+let _syncTimer = null;
 
-function save() { try { localStorage.setItem(STORE, JSON.stringify(jobs)); } catch(e){} }
+// save() — escribe en localStorage Y sincroniza a la DB (debounced 600ms)
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(jobs)); } catch(e){}
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    fetch(API_BASE + '/dispatch/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jobs)
+    }).catch(() => {}); // silencioso si el server está caído
+  }, 600);
+}
+
 function load() {
   try {
     const r = localStorage.getItem(STORE);
@@ -1291,6 +1305,21 @@ function load() {
     const r = localStorage.getItem(TECH_STORE);
     if (r) techs = JSON.parse(r);
   } catch(e){ techs = []; }
+}
+
+// loadFromServer() — intenta cargar jobs desde la DB, sobrescribe localStorage
+async function loadFromServer() {
+  try {
+    const res = await fetch(API_BASE + '/dispatch/jobs');
+    if (!res.ok) return false;
+    const serverJobs = await res.json();
+    if (serverJobs.length > 0) {
+      jobs = serverJobs;
+      try { localStorage.setItem(STORE, JSON.stringify(jobs)); } catch(e){}
+      return true;
+    }
+  } catch(e) {}
+  return false;
 }
 function saveTechs() { try { localStorage.setItem(TECH_STORE, JSON.stringify(techs)); } catch(e){} }
 
@@ -2047,6 +2076,8 @@ function clearAllJobs() {
   if (!confirm('Clear all jobs from the board?')) return;
   jobs = [];
   save(); renderBoard(); updateStats();
+  // También borrar de la DB
+  fetch(API_BASE + '/dispatch/jobs', { method: 'DELETE' }).catch(() => {});
 }
 
 // ═══════════════════════════════════════
@@ -2261,10 +2292,19 @@ function esc(s) {
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-load();
+load();           // Cargar desde localStorage (inmediato)
 renderBoard();
 updateStats();
 renderTechs();
+
+// Intentar hidratar desde la DB en segundo plano
+loadFromServer().then(fromServer => {
+  if (fromServer) { renderBoard(); updateStats(); }
+});
+
+// Topbar: mostrar fecha de hoy
+document.getElementById('topbar-date').textContent =
+  new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
 
 // ═══════════════════════════════════════
 // NEW JOB FORM (manual entry)

@@ -108,6 +108,98 @@
         border: 1px dashed var(--primary);
       }
 
+      /* KPI Cards */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .kpi-card {
+        background: var(--card-bg);
+        padding: 18px 20px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-top: 4px solid var(--primary);
+      }
+      .kpi-card.warning { border-top-color: var(--warning); }
+      .kpi-card.danger  { border-top-color: var(--danger);  }
+      .kpi-card.success { border-top-color: var(--success); }
+      .kpi-label {
+        font-size: 0.78em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 6px;
+        letter-spacing: 0.04em;
+      }
+      .kpi-value {
+        font-size: 1.9em;
+        font-weight: 800;
+        color: var(--text-color);
+        line-height: 1.1;
+      }
+      .kpi-sub {
+        font-size: 0.82em;
+        color: #9ca3af;
+        margin-top: 4px;
+      }
+
+      /* Inventory */
+      .cat-badge {
+        font-size: 0.78em;
+        background: #e5e7eb;
+        padding: 2px 7px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+      .low-stock { color: var(--danger); font-weight: bold; }
+      .btn-sm { padding: 4px 10px; font-size: 0.82em; }
+
+      /* Adjust Modal */
+      .modal-overlay-dark {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-overlay-dark.open { display: flex; }
+      .modal-box {
+        background: var(--card-bg);
+        border-radius: 10px;
+        padding: 28px;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      }
+      .modal-box h3 { margin: 0 0 4px; font-size: 1.1em; }
+      .modal-box .modal-sub { color: #6b7280; font-size: 0.88em; margin-bottom: 20px; }
+      .form-group { margin-bottom: 14px; }
+      .form-group label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 5px; color: #374151; }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 9px 11px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.95em;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      }
+      .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+      .modal-actions .btn { flex: 1; }
+      .btn-secondary { background: #6b7280; }
+
       /* Animation for Detail View */
       .fade-in-up {
         animation: fadeInUp 0.3s ease-out forwards;
@@ -158,6 +250,30 @@
             📥 Import DB
           </button>
           <button class="btn" onclick="loadData()">🔄 Refresh Data</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Jobs esta semana</div>
+          <div class="kpi-value" id="kpi-jobs">—</div>
+          <div class="kpi-sub">últimos 7 días</div>
+        </div>
+        <div class="kpi-card success">
+          <div class="kpi-label">Revenue estimado</div>
+          <div class="kpi-value" id="kpi-revenue">—</div>
+          <div class="kpi-sub">esta semana</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Refrigerante usado</div>
+          <div class="kpi-value" id="kpi-ref">—</div>
+          <div class="kpi-sub">esta semana</div>
+        </div>
+        <div class="kpi-card warning" id="kpi-lowstock-card">
+          <div class="kpi-label">Bajo stock</div>
+          <div class="kpi-value" id="kpi-lowstock">—</div>
+          <div class="kpi-sub">items en alerta</div>
         </div>
       </div>
 
@@ -254,9 +370,10 @@
               <thead>
                 <tr>
                   <th>Item</th>
-                  <th>Category</th>
+                  <th>Categoría</th>
                   <th>Stock</th>
                   <th>Status</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -353,14 +470,66 @@
       </div>
     </div>
 
+    <!-- Adjust Inventory Modal -->
+    <div id="adjustModal" class="modal-overlay-dark" role="dialog" aria-modal="true" aria-labelledby="adjust-modal-title">
+      <div class="modal-box">
+        <h3 id="adjust-modal-title">Ajustar Stock</h3>
+        <p class="modal-sub" id="adjust-modal-sub">—</p>
+
+        <div class="form-group">
+          <label for="adjust-operation">Operación</label>
+          <select id="adjust-operation">
+            <option value="add">➕ Recibido (agregar)</option>
+            <option value="remove">➖ Consumido / Retirado</option>
+            <option value="set">📌 Corrección (valor exacto)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="adjust-amount" id="adjust-amount-label">Cantidad</label>
+          <input type="number" id="adjust-amount" min="0" step="0.1" placeholder="0" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeAdjustModal()">Cancelar</button>
+          <button type="button" class="btn" onclick="submitAdjust()">Guardar</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const API_URL = "http://localhost:3000/api";
       let allJobsData = []; // Store jobs locally for fast filtering
 
       async function loadData() {
+        loadStats();
         loadRefrigerant();
         loadInventory();
         loadDatasheet();
+      }
+
+      async function loadStats() {
+        try {
+          const res = await fetch(`${API_URL}/stats`);
+          const s = await res.json();
+
+          document.getElementById("kpi-jobs").textContent = s.jobsThisWeek ?? "—";
+
+          const rev = s.revenueThisWeek || 0;
+          document.getElementById("kpi-revenue").textContent =
+            rev > 0 ? `$${rev.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "$0";
+
+          const oz = s.refUsedWeekOz || 0;
+          const lbs = (oz / 16).toFixed(1);
+          document.getElementById("kpi-ref").textContent = oz > 0 ? `${lbs} lb` : "0";
+
+          const low = s.lowStockCount || 0;
+          document.getElementById("kpi-lowstock").textContent = low;
+          const card = document.getElementById("kpi-lowstock-card");
+          card.className = `kpi-card ${low > 0 ? "danger" : "success"}`;
+        } catch (e) {
+          console.error("Error loading stats:", e);
+        }
       }
 
       async function loadRefrigerant() {
@@ -402,29 +571,116 @@
           tbody.innerHTML = "";
 
           data.forEach((item) => {
-            // Skip refrigerants in general table to avoid clutter, or keep them if preferred
-            if (item.category === "Refrigerant") return;
-
             const tr = document.createElement("tr");
             const isLow = item.quantity <= item.min_threshold;
+
+            let stockDisplay;
+            if (item.unit === "oz") {
+              const lbs = Math.floor(item.quantity / 16);
+              const oz = (item.quantity % 16).toFixed(1);
+              stockDisplay = `${lbs} lb ${oz} oz`;
+            } else {
+              stockDisplay = `${item.quantity} ${item.unit || "ea"}`;
+            }
+
             tr.innerHTML = `
-            <td>${item.item_name}</td>
-            <td><span style="font-size:0.8em; background:#eee; padding:2px 6px; border-radius:4px;">${
-              item.category
-            }</span></td>
-            <td style="${
-              isLow ? "color:var(--danger); font-weight:bold;" : ""
-            }">
-              ${item.quantity} ${item.unit || "ea"}
-            </td>
-            <td>${isLow ? "⚠️ Restock" : "✅ OK"}</td>
-          `;
+              <td>${item.item_name}</td>
+              <td><span class="cat-badge">${item.category}</span></td>
+              <td class="${isLow ? "low-stock" : ""}">${stockDisplay}</td>
+              <td>${isLow ? "⚠️ Restock" : "✅ OK"}</td>
+              <td>
+                <button type="button" class="btn btn-sm"
+                  onclick="openAdjustModal(${item.id}, '${item.item_name}', ${item.quantity}, '${item.unit || "ea"}')">
+                  Ajustar
+                </button>
+              </td>
+            `;
             tbody.appendChild(tr);
           });
         } catch (e) {
           console.error(e);
         }
       }
+
+      // --- ADJUST INVENTORY ---
+      let _adjustId = null;
+      let _adjustCurrentQty = 0;
+      let _adjustUnit = "ea";
+
+      function openAdjustModal(id, name, currentQty, unit) {
+        _adjustId = id;
+        _adjustCurrentQty = currentQty;
+        _adjustUnit = unit;
+
+        let currentDisplay;
+        if (unit === "oz") {
+          const lbs = Math.floor(currentQty / 16);
+          const oz = (currentQty % 16).toFixed(1);
+          currentDisplay = `${lbs} lb ${oz} oz`;
+        } else {
+          currentDisplay = `${currentQty} ${unit}`;
+        }
+
+        document.getElementById("adjust-modal-title").textContent = `Ajustar: ${name}`;
+        document.getElementById("adjust-modal-sub").textContent = `Stock actual: ${currentDisplay}`;
+        document.getElementById("adjust-amount").value = "";
+
+        const label = document.getElementById("adjust-amount-label");
+        const op = document.getElementById("adjust-operation").value;
+        label.textContent = op === "set" ? `Nuevo valor (${unit})` : `Cantidad (${unit})`;
+
+        document.getElementById("adjustModal").classList.add("open");
+        document.getElementById("adjust-amount").focus();
+      }
+
+      function closeAdjustModal() {
+        document.getElementById("adjustModal").classList.remove("open");
+        _adjustId = null;
+      }
+
+      document.getElementById("adjust-operation").addEventListener("change", () => {
+        const op = document.getElementById("adjust-operation").value;
+        document.getElementById("adjust-amount-label").textContent =
+          op === "set" ? `Nuevo valor (${_adjustUnit})` : `Cantidad (${_adjustUnit})`;
+      });
+
+      async function submitAdjust() {
+        const amount = parseFloat(document.getElementById("adjust-amount").value);
+        if (isNaN(amount) || amount < 0) {
+          alert("Ingresa una cantidad válida.");
+          return;
+        }
+
+        const op = document.getElementById("adjust-operation").value;
+        let delta;
+        if (op === "add")    delta = amount;
+        else if (op === "remove") delta = -amount;
+        else if (op === "set")   delta = amount - _adjustCurrentQty;
+
+        try {
+          const res = await fetch(`${API_URL}/inventory/${_adjustId}/adjust`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ delta }),
+          });
+          const result = await res.json();
+          if (res.ok) {
+            closeAdjustModal();
+            loadInventory();
+            loadRefrigerant();
+            loadStats();
+          } else {
+            alert("Error: " + result.error);
+          }
+        } catch (e) {
+          alert("Error de conexión: " + e.message);
+        }
+      }
+
+      // Cerrar modal al hacer click fuera
+      document.getElementById("adjustModal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("adjustModal")) closeAdjustModal();
+      });
 
       async function loadDatasheet() {
         try {

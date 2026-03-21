@@ -81,6 +81,15 @@ function initDB() {
         if (!err) seedInventory(); // Cargar inventario inicial si está vacío
       }
     );
+
+    // 4. Tabla de Dispatch Jobs (Job Board)
+    db.run(`CREATE TABLE IF NOT EXISTS dispatch_jobs (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      route_date TEXT,
+      status TEXT DEFAULT 'pending',
+      created_at INTEGER
+    )`);
   });
 }
 
@@ -437,6 +446,114 @@ function getRefrigerantType(model) {
   if (model.includes("R32") || model.includes("GL")) return "R32"; // Goodman GL suele ser R32
   return "R410A"; // Default legacy
 }
+
+// 9. KPIs — ESTADÍSTICAS RÁPIDAS
+app.get("/api/stats", (req, res) => {
+  const results = {};
+  let pending = 4;
+  const done = () => { if (--pending === 0) res.json(results); };
+
+  db.get(`SELECT COUNT(*) as count FROM jobs WHERE date >= date('now', '-7 days')`, [], (err, row) => {
+    results.jobsThisWeek = err ? 0 : row.count;
+    done();
+  });
+
+  db.get(
+    `SELECT COALESCE(SUM(ji.price * ji.quantity), 0) as total
+     FROM job_items ji JOIN jobs j ON ji.job_id = j.id
+     WHERE j.date >= date('now', '-7 days') AND ji.category != 'Refrigerant'`,
+    [], (err, row) => {
+      results.revenueThisWeek = err ? 0 : row.total;
+      done();
+    }
+  );
+
+  db.get(`SELECT COUNT(*) as count FROM inventory WHERE quantity <= min_threshold`, [], (err, row) => {
+    results.lowStockCount = err ? 0 : row.count;
+    done();
+  });
+
+  db.get(
+    `SELECT COALESCE(SUM(ji.quantity), 0) as oz
+     FROM job_items ji JOIN jobs j ON ji.job_id = j.id
+     WHERE ji.category = 'Refrigerant' AND j.date >= date('now', '-7 days')`,
+    [], (err, row) => {
+      results.refUsedWeekOz = err ? 0 : row.oz;
+      done();
+    }
+  );
+});
+
+// 10. AJUSTE MANUAL DE INVENTARIO
+app.post("/api/inventory/:id/adjust", (req, res) => {
+  const { id } = req.params;
+  const { delta } = req.body; // positivo = agregar, negativo = quitar
+
+  if (typeof delta !== "number") {
+    return res.status(400).json({ error: "delta debe ser un número" });
+  }
+
+  db.run(
+    "UPDATE inventory SET quantity = MAX(0, quantity + ?) WHERE id = ?",
+    [delta, id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: "Item no encontrado" });
+      db.get("SELECT * FROM inventory WHERE id = ?", [id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Actualizado", item: row });
+      });
+    }
+  );
+});
+
+// 11. GET — Cargar todos los dispatch jobs
+app.get("/api/dispatch/jobs", (req, res) => {
+  db.all("SELECT data FROM dispatch_jobs ORDER BY created_at ASC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    try {
+      res.json(rows.map(r => JSON.parse(r.data)));
+    } catch (e) {
+      res.status(500).json({ error: "Parse error" });
+    }
+  });
+});
+
+// 12. POST — Sync (upsert completo del array de jobs)
+app.post("/api/dispatch/sync", (req, res) => {
+  const jobs = req.body;
+  if (!Array.isArray(jobs)) return res.status(400).json({ error: "Array esperado" });
+
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
+    const stmt = db.prepare(
+      `INSERT OR REPLACE INTO dispatch_jobs (id, data, route_date, status, created_at)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+    jobs.forEach(j => {
+      stmt.run(
+        j.id,
+        JSON.stringify(j),
+        j.routeDate || null,
+        j.status || "pending",
+        j.createdAt ? new Date(j.createdAt).getTime() : Date.now()
+      );
+    });
+    stmt.finalize();
+    db.run("COMMIT", err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ synced: jobs.length });
+    });
+  });
+});
+
+// 13. DELETE — Limpiar todos los dispatch jobs del día
+app.delete("/api/dispatch/jobs", (req, res) => {
+  db.run("DELETE FROM dispatch_jobs", [], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ cleared: this.changes });
+  });
+});
 
 app.listen(port, () => {
   console.log(`🚀 Dashboard Local corriendo en http://localhost:${port}`);
