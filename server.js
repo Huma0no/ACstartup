@@ -378,6 +378,34 @@ app.get("/api/jobs/search", (req, res) => {
   });
 });
 
+// 4b. HISTORIAL POR DIRECCIÓN — todos los jobs + resumen para una propiedad
+app.get("/api/jobs/by-address", (req, res) => {
+  const q = (req.query.q || "").trim();
+  if (!q) return res.json({ jobs: [], summary: null });
+
+  const sql = `
+    SELECT j.*,
+           COALESCE(SUM(ji.price * ji.quantity), 0) AS computed_total
+    FROM jobs j
+    LEFT JOIN job_items ji ON ji.job_id = j.id
+    WHERE j.address LIKE ?
+    GROUP BY j.id
+    ORDER BY j.date DESC
+  `;
+  db.all(sql, [`%${q}%`], (err, rows) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const summary = rows.length
+      ? {
+          total_visits: rows.length,
+          last_visit: rows[0].date,
+          last_tech: rows[0].technician,
+          total_revenue: rows.reduce((s, r) => s + (r.computed_total || r.total_price || 0), 0),
+        }
+      : null;
+    res.json({ jobs: rows, summary });
+  });
+});
+
 // 5. OBTENER TODOS LOS TRABAJOS (Datasheet)
 app.get("/api/jobs", (req, res) => {
   const sql = "SELECT * FROM jobs ORDER BY date DESC";
@@ -507,7 +535,33 @@ app.post("/api/inventory/:id/adjust", (req, res) => {
   );
 });
 
-// 11. GET — Cargar todos los dispatch jobs
+// 11. REPORTE DE PAGOS — Agrupado por semana
+app.get("/api/reports/payments", (req, res) => {
+  const sql = `
+    SELECT
+      strftime('%Y', j.date)  AS year,
+      strftime('%W', j.date)  AS week_num,
+      MIN(j.date)             AS week_start,
+      COUNT(DISTINCT j.id)    AS job_count,
+      COALESCE(SUM(ji.price * ji.quantity), 0) AS revenue
+    FROM jobs j
+    LEFT JOIN job_items ji
+      ON ji.job_id = j.id AND ji.category != 'Refrigerant'
+    GROUP BY year, week_num
+    ORDER BY year DESC, week_num DESC
+    LIMIT 16
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => ({
+      ...r,
+      revenue: parseFloat(r.revenue).toFixed(2),
+      sub_pay: (r.revenue * 0.8).toFixed(2),
+    })));
+  });
+});
+
+// 12. GET — Cargar todos los dispatch jobs
 app.get("/api/dispatch/jobs", (req, res) => {
   db.all("SELECT data FROM dispatch_jobs ORDER BY created_at ASC", [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -552,6 +606,71 @@ app.delete("/api/dispatch/jobs", (req, res) => {
   db.run("DELETE FROM dispatch_jobs", [], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ cleared: this.changes });
+  });
+});
+
+// 14. REPORTE MENSUAL DE REVENUE — últimos 12 meses
+app.get("/api/reports/revenue", (req, res) => {
+  const sql = `
+    SELECT
+      strftime('%Y-%m', j.date)            AS month,
+      COUNT(DISTINCT j.id)                 AS job_count,
+      COALESCE(SUM(ji.price * ji.quantity), 0) AS revenue
+    FROM jobs j
+    LEFT JOIN job_items ji ON ji.job_id = j.id AND ji.category != 'Refrigerant'
+    GROUP BY month
+    ORDER BY month DESC
+    LIMIT 12
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => ({
+      ...r,
+      revenue: parseFloat(r.revenue).toFixed(2),
+      sub_pay: (r.revenue * 0.8).toFixed(2),
+    })));
+  });
+});
+
+// 15. PERFORMANCE POR TÉCNICO
+app.get("/api/reports/techs", (req, res) => {
+  const sql = `
+    SELECT
+      j.technician,
+      COUNT(DISTINCT j.id)                         AS job_count,
+      COALESCE(SUM(ji.price * ji.quantity), 0)     AS total_revenue,
+      COALESCE(AVG(ji.price * ji.quantity), 0)     AS avg_per_item,
+      MAX(j.date)                                  AS last_job,
+      SUM(CASE WHEN ji.category = 'Refrigerant' THEN ji.quantity ELSE 0 END) AS refrigerant_lbs
+    FROM jobs j
+    LEFT JOIN job_items ji ON ji.job_id = j.id
+    WHERE j.technician IS NOT NULL AND j.technician != ''
+    GROUP BY j.technician
+    ORDER BY total_revenue DESC
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    // Also get per-tech job avg revenue (separate query is cleaner)
+    const sql2 = `
+      SELECT technician,
+             AVG(COALESCE(sub.rev,0)) AS avg_per_job
+      FROM jobs j
+      LEFT JOIN (
+        SELECT job_id, SUM(price*quantity) AS rev FROM job_items GROUP BY job_id
+      ) sub ON sub.job_id = j.id
+      WHERE j.technician IS NOT NULL AND j.technician != ''
+      GROUP BY j.technician
+    `;
+    db.all(sql2, [], (err2, avgRows) => {
+      const avgMap = {};
+      (avgRows || []).forEach(r => { avgMap[r.technician] = r.avg_per_job; });
+      res.json(rows.map(r => ({
+        ...r,
+        total_revenue: parseFloat(r.total_revenue).toFixed(2),
+        avg_per_job: parseFloat(avgMap[r.technician] || 0).toFixed(2),
+        refrigerant_lbs: parseFloat(r.refrigerant_lbs || 0).toFixed(1),
+      })));
+    });
   });
 });
 
