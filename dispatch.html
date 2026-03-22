@@ -148,22 +148,36 @@
       }
       .pulse {
         display: inline-block;
-        width: 6px;
-        height: 6px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: var(--green);
         box-shadow: 0 0 6px var(--green);
         animation: pulse 2s infinite;
+        transition: background .4s, box-shadow .4s;
+      }
+      .pulse.offline {
+        background: var(--red);
+        box-shadow: 0 0 6px var(--red);
+        animation: none;
+      }
+      .pulse.checking {
+        background: var(--amber);
+        box-shadow: 0 0 6px var(--amber);
+        animation: pulse 0.6s infinite;
       }
       @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.3;
-        }
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.3; }
       }
+      .server-status-label {
+        font-size: 10px;
+        letter-spacing: 1px;
+        color: var(--green);
+        transition: color .4s;
+      }
+      .server-status-label.offline { color: var(--red); }
+      .server-status-label.checking { color: var(--amber); }
 
       /* ═══ SIDEBAR ═══ */
       .sidebar {
@@ -397,6 +411,24 @@
       }
       .drop-text b {
         color: var(--amber);
+      }
+
+      /* ═══ NAV BADGE ═══ */
+      .nav-badge {
+        margin-left: auto;
+        background: var(--red);
+        color: #fff;
+        font-size: 10px;
+        font-family: var(--mono);
+        font-weight: 600;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 5px;
+        line-height: 1;
       }
 
       /* ═══ PROPERTY PANEL ═══ */
@@ -1305,7 +1337,10 @@
         <div class="topbar-logo">HVAC <span>Dispatch</span></div>
         <div class="topbar-date" id="topbar-date"></div>
         <div class="topbar-stats">
-          <div class="tstat"><span class="pulse"></span></div>
+          <div class="tstat" style="display:flex;align-items:center;gap:5px;cursor:default" title="Server connection status" onclick="checkServerStatus()">
+            <span class="pulse checking" id="server-dot"></span>
+            <span class="server-status-label checking" id="server-label">DB</span>
+          </div>
           <div class="tstat amber">PENDING <b id="st-pending">0</b></div>
           <div class="tstat ice">ASSIGNED <b id="st-assigned">0</b></div>
           <div class="tstat green">DONE <b id="st-done">0</b></div>
@@ -1342,6 +1377,7 @@
         <div class="sidebar-sec">Stock &amp; Records</div>
         <div class="nav-item" data-panel="inventory">
           <span class="nav-icon">📦</span> Inventory
+          <span class="nav-badge" id="inv-low-badge" style="display:none"></span>
         </div>
         <div class="nav-item" data-panel="history">
           <span class="nav-icon">📋</span> History
@@ -1920,6 +1956,12 @@
             </button>
           </div>
 
+          <!-- Low stock alert banner (hidden until needed) -->
+          <div id="inv-low-banner" style="display:none;margin:12px 20px 0;padding:12px 16px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;display:none">
+            <div style="font-size:11px;color:var(--red);font-weight:600;letter-spacing:.05em;margin-bottom:6px">⚠ LOW STOCK ALERT</div>
+            <div id="inv-low-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+
           <div class="card" id="inv-ref-card">
             <div class="card-title">❄ Refrigerant</div>
             <div
@@ -2238,6 +2280,86 @@
           id="hist-body"
           style="max-height: 65vh; overflow-y: auto"
         ></div>
+      </div>
+    </div>
+
+    <!-- SAVE RECORD MODAL -->
+    <div class="modal-bg" id="save-record-modal" role="dialog" aria-modal="true"
+         onclick="if(event.target===this)closeSaveRecord()">
+      <div class="modal" style="max-width:640px">
+        <div class="modal-header">
+          <div class="modal-addr">📋 Save to History</div>
+          <div class="modal-meta" id="sr-job-ref">—</div>
+          <button type="button" class="modal-close" onclick="closeSaveRecord()">✕</button>
+        </div>
+        <div class="modal-body" style="max-height:72vh;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+          <!-- Row 1: Address + Date -->
+          <div style="display:grid;grid-template-columns:1fr auto;gap:10px">
+            <div>
+              <div class="label">Address</div>
+              <input type="text" id="sr-address" style="width:100%" />
+            </div>
+            <div>
+              <div class="label">Date</div>
+              <input type="date" id="sr-date" style="width:140px" />
+            </div>
+          </div>
+
+          <!-- Row 2: Tech + Subdivision + Builder -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div>
+              <div class="label">Technician</div>
+              <input type="text" id="sr-tech" style="width:100%" />
+            </div>
+            <div>
+              <div class="label">Subdivision</div>
+              <input type="text" id="sr-subdivision" style="width:100%" />
+            </div>
+            <div>
+              <div class="label">Builder</div>
+              <input type="text" id="sr-builder" style="width:100%" />
+            </div>
+          </div>
+
+          <!-- Row 3: Notes -->
+          <div>
+            <div class="label">Notes / Service description</div>
+            <textarea id="sr-notes" rows="2" style="width:100%;resize:vertical"></textarea>
+          </div>
+
+          <!-- Items table -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div class="label" style="margin:0">Items</div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="srAddItem()">＋ Add item</button>
+            </div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Item</th>
+                    <th style="width:60px">Qty</th>
+                    <th style="width:80px">Price $</th>
+                    <th style="width:32px"></th>
+                  </tr>
+                </thead>
+                <tbody id="sr-items-tbody">
+                  <!-- rows added dynamically -->
+                </tbody>
+              </table>
+            </div>
+            <div style="text-align:right;margin-top:6px;font-size:12px;color:var(--green)">
+              Total: <strong id="sr-total">$0.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)">
+          <button type="button" class="btn btn-ghost" onclick="closeSaveRecord()">Cancel</button>
+          <button type="button" class="btn btn-primary" id="sr-submit-btn" onclick="submitSaveRecord()">💾 Save to History</button>
+        </div>
       </div>
     </div>
 
@@ -2822,9 +2944,15 @@
       }
     </div>
     ${tech ? `<div class="job-card-tech">◎ ${esc(tech.name)}</div>` : ""}
-    <div style="display:flex;justify-content:flex-end;margin-top:4px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
       <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px" title="Property history"
         onclick="event.stopPropagation();openPropertySearch('${esc(j.address || "")}')">🏠 History</button>
+      ${j.status === "done"
+        ? j.savedToHistory
+          ? `<span style="font-size:10px;color:var(--green);padding:2px 6px;border:1px solid var(--green-dim);border-radius:3px">✓ Saved #${j.savedToHistory}</span>`
+          : `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px;border-color:var(--amber-dim);color:var(--amber)"
+               onclick="event.stopPropagation();openSaveRecord('${j.id}')">📋 Save Record</button>`
+        : ""}
     </div>
   </div>`;
       }
@@ -3782,6 +3910,47 @@
           updateStats();
         }
       });
+
+      // ═══════════════════════════════════════
+      // SERVER STATUS (offline indicator)
+      // ═══════════════════════════════════════
+      let _serverOnline = null; // null = unknown, true = online, false = offline
+
+      async function checkServerStatus() {
+        const dot   = document.getElementById("server-dot");
+        const label = document.getElementById("server-label");
+
+        try {
+          const res = await fetch(API_BASE + "/ping", { cache: "no-store" });
+          if (!res.ok) throw new Error();
+
+          const wasOffline = _serverOnline === false;
+          _serverOnline = true;
+
+          dot.className   = "pulse";
+          label.className = "server-status-label";
+          label.textContent = "DB ONLINE";
+
+          // Auto-resync dispatch jobs if we just came back online
+          if (wasOffline) {
+            save(); // triggers debounced sync to DB
+            showToast("✓ Server reconnected — syncing...");
+            checkLowStock();
+          }
+        } catch (e) {
+          _serverOnline = false;
+          dot.className   = "pulse offline";
+          label.className = "server-status-label offline";
+          label.textContent = "DB OFFLINE";
+        }
+      }
+
+      // Initial check + poll every 30s
+      checkServerStatus();
+      setInterval(checkServerStatus, 30000);
+
+      // Check low stock on startup (after short delay to let server respond)
+      setTimeout(checkLowStock, 2000);
 
       // Topbar: mostrar fecha de hoy
       document.getElementById("topbar-date").textContent =
@@ -4908,6 +5077,50 @@
         _invAdjCurrentQty = 0,
         _invAdjUnit = "ea";
 
+      // Update nav badge + in-panel banner from an inventory array
+      function updateLowStockAlert(invData) {
+        const lowItems = invData.filter(i => i.quantity <= i.min_threshold);
+        const badge  = document.getElementById("inv-low-badge");
+        const banner = document.getElementById("inv-low-banner");
+        const list   = document.getElementById("inv-low-list");
+
+        if (lowItems.length === 0) {
+          if (badge)  { badge.style.display = "none"; badge.textContent = ""; }
+          if (banner) banner.style.display = "none";
+          return;
+        }
+
+        // Nav badge
+        if (badge) {
+          badge.textContent = lowItems.length;
+          badge.style.display = "flex";
+        }
+
+        // In-panel banner
+        if (banner && list) {
+          list.innerHTML = lowItems.map(i => {
+            const qty = i.unit === "oz"
+              ? `${Math.floor(i.quantity/16)}lb ${(i.quantity%16).toFixed(0)}oz`
+              : `${i.quantity} ${i.unit||"ea"}`;
+            return `<span style="background:var(--bg3);border:1px solid var(--red);border-radius:3px;
+                        padding:3px 8px;font-size:11px;color:var(--red)">
+              ${esc(i.item_name)} <b>${qty}</b>
+            </span>`;
+          }).join("");
+          banner.style.display = "block";
+        }
+      }
+
+      // Lightweight background check (uses /api/stats — no full inventory load)
+      async function checkLowStock() {
+        try {
+          const res = await fetch(API_BASE + "/inventory", { cache: "no-store" });
+          if (!res.ok) return;
+          const invData = await res.json();
+          updateLowStockAlert(invData);
+        } catch(e) {}
+      }
+
       async function loadInventoryPanel() {
         const refGrid = document.getElementById("inv-ref-grid");
         const tbody = document.getElementById("inv-tbody");
@@ -4950,6 +5163,9 @@
           // Full inventory table
           const invRes = await fetch(API_BASE + "/inventory");
           const invData = await invRes.json();
+
+          // Update low stock badge + banner with fresh data
+          updateLowStockAlert(invData);
 
           tbody.innerHTML = invData
             .map((item) => {
@@ -5115,6 +5331,132 @@
           }).join("");
         } catch (e) {
           tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red);text-align:center;padding:24px">Error loading payments. Is server.js running?</td></tr>`;
+        }
+      }
+
+      // ═══════════════════════════════════════
+      // SAVE TO HISTORY
+      // ═══════════════════════════════════════
+      let _srJobId = null; // dispatch job id being saved
+
+      const SR_CATEGORIES = ["Service","Refrigerant","Thermostat","Accessory","Fix","Other"];
+
+      function openSaveRecord(dispatchJobId) {
+        const j = jobs.find(x => x.id === dispatchJobId);
+        if (!j) return;
+        _srJobId = dispatchJobId;
+
+        // Pre-fill fields
+        document.getElementById("sr-job-ref").textContent =
+          `Order #${j.orderNumber || "—"} · ${j.status || ""}`;
+        document.getElementById("sr-address").value = j.address || "";
+        document.getElementById("sr-date").value =
+          j.routeDate || new Date().toISOString().slice(0,10);
+        const tech = techs.find(t => t.id === j.assignedTech);
+        document.getElementById("sr-tech").value = tech ? tech.name : (j.techName || "");
+        document.getElementById("sr-subdivision").value = j.subdivision || "";
+        document.getElementById("sr-builder").value = j.builder || "";
+        document.getElementById("sr-notes").value =
+          [j.serviceType, j.problem, j.dispatchNotes].filter(Boolean).join(" · ");
+
+        // Pre-populate items from job if any
+        const tbody = document.getElementById("sr-items-tbody");
+        tbody.innerHTML = "";
+        // Add one starter row
+        srAddItem();
+
+        srUpdateTotal();
+        document.getElementById("save-record-modal").classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeSaveRecord() {
+        document.getElementById("save-record-modal").classList.remove("open");
+        document.body.style.overflow = "";
+        _srJobId = null;
+      }
+
+      function srAddItem(cat="Service", name="", qty=1, price=0) {
+        const tbody = document.getElementById("sr-items-tbody");
+        const row = document.createElement("tr");
+        const catOpts = SR_CATEGORIES.map(c =>
+          `<option value="${c}" ${c===cat?"selected":""}>${c}</option>`
+        ).join("");
+        row.innerHTML = `
+          <td><select onchange="srUpdateTotal()" style="width:100%">${catOpts}</select></td>
+          <td><input type="text" value="${esc(name)}" style="width:100%" /></td>
+          <td><input type="number" value="${qty}" min="0.1" step="0.1" style="width:100%" oninput="srUpdateTotal()" /></td>
+          <td><input type="number" value="${price}" min="0" step="0.01" style="width:100%" oninput="srUpdateTotal()" /></td>
+          <td><button type="button" class="btn btn-red btn-sm" onclick="this.closest('tr').remove();srUpdateTotal()">✕</button></td>
+        `;
+        tbody.appendChild(row);
+        srUpdateTotal();
+      }
+
+      function srUpdateTotal() {
+        const rows = document.querySelectorAll("#sr-items-tbody tr");
+        let total = 0;
+        rows.forEach(row => {
+          const qty   = parseFloat(row.querySelectorAll("input")[1]?.value) || 0;
+          const price = parseFloat(row.querySelectorAll("input")[2]?.value) || 0;
+          total += qty * price;
+        });
+        document.getElementById("sr-total").textContent =
+          "$" + total.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+      }
+
+      async function submitSaveRecord() {
+        const address = document.getElementById("sr-address").value.trim();
+        if (!address) { alert("Address is required"); return; }
+
+        const btn = document.getElementById("sr-submit-btn");
+        btn.disabled = true;
+        btn.textContent = "Saving...";
+
+        // Collect items
+        const items = [];
+        document.querySelectorAll("#sr-items-tbody tr").forEach(row => {
+          const selects = row.querySelectorAll("select");
+          const inputs  = row.querySelectorAll("input");
+          const cat   = selects[0]?.value || "Service";
+          const iname = inputs[0]?.value.trim() || "";
+          const qty   = parseFloat(inputs[1]?.value) || 1;
+          const price = parseFloat(inputs[2]?.value) || 0;
+          if (iname) items.push({ category: cat, item_name: iname, quantity: qty, price });
+        });
+
+        const payload = {
+          address,
+          date:        document.getElementById("sr-date").value,
+          technician:  document.getElementById("sr-tech").value.trim(),
+          subdivision: document.getElementById("sr-subdivision").value.trim(),
+          builder:     document.getElementById("sr-builder").value.trim(),
+          notes:       document.getElementById("sr-notes").value.trim(),
+          items,
+        };
+
+        try {
+          const res = await fetch(API_BASE + "/jobs/save-record", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error("Server error " + res.status);
+          const { id } = await res.json();
+
+          // Mark dispatch job as saved
+          if (_srJobId) {
+            const j = jobs.find(x => x.id === _srJobId);
+            if (j) { j.savedToHistory = id; save(); renderBoard(); }
+          }
+
+          closeSaveRecord();
+          showToast(`✓ Record #${id} saved to history`);
+        } catch(e) {
+          alert("Error saving record. Is server.js running?\n" + e.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "💾 Save to History";
         }
       }
 
@@ -5483,12 +5825,10 @@
           document.getElementById("inv-adjust-modal").classList.contains("open")
         )
           closeInvAdjust();
-        else if (
-          document
-            .getElementById("hist-detail-modal")
-            .classList.contains("open")
-        )
+        else if (document.getElementById("hist-detail-modal").classList.contains("open"))
           closeHistDetail();
+        else if (document.getElementById("save-record-modal").classList.contains("open"))
+          closeSaveRecord();
       });
     </script>
   </body>

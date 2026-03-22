@@ -145,6 +145,9 @@ function seedInventory() {
 
 // --- API ENDPOINTS ---
 
+// 0. PING — health check rápido
+app.get("/api/ping", (req, res) => res.json({ ok: true }));
+
 // 1. IMPORTAR DATOS (Desde el JSON exportado por la App)
 app.post("/api/import", async (req, res) => {
   const jobs = req.body;
@@ -609,7 +612,42 @@ app.delete("/api/dispatch/jobs", (req, res) => {
   });
 });
 
-// 14. REPORTE MENSUAL DE REVENUE — últimos 12 meses
+// 14. GUARDAR REGISTRO DESDE DISPATCH — un job completado → history
+app.post("/api/jobs/save-record", (req, res) => {
+  const {
+    address, date, technician, notes,
+    subdivision, builder, indoor_model, outdoor_model,
+    items = [],
+  } = req.body;
+
+  if (!address) return res.status(400).json({ error: "Address required" });
+
+  const jobDate = date || new Date().toISOString().slice(0, 10);
+  const totalPrice = items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 1), 0);
+
+  db.run(
+    `INSERT INTO jobs (address, date, technician, total_price, notes, created_at, subdivision, builder, indoor_model, outdoor_model)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [address, jobDate, technician || "", totalPrice, notes || "", Date.now(),
+     subdivision || "", builder || "", indoor_model || "", outdoor_model || ""],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const jobId = this.lastID;
+      if (!items.length) return res.json({ id: jobId });
+
+      const stmt = db.prepare(
+        `INSERT INTO job_items (job_id, category, item_name, quantity, price) VALUES (?, ?, ?, ?, ?)`
+      );
+      items.forEach(i => stmt.run(jobId, i.category || "Service", i.item_name || "", parseFloat(i.quantity) || 1, parseFloat(i.price) || 0));
+      stmt.finalize((e) => {
+        if (e) return res.status(500).json({ error: e.message });
+        res.json({ id: jobId });
+      });
+    }
+  );
+});
+
+// 14b. REPORTE MENSUAL DE REVENUE — últimos 12 meses
 app.get("/api/reports/revenue", (req, res) => {
   const sql = `
     SELECT
