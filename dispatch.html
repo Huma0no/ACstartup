@@ -434,6 +434,12 @@
       @media print {
         body > *:not(#rst-print-area) { display: none !important; }
         #rst-print-area { display: block !important; }
+        body, #rst-print-area, #rst-print-area * {
+          color: #000 !important;
+          background: #fff !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
       }
 
       /* ═══ HOME PANEL ═══ */
@@ -2614,9 +2620,6 @@
         </div>
       </div>
     </div>
-
-    <!-- PRINTABLE RESTOCK REPORT (hidden, shown only when printing) -->
-    <div id="rst-print-area" style="display:none"></div>
 
     <!-- SAVE RECORD MODAL -->
     <div class="modal-bg" id="save-record-modal" role="dialog" aria-modal="true"
@@ -5959,7 +5962,7 @@
         const area = document.getElementById("rst-print-area");
         if (!area.innerHTML.trim()) {
           rstAutofill();
-          setTimeout(window.print, 200);
+          setTimeout(() => window.print(), 200);
         } else {
           window.print();
         }
@@ -6696,5 +6699,8 @@
           closeSaveRecord();
       });
     </script>
+
+  <!-- PRINTABLE RESTOCK REPORT — must be direct child of body for @media print selector -->
+  <div id="rst-print-area" style="display:none"></div>
   </body>
 </html>
