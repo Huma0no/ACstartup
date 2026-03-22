@@ -3799,12 +3799,15 @@
         if (e.dataTransfer.files[0]) handleJSONImport(e.dataTransfer.files[0]);
       });
 
+      let _lastImportedJobs = []; // keep reference for DB save
+
       function handleJSONImport(file) {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
             const techJobs = JSON.parse(e.target.result);
+            _lastImportedJobs = techJobs;
             renderCompletion(techJobs, file.name);
           } catch (err) {
             alert("Error parsing JSON: " + err.message);
@@ -3884,10 +3887,12 @@
         const fullText = allText.join("\n");
         html = `<div class="card">
     <div class="card-title">Day Total: $${totalDay}</div>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="copyCompletion()">📋 Copy All</button>
       <button class="btn btn-outline" onclick="whatsappCompletion()">💬 Send via WhatsApp</button>
+      <button class="btn btn-ice" id="save-db-btn" onclick="saveCompletedToDB()">💾 Save All to DB</button>
     </div>
+    <div id="save-db-status" style="margin-bottom:8px"></div>
     ${html}
     <textarea id="completion-text" style="display:none">${esc(
       fullText
@@ -3925,6 +3930,46 @@
           "https://wa.me/?text=" + encodeURIComponent(text),
           "_blank"
         );
+      }
+
+      async function saveCompletedToDB() {
+        if (!_lastImportedJobs.length) {
+          alert("No imported jobs to save. Import a JSON file first.");
+          return;
+        }
+
+        const btn    = document.getElementById("save-db-btn");
+        const status = document.getElementById("save-db-status");
+        btn.disabled    = true;
+        btn.textContent = "Saving...";
+        if (status) status.innerHTML = "";
+
+        try {
+          const res = await fetch(API_BASE + "/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(_lastImportedJobs),
+          });
+
+          if (!res.ok) throw new Error("Server error " + res.status);
+          const result = await res.json();
+
+          const msg = `✓ ${result.imported} jobs saved to history${result.skipped ? ` · ${result.skipped} already existed` : ""}`;
+          if (status) status.innerHTML =
+            `<div style="color:var(--green);font-size:12px;padding:4px 0">${msg}</div>`;
+          showToast(msg);
+
+          // Refresh low stock badge since import may deduct inventory
+          checkLowStock();
+        } catch(e) {
+          const errMsg = "Error saving to DB. Is server.js running?\n" + e.message;
+          if (status) status.innerHTML =
+            `<div style="color:var(--red);font-size:12px;padding:4px 0">✕ ${esc(e.message)}</div>`;
+          alert(errMsg);
+        } finally {
+          btn.disabled    = false;
+          btn.textContent = "💾 Save All to DB";
+        }
       }
 
       // ═══════════════════════════════════════
