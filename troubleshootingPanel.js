@@ -5,6 +5,7 @@
 
 import { getState } from "./state.js";
 import { getJobs, getActiveJobAddress } from "./jobs.js";
+import { TSTAT_DATA, normalizeTstatKey } from "./tstatData.js";
 import {
   SYMPTOM,
   SYMPTOM_LABELS,
@@ -187,7 +188,23 @@ function buildActiveJobCard(job) {
 
   const ctx = buildContextFromJob(job);
   if (ctx.isA2L)        addChip("A2L", "ts-chip-a2l");
-  if (job.thermostat?.type) addChip(job.thermostat.type, "ts-chip-tstat");
+  if (job.thermostat?.type) {
+    const tstatKey = normalizeTstatKey(job.thermostat.type);
+    if (tstatKey) {
+      // Interactive chip with submenu
+      const chip = document.createElement("span");
+      chip.className = "ts-active-job-chip ts-chip-tstat ts-chip-tstat-menu";
+      chip.title = "Tap for wiring, programming & manual";
+      chip.textContent = job.thermostat.type + " ▾";
+      chip.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openTstatMenu(e, tstatKey, job.builder || "");
+      });
+      meta.appendChild(chip);
+    } else {
+      addChip(job.thermostat.type, "ts-chip-tstat");
+    }
+  }
   if (ctx.hasZoning)    addChip("Zoning", "ts-chip-acc");
   if (ctx.hasFloatSwitch) addChip("Float Switch", "ts-chip-acc");
   if (ctx.hasTraneHarness) addChip("Harness", "ts-chip-a2l");
@@ -551,4 +568,263 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
+}
+
+// ─────────────────────────────────────────────
+// TSTAT SUBMENU
+// ─────────────────────────────────────────────
+
+function openTstatMenu(e, tstatKey, builder) {
+  closeTstatMenu();
+  const data = TSTAT_DATA[tstatKey];
+  if (!data) return;
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  const menu = document.createElement("div");
+  menu.id = "_tstat-menu";
+  menu.style.cssText = `
+    position:fixed;
+    top:${rect.bottom + 6}px;
+    left:${rect.left}px;
+    z-index:10000;
+    background:var(--container-bg,#1a1a2e);
+    border:1px solid rgba(56,190,255,0.25);
+    border-radius:10px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.55);
+    overflow:hidden;
+    min-width:220px;
+    animation:fadeIn 0.12s ease;
+  `;
+
+  const items = [
+    { icon: "🔌", label: "How to Wire",           action: () => openTstatWiring(tstatKey) },
+    { icon: "⚙️",  label: "How to Program",        action: () => openTstatProgramming(tstatKey, builder) },
+    { icon: "📄", label: "Installation Manual",    action: () => window.open(data.manualUrl, "_blank") },
+  ];
+
+  items.forEach(({ icon, label, action }) => {
+    const btn = document.createElement("button");
+    btn.style.cssText = `
+      display:flex;align-items:center;gap:10px;
+      width:100%;padding:11px 16px;border:none;cursor:pointer;
+      background:transparent;color:var(--text-color,#eee);
+      font-size:13px;font-weight:500;text-align:left;
+      transition:background 0.12s;
+    `;
+    btn.innerHTML = `<span style="font-size:16px">${icon}</span><span>${label}</span>`;
+    btn.onmouseenter = () => btn.style.background = "rgba(56,190,255,0.1)";
+    btn.onmouseleave = () => btn.style.background = "transparent";
+    btn.onclick = () => { closeTstatMenu(); action(); };
+    menu.appendChild(btn);
+  });
+
+  document.body.appendChild(menu);
+
+  // Adjust if overflows right edge
+  const mr = menu.getBoundingClientRect();
+  if (mr.right > window.innerWidth - 8) {
+    menu.style.left = `${window.innerWidth - mr.width - 8}px`;
+  }
+
+  setTimeout(() => document.addEventListener("click", closeTstatMenu, { once: true }), 0);
+}
+
+function closeTstatMenu() {
+  document.getElementById("_tstat-menu")?.remove();
+}
+
+// ─── Wiring modal ───────────────────────────
+
+function openTstatWiring(tstatKey) {
+  const data = TSTAT_DATA[tstatKey];
+  if (!data) return;
+
+  const stagesHtml = Object.entries(data.wiring.stages).map(([stageName, wires]) => `
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                  color:rgba(56,190,255,0.8);margin-bottom:12px">${stageName}</div>
+      ${buildWiringSVG(wires)}
+    </div>
+  `).join("");
+
+  openTstatModal(`🔌 ${data.label} — Wiring`, `
+    ${stagesHtml}
+    <div style="font-size:11px;color:var(--text-muted,#888);
+                background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.2);
+                border-radius:6px;padding:8px 12px;margin-top:4px">
+      ⚠️ ${data.wiring.notes}
+    </div>
+  `);
+}
+
+function buildWiringSVG(wires) {
+  // Terminal block on left, tstat board on right
+  // Colors per HVAC convention
+  const wireColor = { Y: "#FFD600", R: "#E53935", C: "#1E88E5", G: "#43A047", W: "#FFFFFF" };
+  const wireLabel = { Y: "Cooling", R: "Power 24V", C: "Common", G: "Fan", W: "Heat/Stage 1" };
+
+  const rowH = 44;
+  const svgH = wires.length * rowH + 20;
+  const W = 320;
+
+  const rows = wires.map((wire, i) => {
+    const y = 20 + i * rowH;
+    const color = wireColor[wire] || "#aaa";
+    const desc = wireLabel[wire] || "";
+    return `
+      <!-- Equipment terminal -->
+      <rect x="12" y="${y - 10}" width="36" height="22" rx="4"
+            fill="#1a2438" stroke="${color}" stroke-width="1.5"/>
+      <text x="30" y="${y + 5}" text-anchor="middle"
+            font-family="monospace" font-size="12" font-weight="700" fill="${color}">${wire}</text>
+
+      <!-- Wire line -->
+      <line x1="48" y1="${y + 1}" x2="${W - 48}" y2="${y + 1}"
+            stroke="${color}" stroke-width="2.5" stroke-dasharray="${wire === "C" ? "6,3" : "none"}"/>
+
+      <!-- Tstat terminal -->
+      <rect x="${W - 48}" y="${y - 10}" width="36" height="22" rx="4"
+            fill="#1a2438" stroke="${color}" stroke-width="1.5"/>
+      <text x="${W - 30}" y="${y + 5}" text-anchor="middle"
+            font-family="monospace" font-size="12" font-weight="700" fill="${color}">${wire}</text>
+
+      <!-- Label -->
+      <text x="${W / 2}" y="${y - 14}" text-anchor="middle"
+            font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.4)">${desc}</text>
+    `;
+  }).join("");
+
+  return `
+    <svg viewBox="0 0 ${W} ${svgH}" width="100%" style="max-width:320px;display:block;margin:0 auto"
+         xmlns="http://www.w3.org/2000/svg">
+      <!-- Background -->
+      <rect width="${W}" height="${svgH}" rx="8" fill="#0d1420"/>
+
+      <!-- Headers -->
+      <text x="30" y="12" text-anchor="middle" font-family="sans-serif" font-size="9"
+            font-weight="700" fill="rgba(255,255,255,0.35)" letter-spacing="1">UNIT</text>
+      <text x="${W - 30}" y="12" text-anchor="middle" font-family="sans-serif" font-size="9"
+            font-weight="700" fill="rgba(255,255,255,0.35)" letter-spacing="1">TSTAT</text>
+
+      ${rows}
+    </svg>
+  `;
+}
+
+// ─── Programming modal ──────────────────────
+
+function openTstatProgramming(tstatKey, builder) {
+  const data = TSTAT_DATA[tstatKey];
+  if (!data) return;
+
+  const prog = data.programming;
+
+  // Find matching builder rule (case-insensitive partial match)
+  const matchedBuilder = Object.keys(prog.builders).find(
+    b => builder.toLowerCase().includes(b.toLowerCase()) ||
+         b.toLowerCase().includes(builder.toLowerCase())
+  );
+  const rule = matchedBuilder ? prog.builders[matchedBuilder] : null;
+
+  const builderBadge = rule
+    ? `<div style="display:inline-flex;align-items:center;gap:8px;
+                   background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);
+                   border-radius:6px;padding:8px 14px;margin-bottom:16px">
+        <span style="font-size:18px">🏗️</span>
+        <div>
+          <div style="font-size:10px;color:rgba(48,209,88,0.8);font-weight:700;letter-spacing:1px">BUILDER RULE — ${matchedBuilder.toUpperCase()}</div>
+          <div style="font-size:13px;color:#fff;font-weight:600;margin-top:2px">
+            ❄️ Cool: <strong>${rule.cool}°F</strong> &nbsp;·&nbsp; 🔥 Heat: <strong>${rule.heat}°F</strong>
+            ${rule.notes ? `<span style="color:rgba(255,255,255,0.5);font-size:11px"> — ${rule.notes}</span>` : ""}
+          </div>
+        </div>
+       </div>`
+    : builder
+      ? `<div style="background:rgba(255,159,10,0.1);border:1px solid rgba(255,159,10,0.3);
+                     border-radius:6px;padding:8px 14px;margin-bottom:16px;font-size:12px;color:#ff9f0a">
+          ⚠️ No specific rule found for builder "<strong>${builder}</strong>" — use default settings.
+         </div>`
+      : `<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+                     border-radius:6px;padding:8px 14px;margin-bottom:16px;font-size:12px;color:#888">
+          No builder assigned to this job.
+         </div>`;
+
+  const allRulesHtml = `
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07)">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.3);
+                  text-transform:uppercase;margin-bottom:8px">All Builder Rules</div>
+      ${Object.entries(prog.builders).map(([b, r]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    padding:6px 10px;border-radius:5px;margin-bottom:4px;
+                    background:${matchedBuilder === b ? "rgba(56,190,255,0.08)" : "rgba(255,255,255,0.03)"};
+                    border:1px solid ${matchedBuilder === b ? "rgba(56,190,255,0.2)" : "transparent"}">
+          <span style="font-size:12px;color:${matchedBuilder === b ? "var(--neon-primary,#38beff)" : "#aaa"};font-weight:${matchedBuilder === b ? "700" : "400"}">${b}</span>
+          <span style="font-size:12px;color:#ddd">❄️ ${r.cool}° &nbsp; 🔥 ${r.heat}°</span>
+        </div>`).join("")}
+    </div>
+  `;
+
+  const stepsHtml = `
+    <div style="margin-top:14px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.3);
+                  text-transform:uppercase;margin-bottom:8px">Programming Steps</div>
+      <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+        ${prog.steps.map(s => `<li style="font-size:13px;color:#ccc;line-height:1.4">${s}</li>`).join("")}
+      </ol>
+    </div>
+  `;
+
+  openTstatModal(`⚙️ ${data.label} — Programming`, builderBadge + stepsHtml + allRulesHtml);
+}
+
+// ─── Generic modal shell ────────────────────
+
+function openTstatModal(title, bodyHtml) {
+  document.getElementById("_tstat-modal")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "_tstat-modal";
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9998;
+    background:rgba(0,0,0,0.65);
+    display:flex;align-items:center;justify-content:center;
+    padding:16px;
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    animation:fadeIn 0.15s ease;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background:var(--container-bg,#0f1520);
+      border:1px solid rgba(56,190,255,0.2);
+      border-radius:14px;
+      width:100%;max-width:380px;
+      max-height:85dvh;
+      display:flex;flex-direction:column;
+      box-shadow:0 24px 64px rgba(0,0,0,0.6);
+      overflow:hidden;
+    ">
+      <!-- Header -->
+      <div style="
+        padding:14px 18px;
+        border-bottom:1px solid rgba(56,190,255,0.12);
+        display:flex;justify-content:space-between;align-items:center;
+        background:rgba(56,190,255,0.05);flex-shrink:0;
+      ">
+        <div style="font-size:14px;font-weight:700;color:var(--text-color,#eee)">${title}</div>
+        <button id="_tstat-modal-close" style="
+          background:none;border:none;color:rgba(255,255,255,0.45);
+          cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px;
+        ">✕</button>
+      </div>
+      <!-- Body -->
+      <div style="padding:18px;overflow-y:auto;flex:1;color:var(--text-color,#eee)">
+        ${bodyHtml}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.querySelector("#_tstat-modal-close").onclick = () => overlay.remove();
+  overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
 }

@@ -3593,6 +3593,18 @@ html[data-theme="darkMode"] .ts-severity-badge.ts-critical { background: rgba(25
 .ts-active-job-chip.ts-chip-tstat {
   background: #4a148c;
 }
+.ts-active-job-chip.ts-chip-tstat-menu {
+  cursor: pointer;
+  background: #4a148c;
+  border: 1px solid rgba(191,90,242,0.5);
+  transition: background 0.15s, box-shadow 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ts-active-job-chip.ts-chip-tstat-menu:hover {
+  background: #6a1ab2;
+  box-shadow: 0 0 10px rgba(191,90,242,0.4);
+}
 .ts-active-job-chip.ts-chip-acc {
   background: #e65100;
 }
