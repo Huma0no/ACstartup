@@ -619,6 +619,25 @@ app.delete("/api/dispatch/jobs", (req, res) => {
   });
 });
 
+// 13b. REFRIGERANT USAGE BY ADDRESS — for restock report
+app.get("/api/reports/refrigerant-usage", (req, res) => {
+  const type = (req.query.type || "").trim();
+  if (!type) return res.json([]);
+
+  const sql = `
+    SELECT j.id, j.address, j.date, j.technician, j.subdivision, j.builder,
+           ji.item_name AS ref_type, ji.quantity AS oz_used
+    FROM job_items ji
+    JOIN jobs j ON ji.job_id = j.id
+    WHERE ji.category = 'Refrigerant' AND ji.item_name LIKE ?
+    ORDER BY j.date DESC
+  `;
+  db.all(sql, [`%${type}%`], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
 // 14. HOME DASHBOARD — todo en un solo fetch
 app.get("/api/stats/home", (req, res) => {
   const out = {};

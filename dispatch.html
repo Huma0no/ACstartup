@@ -413,6 +413,29 @@
         color: var(--amber);
       }
 
+      /* ═══ REFRIGERANT CONTEXT MENU ═══ */
+      .ref-ctx-item {
+        display: block;
+        width: 100%;
+        background: none;
+        border: none;
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 9px 14px;
+        text-align: left;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+      }
+      .ref-ctx-item:last-child { border-bottom: none; }
+      .ref-ctx-item:hover { background: var(--bg3); color: var(--text-bright); }
+
+      @media print {
+        body > *:not(#rst-print-area) { display: none !important; }
+        #rst-print-area { display: block !important; }
+      }
+
       /* ═══ HOME PANEL ═══ */
       .home-kpi {
         padding: 14px 16px;
@@ -2512,6 +2535,88 @@
         ></div>
       </div>
     </div>
+
+    <!-- REFRIGERANT CONTEXT MENU -->
+    <div id="ref-ctx-menu" style="display:none;position:fixed;z-index:2000;background:var(--bg2);
+         border:1px solid var(--border2);border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:140px">
+      <div id="ref-ctx-type" style="padding:8px 12px;font-size:10px;letter-spacing:1px;
+           text-transform:uppercase;color:var(--amber);border-bottom:1px solid var(--border)"></div>
+      <button class="ref-ctx-item" onclick="openRestockModal(_ctxRefType,'view')">👁 View Usage</button>
+      <button class="ref-ctx-item" onclick="openRestockModal(_ctxRefType,'restock')">📋 Restock Report</button>
+      <button class="ref-ctx-item" onclick="openRestockModal(_ctxRefType,'print')">🖨 Print Report</button>
+    </div>
+
+    <!-- RESTOCK REPORT MODAL -->
+    <div class="modal-bg" id="restock-modal" role="dialog" aria-modal="true"
+         onclick="if(event.target===this)closeRestockModal()">
+      <div class="modal" style="max-width:760px">
+        <div class="modal-header">
+          <div class="modal-addr" id="rst-title">Refrigerant Report</div>
+          <div class="modal-meta" id="rst-meta"></div>
+          <button type="button" class="modal-close" onclick="closeRestockModal()">✕</button>
+        </div>
+        <div class="modal-body" style="max-height:70vh;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+
+          <!-- Summary bar -->
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+               padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)">
+            <div>
+              <span style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">Selected</span>
+              <span id="rst-sel-count" style="font-family:var(--head);font-size:20px;color:var(--ice);margin-left:8px">0</span>
+              <span style="font-size:11px;color:var(--text-dim)"> jobs</span>
+            </div>
+            <div>
+              <span style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">Total oz</span>
+              <span id="rst-sel-oz" style="font-family:var(--head);font-size:20px;color:var(--amber);margin-left:8px">0.0</span>
+            </div>
+            <div>
+              <span style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em">Total lbs</span>
+              <span id="rst-sel-lbs" style="font-family:var(--head);font-size:20px;color:var(--green);margin-left:8px">0.0</span>
+            </div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:var(--text-dim)">Requesting:</span>
+              <input type="number" id="rst-request-lbs" min="0" step="0.5"
+                style="width:70px;text-align:center" placeholder="lbs" />
+              <span style="font-size:11px;color:var(--text-dim)">lbs</span>
+            </div>
+          </div>
+
+          <!-- Select all row -->
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-ghost btn-sm" onclick="rstSelectAll(true)">☑ Select All</button>
+            <button class="btn btn-ghost btn-sm" onclick="rstSelectAll(false)">☐ Deselect All</button>
+            <span id="rst-loading" style="font-size:11px;color:var(--text-dim)"></span>
+          </div>
+
+          <!-- Jobs table -->
+          <div class="tbl-wrap" style="max-height:320px;overflow-y:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:32px"></th>
+                  <th>Date</th>
+                  <th>Address</th>
+                  <th>Subdivision</th>
+                  <th>Tech</th>
+                  <th style="text-align:right">Oz Used</th>
+                  <th style="text-align:right">Lbs</th>
+                </tr>
+              </thead>
+              <tbody id="rst-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;
+             padding:12px 20px;border-top:1px solid var(--border)">
+          <button type="button" class="btn btn-ghost" onclick="closeRestockModal()">Cancel</button>
+          <button type="button" class="btn btn-outline" onclick="rstAutofill()">✎ Auto-fill Report</button>
+          <button type="button" class="btn btn-primary" onclick="rstPrint()">🖨 Print</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRINTABLE RESTOCK REPORT (hidden, shown only when printing) -->
+    <div id="rst-print-area" style="display:none"></div>
 
     <!-- SAVE RECORD MODAL -->
     <div class="modal-bg" id="save-record-modal" role="dialog" aria-modal="true"
@@ -5467,31 +5572,25 @@
           const refRes = await fetch(API_BASE + "/reports/refrigerant");
           const refData = await refRes.json();
           refGrid.innerHTML = refData
-            .map(
-              (r) => `
-      <div style="background:var(--bg3);border:1px solid ${
-        r.alert ? "var(--red)" : "var(--border)"
-      };
-                  border-radius:4px;padding:14px;text-align:center">
-        <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;
-                    color:var(--text-dim);margin-bottom:6px">${esc(
-                      r.type
-                    )}</div>
-        <div style="font-family:var(--head);font-size:24px;font-weight:800;
-                    color:${r.alert ? "var(--red)" : "var(--amber)"}">${esc(
-                r.stock_display
-              )}</div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:4px">
-          Used total: ${(r.used_oz / 16).toFixed(1)} lb
+            .map((r) => `
+      <div style="background:var(--bg3);border:1px solid ${r.alert ? "var(--red)" : "var(--border)"};
+                  border-radius:4px;padding:14px;position:relative">
+        <!-- ⋮ menu button -->
+        <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px"
+            onclick="openRefMenu(event,'${esc(r.type)}')">⋮</button>
         </div>
-        ${
-          r.alert
-            ? '<div style="color:var(--red);font-size:10px;font-weight:700;margin-top:6px">⚠ LOW STOCK</div>'
-            : ""
-        }
-      </div>
-    `
-            )
+        <div style="text-align:center">
+          <div style="font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;
+                      color:var(--text-dim);margin-bottom:6px">${esc(r.type)}</div>
+          <div style="font-family:var(--head);font-size:24px;font-weight:800;
+                      color:${r.alert ? "var(--red)" : "var(--amber)"}">${esc(r.stock_display)}</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px">
+            Used total: ${(r.used_oz / 16).toFixed(1)} lb
+          </div>
+          ${r.alert ? '<div style="color:var(--red);font-size:10px;font-weight:700;margin-top:6px">⚠ LOW STOCK</div>' : ""}
+        </div>
+      </div>`)
             .join("");
 
           // Full inventory table
@@ -5665,6 +5764,204 @@
           }).join("");
         } catch (e) {
           tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red);text-align:center;padding:24px">Error loading payments. Is server.js running?</td></tr>`;
+        }
+      }
+
+      // ═══════════════════════════════════════
+      // REFRIGERANT CONTEXT MENU + RESTOCK
+      // ═══════════════════════════════════════
+      let _ctxRefType = "";
+      let _rstJobs    = []; // all usage records for current ref type
+
+      function openRefMenu(e, refType) {
+        e.stopPropagation();
+        _ctxRefType = refType;
+        const menu = document.getElementById("ref-ctx-menu");
+        document.getElementById("ref-ctx-type").textContent = refType;
+        menu.style.display = "block";
+        // Position near button
+        const rect = e.target.getBoundingClientRect();
+        menu.style.top  = (rect.bottom + 4) + "px";
+        menu.style.left = Math.min(rect.left, window.innerWidth - 160) + "px";
+      }
+
+      // Close context menu on outside click
+      document.addEventListener("click", () => {
+        document.getElementById("ref-ctx-menu").style.display = "none";
+      });
+
+      async function openRestockModal(refType, mode) {
+        document.getElementById("ref-ctx-menu").style.display = "none";
+        document.getElementById("rst-title").textContent =
+          mode === "view" ? `Usage — ${refType}` : `Restock Report — ${refType}`;
+        document.getElementById("rst-meta").textContent = "";
+        document.getElementById("rst-loading").textContent = "Loading...";
+        document.getElementById("rst-tbody").innerHTML =
+          `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
+        document.getElementById("rst-sel-count").textContent = "0";
+        document.getElementById("rst-sel-oz").textContent = "0.0";
+        document.getElementById("rst-sel-lbs").textContent = "0.0";
+        document.getElementById("rst-request-lbs").value = "";
+        document.getElementById("restock-modal").classList.add("open");
+        document.body.style.overflow = "hidden";
+
+        try {
+          const res = await fetch(API_BASE + "/reports/refrigerant-usage?type=" + encodeURIComponent(refType));
+          _rstJobs = await res.json();
+          document.getElementById("rst-loading").textContent =
+            `${_rstJobs.length} records found`;
+          rstRenderTable();
+          if (mode === "print") setTimeout(rstPrint, 300);
+        } catch(e) {
+          document.getElementById("rst-tbody").innerHTML =
+            `<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px">Error loading data</td></tr>`;
+        }
+      }
+
+      function closeRestockModal() {
+        document.getElementById("restock-modal").classList.remove("open");
+        document.body.style.overflow = "";
+        _rstJobs = [];
+      }
+
+      function rstRenderTable() {
+        const tbody = document.getElementById("rst-tbody");
+        if (!_rstJobs.length) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">No usage records found</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = _rstJobs.map((j, i) => {
+          const dateStr = j.date
+            ? new Date(j.date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+            : "—";
+          const lbs = (j.oz_used / 16).toFixed(2);
+          return `<tr>
+            <td><input type="checkbox" class="rst-chk" data-idx="${i}" checked onchange="rstUpdateTotals()" /></td>
+            <td class="dim">${dateStr}</td>
+            <td class="bright">${esc(j.address||"—")}</td>
+            <td class="dim">${esc(j.subdivision||"—")}</td>
+            <td style="color:var(--purple)">${esc(j.technician||"—")}</td>
+            <td style="text-align:right;color:var(--amber)">${parseFloat(j.oz_used).toFixed(1)}</td>
+            <td style="text-align:right;color:var(--text-dim)">${lbs}</td>
+          </tr>`;
+        }).join("");
+        rstUpdateTotals();
+      }
+
+      function rstSelectAll(checked) {
+        document.querySelectorAll(".rst-chk").forEach(c => { c.checked = checked; });
+        rstUpdateTotals();
+      }
+
+      function rstUpdateTotals() {
+        const checked = Array.from(document.querySelectorAll(".rst-chk:checked"));
+        const totalOz = checked.reduce((s, c) => s + parseFloat(_rstJobs[c.dataset.idx]?.oz_used || 0), 0);
+        document.getElementById("rst-sel-count").textContent = checked.length;
+        document.getElementById("rst-sel-oz").textContent   = totalOz.toFixed(1);
+        document.getElementById("rst-sel-lbs").textContent  = (totalOz / 16).toFixed(2);
+        // Auto-suggest requesting quantity (round up to nearest 0.5 lb)
+        const inp = document.getElementById("rst-request-lbs");
+        if (!inp.value) {
+          const suggested = Math.ceil((totalOz / 16) * 2) / 2;
+          inp.placeholder = suggested + " lbs";
+        }
+      }
+
+      function rstGetSelected() {
+        return Array.from(document.querySelectorAll(".rst-chk:checked"))
+          .map(c => _rstJobs[c.dataset.idx])
+          .filter(Boolean);
+      }
+
+      function rstAutofill() {
+        const selected = rstGetSelected();
+        if (!selected.length) { alert("Select at least one record first."); return; }
+        const totalOz  = selected.reduce((s, j) => s + parseFloat(j.oz_used||0), 0);
+        const lbs      = (totalOz / 16).toFixed(2);
+        const reqLbs   = document.getElementById("rst-request-lbs").value || Math.ceil(parseFloat(lbs) * 2) / 2;
+        const refType  = selected[0].ref_type || _ctxRefType;
+        const dateFrom = selected[selected.length-1].date || "";
+        const dateTo   = selected[0].date || "";
+
+        const rows = selected.map(j => {
+          const d = j.date ? new Date(j.date+"T00:00:00").toLocaleDateString("en-US",{month:"2-digit",day:"2-digit",year:"numeric"}) : "—";
+          return `<tr>
+            <td>${d}</td>
+            <td>${j.address||"—"}</td>
+            <td>${j.subdivision||"—"}</td>
+            <td style="text-align:right">${parseFloat(j.oz_used).toFixed(1)} oz</td>
+            <td style="text-align:right">${(j.oz_used/16).toFixed(2)} lbs</td>
+          </tr>`;
+        }).join("");
+
+        document.getElementById("rst-print-area").innerHTML = `
+          <div style="font-family:Arial,sans-serif;font-size:13px;max-width:700px;margin:0 auto;padding:24px;color:#000">
+            <div style="text-align:center;margin-bottom:20px">
+              <div style="font-size:20px;font-weight:bold;text-transform:uppercase;letter-spacing:2px">
+                Refrigerant Exchange Request
+              </div>
+              <div style="font-size:12px;color:#666;margin-top:4px">
+                Generated: ${new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}
+              </div>
+            </div>
+
+            <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px">
+              <tr>
+                <td style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;width:140px">Refrigerant Type</td>
+                <td style="padding:6px 10px;border:1px solid #ddd">${refType}</td>
+                <td style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold;width:140px">Period</td>
+                <td style="padding:6px 10px;border:1px solid #ddd">${dateFrom} — ${dateTo}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold">Total Used</td>
+                <td style="padding:6px 10px;border:1px solid #ddd">${totalOz.toFixed(1)} oz / ${lbs} lbs</td>
+                <td style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;font-weight:bold">Requesting</td>
+                <td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;color:#c00">${reqLbs} lbs</td>
+              </tr>
+            </table>
+
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="background:#222;color:#fff">
+                  <th style="padding:8px 10px;text-align:left">Date</th>
+                  <th style="padding:8px 10px;text-align:left">Address</th>
+                  <th style="padding:8px 10px;text-align:left">Subdivision</th>
+                  <th style="padding:8px 10px;text-align:right">Oz Used</th>
+                  <th style="padding:8px 10px;text-align:right">Lbs</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+                <tr style="background:#f0f0f0;font-weight:bold;border-top:2px solid #000">
+                  <td colspan="3" style="padding:8px 10px">TOTAL (${selected.length} jobs)</td>
+                  <td style="padding:8px 10px;text-align:right">${totalOz.toFixed(1)} oz</td>
+                  <td style="padding:8px 10px;text-align:right">${lbs} lbs</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+              <div>
+                <div style="border-bottom:1px solid #000;margin-bottom:4px;height:32px"></div>
+                <div style="font-size:11px;color:#666">Prepared by / Signature</div>
+              </div>
+              <div>
+                <div style="border-bottom:1px solid #000;margin-bottom:4px;height:32px"></div>
+                <div style="font-size:11px;color:#666">Date</div>
+              </div>
+            </div>
+          </div>`;
+
+        showToast("✓ Report ready — click 🖨 Print");
+      }
+
+      function rstPrint() {
+        const area = document.getElementById("rst-print-area");
+        if (!area.innerHTML.trim()) {
+          rstAutofill();
+          setTimeout(window.print, 200);
+        } else {
+          window.print();
         }
       }
 
