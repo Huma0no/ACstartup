@@ -413,6 +413,31 @@
         color: var(--amber);
       }
 
+      /* ═══ HOME PANEL ═══ */
+      .home-kpi {
+        padding: 14px 16px;
+        transition: border-color .15s;
+      }
+      .home-kpi:hover { border-color: var(--border2); }
+      .home-kpi-label {
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+      .home-kpi-val {
+        font-family: var(--head);
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .home-kpi-sub {
+        font-size: 10px;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+
       /* ═══ GLOBAL SEARCH ═══ */
       .gs-wrap {
         position: relative;
@@ -1469,8 +1494,11 @@
 
       <!-- SIDEBAR -->
       <nav class="sidebar">
+        <div class="nav-item" data-panel="home">
+          <span class="nav-icon">⌂</span> Home
+        </div>
         <div class="sidebar-sec">Dispatch</div>
-        <div class="nav-item active" data-panel="board">
+        <div class="nav-item" data-panel="board">
           <span class="nav-icon">▦</span> Job Board
         </div>
         <div class="nav-item" data-panel="intake">
@@ -1508,8 +1536,74 @@
 
       <!-- MAIN -->
       <main class="main">
+        <!-- ══════════ PANEL: HOME ══════════ -->
+        <div class="panel active" id="panel-home">
+          <div class="sec-header">
+            <div class="sec-title">Command Center</div>
+            <div class="sec-sub" id="home-date-sub">Loading...</div>
+            <button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="loadHomePanel()">↻ Refresh</button>
+          </div>
+
+          <!-- KPI row -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px 20px 0">
+            <div class="card home-kpi" onclick="switchPanel('board')" title="Go to Job Board" style="cursor:pointer">
+              <div class="home-kpi-label">Board Today</div>
+              <div class="home-kpi-val" id="hk-board" style="color:var(--ice)">—</div>
+              <div class="home-kpi-sub" id="hk-board-sub"></div>
+            </div>
+            <div class="card home-kpi" onclick="switchPanel('reports')" title="Go to Reports" style="cursor:pointer">
+              <div class="home-kpi-label">Revenue · 7 days</div>
+              <div class="home-kpi-val" id="hk-revenue" style="color:var(--green)">—</div>
+              <div class="home-kpi-sub" id="hk-revenue-sub"></div>
+            </div>
+            <div class="card home-kpi" onclick="switchPanel('reports')" title="Go to Reports" style="cursor:pointer">
+              <div class="home-kpi-label">Top Tech · Week</div>
+              <div class="home-kpi-val" id="hk-tech" style="color:var(--purple);font-size:16px">—</div>
+              <div class="home-kpi-sub" id="hk-tech-sub"></div>
+            </div>
+            <div class="card home-kpi" id="hk-stock-card" onclick="switchPanel('inventory')" title="Go to Inventory" style="cursor:pointer">
+              <div class="home-kpi-label">Low Stock</div>
+              <div class="home-kpi-val" id="hk-stock" style="color:var(--green)">—</div>
+              <div class="home-kpi-sub" id="hk-stock-sub">items below minimum</div>
+            </div>
+          </div>
+
+          <!-- Quick actions + Recent jobs row -->
+          <div style="display:grid;grid-template-columns:200px 1fr;gap:12px;padding:12px 20px">
+
+            <!-- Quick actions -->
+            <div class="card" style="display:flex;flex-direction:column;gap:8px">
+              <div class="card-title">Quick Actions</div>
+              <button class="btn btn-primary" onclick="switchPanel('intake')">＋ New Job</button>
+              <button class="btn btn-outline" onclick="switchPanel('intake');setTimeout(()=>document.getElementById('pdf-drop')?.click(),100)">📄 Import PDF</button>
+              <button class="btn btn-outline" onclick="switchPanel('completion');setTimeout(()=>document.getElementById('json-file')?.click(),100)">📲 Import Completed</button>
+              <button class="btn btn-ghost" onclick="switchPanel('board')">▦ Job Board</button>
+            </div>
+
+            <!-- Recent completed jobs -->
+            <div class="card">
+              <div class="card-title">Recent Activity</div>
+              <div class="tbl-wrap" style="max-height:280px;overflow-y:auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Address</th>
+                      <th>Tech</th>
+                      <th style="text-align:right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="home-recent-tbody">
+                    <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══════════ PANEL: JOB BOARD ══════════ -->
-        <div class="panel active" id="panel-board">
+        <div class="panel" id="panel-board">
           <div class="sec-header">
             <div class="sec-title">Job Board</div>
             <div class="sec-sub" id="board-date-label">Today's route</div>
@@ -2582,6 +2676,7 @@
         const navEl = document.querySelector(`[data-panel="${name}"]`);
         if (navEl) navEl.classList.add("active");
         document.getElementById("panel-" + name)?.classList.add("active");
+        if (name === "home") loadHomePanel();
         if (name === "completion") populateCompletionTechSelect();
         if (name === "export") renderExportPanel();
         if (name === "inventory") loadInventoryPanel();
@@ -4137,9 +4232,10 @@
       // INIT
       // ═══════════════════════════════════════
       load(); // Cargar desde localStorage (inmediato)
-      setBoardDate("today"); // Default filter = today; also triggers renderBoard
+      setBoardDate("today");
       updateStats();
       renderTechs();
+      switchPanel("home"); // Start on Home dashboard
 
       // Intentar hidratar desde la DB en segundo plano
       loadFromServer().then((fromServer) => {
@@ -5569,6 +5665,82 @@
           }).join("");
         } catch (e) {
           tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red);text-align:center;padding:24px">Error loading payments. Is server.js running?</td></tr>`;
+        }
+      }
+
+      // ═══════════════════════════════════════
+      // HOME PANEL
+      // ═══════════════════════════════════════
+      async function loadHomePanel() {
+        // Board stats (in-memory, instant)
+        const todayStr = _todayStr();
+        const todayJobs = jobs.filter(j => (j.routeDate || "").slice(0,10) === todayStr);
+        const done  = todayJobs.filter(j => j.status === "done").length;
+        const total = todayJobs.length;
+        document.getElementById("hk-board").textContent = total;
+        document.getElementById("hk-board-sub").textContent =
+          total ? `${done} done · ${total - done} remaining` : "No jobs today";
+
+        // Header date
+        const sub = document.getElementById("home-date-sub");
+        if (sub) sub.textContent = new Date().toLocaleDateString("en-US",
+          { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+        // DB stats
+        try {
+          const res = await fetch(API_BASE + "/stats/home");
+          if (!res.ok) throw new Error();
+          const d = await res.json();
+
+          // Revenue
+          document.getElementById("hk-revenue").textContent =
+            "$" + parseFloat(d.weekRevenue).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+          document.getElementById("hk-revenue-sub").textContent =
+            `${d.weekJobs} jobs this week`;
+
+          // Top tech
+          if (d.topTech) {
+            document.getElementById("hk-tech").textContent = d.topTech.technician;
+            document.getElementById("hk-tech-sub").textContent = `${d.topTech.job_count} jobs this week`;
+          } else {
+            document.getElementById("hk-tech").textContent = "—";
+            document.getElementById("hk-tech-sub").textContent = "No data yet";
+          }
+
+          // Low stock
+          const stockEl    = document.getElementById("hk-stock");
+          const stockCard  = document.getElementById("hk-stock-card");
+          const stockCount = d.lowStockCount || 0;
+          stockEl.textContent = stockCount;
+          stockEl.style.color = stockCount > 0 ? "var(--red)" : "var(--green)";
+          if (stockCard) stockCard.style.borderColor = stockCount > 0 ? "var(--red-dim)" : "";
+          document.getElementById("hk-stock-sub").textContent =
+            stockCount > 0 ? "⚠ needs restocking" : "all items OK";
+
+          // Recent jobs table
+          const tbody = document.getElementById("home-recent-tbody");
+          if (!d.recentJobs.length) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">No completed jobs yet</td></tr>`;
+          } else {
+            tbody.innerHTML = d.recentJobs.map(j => {
+              const dateStr = j.date
+                ? new Date(j.date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})
+                : "—";
+              return `<tr style="cursor:pointer" onclick="openPropertySearch('${esc(j.address||"")}')">
+                <td class="dim">${dateStr}</td>
+                <td class="bright" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(j.address||"—")}</td>
+                <td style="color:var(--purple)">${esc(j.technician||"—")}</td>
+                <td style="text-align:right;color:var(--green)">$${parseFloat(j.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+              </tr>`;
+            }).join("");
+          }
+        } catch(e) {
+          // Server offline — show what we can from memory
+          document.getElementById("hk-revenue").textContent = "—";
+          document.getElementById("hk-tech").textContent = "—";
+          document.getElementById("hk-stock").textContent = "—";
+          document.getElementById("home-recent-tbody").innerHTML =
+            `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Server offline — showing board data only</td></tr>`;
         }
       }
 

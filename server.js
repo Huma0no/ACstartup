@@ -619,7 +619,56 @@ app.delete("/api/dispatch/jobs", (req, res) => {
   });
 });
 
-// 14. GUARDAR REGISTRO DESDE DISPATCH — un job completado → history
+// 14. HOME DASHBOARD — todo en un solo fetch
+app.get("/api/stats/home", (req, res) => {
+  const out = {};
+  let pending = 4;
+  const done = (err) => { if (err) console.error(err); if (--pending === 0) res.json(out); };
+
+  // Week summary
+  db.get(
+    `SELECT COUNT(DISTINCT j.id) AS job_count,
+            COALESCE(SUM(ji.price * ji.quantity), 0) AS revenue
+     FROM jobs j LEFT JOIN job_items ji ON ji.job_id = j.id AND ji.category != 'Refrigerant'
+     WHERE j.date >= date('now', '-7 days')`,
+    [], (err, row) => {
+      out.weekJobs    = err ? 0 : row.job_count;
+      out.weekRevenue = err ? 0 : parseFloat(row.revenue).toFixed(2);
+      done(err);
+    }
+  );
+
+  // Low stock count
+  db.get(`SELECT COUNT(*) AS count FROM inventory WHERE quantity <= min_threshold`, [], (err, row) => {
+    out.lowStockCount = err ? 0 : row.count;
+    done(err);
+  });
+
+  // Last 5 completed jobs
+  db.all(
+    `SELECT j.id, j.address, j.date, j.technician, j.subdivision,
+            COALESCE(SUM(ji.price * ji.quantity), 0) AS total
+     FROM jobs j LEFT JOIN job_items ji ON ji.job_id = j.id
+     GROUP BY j.id ORDER BY j.created_at DESC LIMIT 5`,
+    [], (err, rows) => {
+      out.recentJobs = err ? [] : rows.map(r => ({ ...r, total: parseFloat(r.total).toFixed(2) }));
+      done(err);
+    }
+  );
+
+  // Top tech this week
+  db.get(
+    `SELECT technician, COUNT(*) AS job_count
+     FROM jobs WHERE date >= date('now', '-7 days') AND technician != '' AND technician IS NOT NULL
+     GROUP BY technician ORDER BY job_count DESC LIMIT 1`,
+    [], (err, row) => {
+      out.topTech = err || !row ? null : row;
+      done(err);
+    }
+  );
+});
+
+// 14b. GUARDAR REGISTRO DESDE DISPATCH — un job completado → history
 app.post("/api/jobs/save-record", (req, res) => {
   const {
     address, date, technician, notes,
