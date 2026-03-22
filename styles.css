@@ -3681,6 +3681,35 @@ html[data-theme="darkMode"] .ts-severity-badge.ts-critical { background: rgba(25
   padding: 10px 0;
 }
 
+/* Generic mode badge */
+.ts-generic-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255, 214, 10, 0.07);
+  border: 1px solid rgba(255, 214, 10, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 6px;
+}
+.ts-generic-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.ts-generic-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffd60a;
+}
+.ts-generic-sub {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
 
 /* ── Photo Preset Groups (Gas / Electric expandable) ── */
 .photo-preset-group {

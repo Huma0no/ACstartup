@@ -139,8 +139,9 @@ function renderJobSection() {
   const jobs = getJobs();
 
   if (jobs.length === 0) {
-    container.innerHTML = `<p class="ts-no-jobs">Sin jobs registrados.<br>Agrega jobs en la pestaña Jobs primero.</p>`;
-    el.symptomSection().classList.add("hidden");
+    // No jobs — show generic mode badge and allow troubleshooting anyway
+    container.appendChild(buildGenericModeBadge("No jobs registered"));
+    el.symptomSection().classList.remove("hidden");
     return;
   }
 
@@ -158,9 +159,10 @@ function renderJobSection() {
 
     el.symptomSection().classList.remove("hidden");
   } else {
-    // No job selected → show picker inline
+    // Jobs exist but none selected — show picker + generic mode option
     container.appendChild(buildJobPicker(jobs));
-    el.symptomSection().classList.add("hidden");
+    container.appendChild(buildGenericModeBadge("Or continue without selecting a job"));
+    el.symptomSection().classList.remove("hidden");
   }
 }
 
@@ -231,6 +233,19 @@ function buildActiveJobCard(job) {
   }
 
   return card;
+}
+
+function buildGenericModeBadge(subtitle) {
+  const badge = document.createElement("div");
+  badge.className = "ts-generic-badge";
+  badge.innerHTML = `
+    <span class="ts-generic-icon">⚡</span>
+    <div>
+      <div class="ts-generic-title">Generic Mode</div>
+      <div class="ts-generic-sub">${subtitle} — diagnosis will not be equipment-specific</div>
+    </div>
+  `;
+  return badge;
 }
 
 function buildJobPicker(jobs) {
