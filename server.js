@@ -367,13 +367,20 @@ app.get("/api/inventory", (req, res) => {
   );
 });
 
-// 4. BUSQUEDA DE TRABAJOS
+// 4. BUSQUEDA DE TRABAJOS — address, tech, notes, subdivision, builder
 app.get("/api/jobs/search", (req, res) => {
   const query = req.query.q;
   if (!query) return res.json([]);
 
-  const sql = `SELECT * FROM jobs WHERE address LIKE ? ORDER BY date DESC LIMIT 20`;
-  const params = [`%${query}%`];
+  const sql = `
+    SELECT * FROM jobs
+    WHERE address    LIKE ?
+       OR technician LIKE ?
+       OR notes      LIKE ?
+       OR subdivision LIKE ?
+       OR builder    LIKE ?
+    ORDER BY date DESC LIMIT 25`;
+  const params = Array(5).fill(`%${query}%`);
 
   db.all(sql, params, (err, rows) => {
     if (err) return res.status(400).json({ error: err.message });

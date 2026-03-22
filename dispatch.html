@@ -413,6 +413,108 @@
         color: var(--amber);
       }
 
+      /* ═══ GLOBAL SEARCH ═══ */
+      .gs-wrap {
+        position: relative;
+        flex: 1;
+        max-width: 340px;
+        margin: 0 16px;
+      }
+      .gs-input-row {
+        display: flex;
+        align-items: center;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 4px;
+        padding: 0 8px;
+        gap: 6px;
+        transition: border-color .15s;
+      }
+      .gs-wrap:focus-within .gs-input-row { border-color: var(--amber-dim); }
+      .gs-icon { color: var(--text-dim); font-size: 14px; pointer-events: none; }
+      .gs-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-bright);
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 6px 0;
+      }
+      .gs-input::placeholder { color: var(--text-dim); }
+      .gs-clear {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+        line-height: 1;
+      }
+      .gs-clear:hover { color: var(--text); }
+      .gs-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0; right: 0;
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 4px;
+        z-index: 1000;
+        max-height: 440px;
+        overflow-y: auto;
+        box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      }
+      .gs-group-label {
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        padding: 8px 12px 4px;
+        border-top: 1px solid var(--border);
+      }
+      .gs-group-label:first-child { border-top: none; }
+      .gs-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+        transition: background .1s;
+      }
+      .gs-item:last-child { border-bottom: none; }
+      .gs-item:hover, .gs-item.active { background: var(--bg3); }
+      .gs-item-icon { font-size: 14px; flex-shrink: 0; }
+      .gs-item-main { flex: 1; overflow: hidden; }
+      .gs-item-title {
+        font-size: 12px;
+        color: var(--text-bright);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .gs-item-sub {
+        font-size: 10px;
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 1px;
+      }
+      .gs-item-tag {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      .gs-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+
       /* ═══ NAV BADGE ═══ */
       .nav-badge {
         margin-left: auto;
@@ -1336,6 +1438,23 @@
       <header class="topbar">
         <div class="topbar-logo">HVAC <span>Dispatch</span></div>
         <div class="topbar-date" id="topbar-date"></div>
+
+        <!-- Global Search -->
+        <div class="gs-wrap" id="gs-wrap">
+          <div class="gs-input-row">
+            <span class="gs-icon">⌕</span>
+            <input type="text" class="gs-input" id="gs-input"
+              placeholder="Search jobs, address, tech… ⌘K"
+              autocomplete="off"
+              oninput="gsOnInput()"
+              onkeydown="gsOnKeydown(event)"
+              onfocus="gsOnFocus()"
+            />
+            <button class="gs-clear" id="gs-clear" onclick="gsClear()" style="display:none">✕</button>
+          </div>
+          <div class="gs-dropdown" id="gs-dropdown" style="display:none"></div>
+        </div>
+
         <div class="topbar-stats">
           <div class="tstat" style="display:flex;align-items:center;gap:5px;cursor:default" title="Server connection status" onclick="checkServerStatus()">
             <span class="pulse checking" id="server-dot"></span>
@@ -5459,6 +5578,164 @@
           btn.textContent = "💾 Save to History";
         }
       }
+
+      // ═══════════════════════════════════════
+      // GLOBAL SEARCH
+      // ═══════════════════════════════════════
+      let _gsTimer    = null;
+      let _gsResults  = []; // flat list of result objects for keyboard nav
+      let _gsActive   = -1; // active index for keyboard nav
+
+      function gsOpen() {
+        const inp = document.getElementById("gs-input");
+        if (inp) { inp.focus(); inp.select(); }
+      }
+
+      function gsClear() {
+        document.getElementById("gs-input").value = "";
+        document.getElementById("gs-clear").style.display = "none";
+        gsCloseDropdown();
+      }
+
+      function gsCloseDropdown() {
+        document.getElementById("gs-dropdown").style.display = "none";
+        _gsResults = [];
+        _gsActive  = -1;
+      }
+
+      function gsOnFocus() {
+        const val = document.getElementById("gs-input").value.trim();
+        if (val.length >= 2) gsRunSearch(val);
+      }
+
+      function gsOnInput() {
+        const val = document.getElementById("gs-input").value.trim();
+        document.getElementById("gs-clear").style.display = val ? "block" : "none";
+        clearTimeout(_gsTimer);
+        if (val.length < 2) { gsCloseDropdown(); return; }
+        _gsTimer = setTimeout(() => gsRunSearch(val), 250);
+      }
+
+      function gsOnKeydown(e) {
+        if (e.key === "Escape") { gsClear(); return; }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          _gsActive = Math.min(_gsActive + 1, _gsResults.length - 1);
+          gsHighlight();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          _gsActive = Math.max(_gsActive - 1, 0);
+          gsHighlight();
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (_gsActive >= 0 && _gsResults[_gsActive]) {
+            gsSelect(_gsResults[_gsActive]);
+          }
+        }
+      }
+
+      function gsHighlight() {
+        document.querySelectorAll(".gs-item").forEach((el, i) => {
+          el.classList.toggle("active", i === _gsActive);
+          if (i === _gsActive) el.scrollIntoView({ block: "nearest" });
+        });
+      }
+
+      async function gsRunSearch(q) {
+        const dropdown = document.getElementById("gs-dropdown");
+        dropdown.innerHTML = `<div class="gs-empty">Searching...</div>`;
+        dropdown.style.display = "block";
+        _gsResults = [];
+        _gsActive  = -1;
+
+        // 1. Board jobs (in-memory, instant)
+        const qLow = q.toLowerCase();
+        const boardMatches = jobs.filter(j =>
+          [j.address, j.orderNumber, j.subdivision, j.builder, j.serviceType, j.contactName]
+            .some(f => f && f.toLowerCase().includes(qLow))
+        ).slice(0, 8);
+
+        // 2. History records (from DB)
+        let histMatches = [];
+        try {
+          const res = await fetch(API_BASE + "/jobs/search?q=" + encodeURIComponent(q));
+          if (res.ok) histMatches = await res.json();
+        } catch(e) {}
+
+        // Build flat results list
+        _gsResults = [
+          ...boardMatches.map(j => ({ type: "board", data: j })),
+          ...histMatches.map(j => ({ type: "history", data: j })),
+        ];
+
+        if (!_gsResults.length) {
+          dropdown.innerHTML = `<div class="gs-empty">No results for "<strong>${esc(q)}</strong>"</div>`;
+          return;
+        }
+
+        let html = "";
+
+        if (boardMatches.length) {
+          const statusColors = { pending:"var(--amber)", assigned:"var(--ice)", progress:"var(--purple)", done:"var(--green)", cancelled:"var(--text-dim)" };
+          html += `<div class="gs-group-label">On Board (${boardMatches.length})</div>`;
+          html += boardMatches.map((j, i) => {
+            const color = statusColors[j.status] || "var(--text-dim)";
+            return `<div class="gs-item" data-idx="${i}" onclick="gsSelect(_gsResults[${i}])">
+              <span class="gs-item-icon">▦</span>
+              <div class="gs-item-main">
+                <div class="gs-item-title">${esc(j.address || "—")}</div>
+                <div class="gs-item-sub">${esc(j.orderNumber ? "#"+j.orderNumber+" · " : "")}${esc(j.subdivision || "")}${j.builder ? " · "+esc(j.builder) : ""}</div>
+              </div>
+              <span class="gs-item-tag" style="background:transparent;border:1px solid ${color};color:${color}">${j.status||""}</span>
+            </div>`;
+          }).join("");
+        }
+
+        if (histMatches.length) {
+          const offset = boardMatches.length;
+          html += `<div class="gs-group-label">History (${histMatches.length})</div>`;
+          html += histMatches.map((j, i) => {
+            const dateStr = j.date
+              ? new Date(j.date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+              : "—";
+            return `<div class="gs-item" data-idx="${offset+i}" onclick="gsSelect(_gsResults[${offset+i}])">
+              <span class="gs-item-icon">📋</span>
+              <div class="gs-item-main">
+                <div class="gs-item-title">${esc(j.address || "—")}</div>
+                <div class="gs-item-sub">${dateStr}${j.technician ? " · "+esc(j.technician) : ""}${j.notes ? " · "+esc(j.notes).substring(0,40) : ""}</div>
+              </div>
+              <span class="gs-item-tag" style="color:var(--green)">$${parseFloat(j.total_price||0).toFixed(0)}</span>
+            </div>`;
+          }).join("");
+        }
+
+        dropdown.innerHTML = html;
+      }
+
+      function gsSelect(result) {
+        gsClear();
+        if (result.type === "board") {
+          switchPanel("board");
+          setTimeout(() => openJob(result.data.id), 50);
+        } else {
+          openPropertySearch(result.data.address);
+        }
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (e) => {
+        if (!document.getElementById("gs-wrap")?.contains(e.target)) {
+          gsCloseDropdown();
+        }
+      });
+
+      // ⌘K / Ctrl+K to focus search
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+          e.preventDefault();
+          gsOpen();
+        }
+      });
 
       // ═══════════════════════════════════════
       // REPORTS PANEL
