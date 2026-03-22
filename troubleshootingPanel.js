@@ -408,6 +408,21 @@ function renderResults(result) {
   el.claudeSection().classList.remove("hidden");
   el.claudeResponse().textContent = "";
   el.claudeResponse().classList.add("hidden");
+  refreshDrawerProviderStatus();
+}
+
+function refreshDrawerProviderStatus() {
+  const p      = getActiveProvider();
+  const hasKey = hasProviderKey(p.id);
+  const bar    = document.getElementById("ts-provider-status-bar");
+  if (!bar) return;
+  bar.style.setProperty("--pc", p.color);
+  bar.innerHTML = hasKey
+    ? `<span style="color:var(--pc)">${p.icon} ${p.label}</span> <span style="color:#30d158">✓ Ready</span>`
+    : `<span style="color:var(--pc)">${p.icon} ${p.label}</span> <span style="color:#ff9f0a">⚠ No key</span>
+       <button onclick="document.getElementById('ai-settings-modal').style.display='flex'"
+         style="background:none;border:none;font-size:10px;color:inherit;opacity:0.6;cursor:pointer;
+                text-decoration:underline;margin-left:4px">Configure →</button>`;
 }
 
 // ─────────────────────────────────────────────
@@ -632,6 +647,7 @@ function init() {
 
   el.resetBtn()?.addEventListener("click", resetToSymptomSelection);
 
+  initAISettingsModal();
   renderProviderSelector();
   selectProvider(getActiveProvider().id); // init button label + note
 
@@ -652,6 +668,101 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
+}
+
+// ─────────────────────────────────────────────
+// AI SETTINGS MODAL (header button)
+// ─────────────────────────────────────────────
+function initAISettingsModal() {
+  const modal    = document.getElementById("ai-settings-modal");
+  const openBtn  = document.getElementById("btn-ai-settings");
+  const closeBtn = document.getElementById("ai-settings-close");
+  const mainRow  = document.getElementById("ai-settings-main-row");
+  const extRow   = document.getElementById("ai-settings-ext-row");
+  const moreBtn  = document.getElementById("ai-settings-more");
+  const keyInput = document.getElementById("ai-settings-key-input");
+  const saveBtn  = document.getElementById("ai-settings-save");
+  const clearBtn = document.getElementById("ai-settings-clear");
+  const status   = document.getElementById("ai-settings-status");
+
+  if (!modal || !openBtn) return;
+
+  // Build provider chips
+  const makeChip = (p) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "ts-provider-chip";
+    chip.dataset.provider = p.id;
+    chip.style.setProperty("--pc", p.color);
+    chip.innerHTML = `<span class="ts-provider-icon">${p.icon}</span>${p.label}`;
+    chip.addEventListener("click", () => refreshSettingsModal(p.id));
+    return chip;
+  };
+
+  MAIN_PROVIDERS.forEach(p => mainRow?.appendChild(makeChip(p)));
+  EXTENDED_PROVIDERS.forEach(p => extRow?.appendChild(makeChip(p)));
+
+  moreBtn?.addEventListener("click", () => {
+    const hidden = extRow.classList.toggle("hidden");
+    moreBtn.textContent = hidden ? "More ▾" : "Less ▴";
+  });
+
+  function refreshSettingsModal(providerId) {
+    setActiveProvider(providerId);
+    // Sync chips in this modal
+    modal.querySelectorAll(".ts-provider-chip").forEach(c => {
+      c.classList.toggle("active", c.dataset.provider === providerId);
+    });
+    // Sync chips in the drawer too
+    document.querySelectorAll("#ts-provider-main .ts-provider-chip, #ts-provider-extended .ts-provider-chip")
+      .forEach(c => c.classList.toggle("active", c.dataset.provider === providerId));
+
+    const p   = MAIN_PROVIDERS.concat(EXTENDED_PROVIDERS).find(x => x.id === providerId);
+    const key = getProviderKey(providerId);
+    keyInput.value = key ? "••••••••••••••••" : "";
+    keyInput.placeholder = p?.keyPlaceholder || "API Key...";
+
+    const hasKey = hasProviderKey(providerId);
+    status.innerHTML = hasKey
+      ? `✓ Key saved for <strong>${p?.label}</strong> &nbsp;·&nbsp; <a href="${p?.keyHintUrl}" target="_blank" style="color:inherit;opacity:0.7">${p?.keyHint}</a>`
+      : `No key saved &nbsp;·&nbsp; <a href="${p?.keyHintUrl}" target="_blank" style="color:inherit;opacity:0.7">${p?.keyHint}</a>`;
+
+    // Update drawer button label
+    selectProvider(providerId);
+  }
+
+  saveBtn?.addEventListener("click", () => {
+    const val = keyInput.value.trim();
+    if (!val || val.startsWith("•")) return;
+    const p = getActiveProvider();
+    saveProviderKey(p.id, val);
+    refreshSettingsModal(p.id);
+    showToastLocal(`${p.label} key saved ✓`);
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    const p = getActiveProvider();
+    clearProviderKey(p.id);
+    keyInput.value = "";
+    refreshSettingsModal(p.id);
+    showToastLocal(`${p.label} key cleared`);
+  });
+
+  keyInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveBtn.click();
+  });
+
+  openBtn.addEventListener("click", () => {
+    refreshSettingsModal(getActiveProvider().id);
+    modal.style.display = "flex";
+    setTimeout(() => keyInput?.focus(), 100);
+  });
+
+  closeBtn?.addEventListener("click", () => modal.style.display = "none");
+  modal.addEventListener("click", e => { if (e.target === modal) modal.style.display = "none"; });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && modal.style.display === "flex") modal.style.display = "none";
+  });
 }
 
 // ─────────────────────────────────────────────

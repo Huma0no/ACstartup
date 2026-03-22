@@ -31,12 +31,60 @@
           </button>
           <button
             type="button"
+            id="btn-ai-settings"
+            class="btn btn-icon"
+            title="AI Assistant Settings"
+          >
+            🤖
+          </button>
+          <button
+            type="button"
             id="btn-open-troubleshoot"
             class="btn btn-icon"
             title="Troubleshooting Engine"
           >
             🔧
           </button>
+        </div>
+      </div>
+
+      <!-- AI SETTINGS MODAL -->
+      <div id="ai-settings-modal" style="display:none;position:fixed;inset:0;z-index:9000;
+           background:rgba(0,0,0,0.55);align-items:center;justify-content:center;
+           padding:16px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)">
+        <div style="background:var(--container-bg,#fff);border:1px solid var(--border-color,#ddd);
+                    border-radius:14px;width:100%;max-width:400px;
+                    box-shadow:0 24px 64px rgba(0,0,0,0.5);overflow:hidden">
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:14px 18px;border-bottom:1px solid var(--border-color,#eee);
+                      background:rgba(56,190,255,0.04)">
+            <div style="font-weight:700;font-size:14px;color:var(--text-color,#111)">🤖 AI Assistant</div>
+            <button id="ai-settings-close" style="background:none;border:none;font-size:18px;
+                    cursor:pointer;color:var(--text-color,#555);padding:2px 6px;border-radius:4px">✕</button>
+          </div>
+          <!-- Body -->
+          <div style="padding:18px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                        color:var(--text-muted,#888);margin-bottom:10px">Select Provider</div>
+            <div id="ai-settings-main-row" class="ts-provider-row"></div>
+            <div id="ai-settings-ext-row"  class="ts-provider-row ts-provider-row hidden" style="margin-top:4px"></div>
+            <button id="ai-settings-more" class="ts-provider-more-btn" style="margin-bottom:12px">More ▾</button>
+
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                        color:var(--text-muted,#888);margin-bottom:8px">API Key</div>
+            <input id="ai-settings-key-input" type="password" autocomplete="off"
+              style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;
+                     font-size:13px;border:1px solid var(--input-border-light,#ccc);
+                     background:var(--input-bg,#fff);color:var(--text-color,#111);
+                     margin-bottom:8px"
+              placeholder="API Key..."/>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button id="ai-settings-save" class="btn" style="flex:1;font-size:12px;padding:8px">Save Key</button>
+              <button id="ai-settings-clear" class="btn" style="font-size:12px;padding:8px 12px">Clear</button>
+            </div>
+            <div id="ai-settings-status" style="font-size:11px;color:var(--text-muted,#888);line-height:1.5"></div>
+          </div>
         </div>
       </div>
 
@@ -1296,6 +1344,11 @@
             <div class="ts-claude-title">✨ Level 2 — AI Assistant</div>
             <button type="button" id="ts-api-key-toggle" class="ts-key-btn" title="API Key">🔑</button>
           </div>
+
+          <!-- Active provider status -->
+          <div id="ts-provider-status-bar" style="font-size:11px;display:flex;align-items:center;
+               gap:6px;margin-bottom:8px;padding:5px 8px;border-radius:6px;
+               background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"></div>
 
           <!-- Provider selector -->
           <div id="ts-provider-selector">
