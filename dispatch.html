@@ -3086,7 +3086,7 @@
         onclick="event.stopPropagation();openPropertySearch('${esc(j.address || "")}')">🏠 History</button>
       ${j.status === "done"
         ? j.savedToHistory
-          ? `<span style="font-size:10px;color:var(--green);padding:2px 6px;border:1px solid var(--green-dim);border-radius:3px">✓ Saved #${j.savedToHistory}</span>`
+          ? `<span style="font-size:10px;color:var(--green);padding:2px 6px;border:1px solid var(--green-dim);border-radius:3px">✓ Saved${j.savedToHistory !== "imported" ? " #"+j.savedToHistory : ""}</span>`
           : `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px;border-color:var(--amber-dim);color:var(--amber)"
                onclick="event.stopPropagation();openSaveRecord('${j.id}')">📋 Save Record</button>`
         : ""}
@@ -3877,18 +3877,12 @@
           const ss = j.savedState;
           if (!ss) return;
 
-          // Find matching dispatch job by address
-          const dispatchJob = jobs.find(
-            (dj) =>
-              (dj.address || "")
-                .toUpperCase()
-                .includes(
-                  (j.address || "").toUpperCase().split(" ")[1] || ""
-                ) ||
-              (j.address || "")
-                .toUpperCase()
-                .includes((dj.address || "").toUpperCase().split(" ")[1] || "")
-          );
+          // Find matching dispatch job by address (exact first, then substring)
+          const addrA = (j.address || "").toUpperCase().trim();
+          const dispatchJob = jobs.find((dj) => {
+            const addrB = (dj.address || "").toUpperCase().trim();
+            return addrB === addrA || addrB.includes(addrA) || addrA.includes(addrB);
+          });
           const orderNum = dispatchJob?.orderNumber
             ? `#${dispatchJob.orderNumber} · `
             : "";
@@ -3954,11 +3948,11 @@
 
         // Mark matched jobs as done
         techJobs.forEach((j) => {
-          const dj = jobs.find((dj) =>
-            (dj.address || "")
-              .toUpperCase()
-              .includes((j.address || "").toUpperCase().split(" ")[1] || "")
-          );
+          const addrNorm = (j.address || "").toUpperCase().trim();
+          const dj = jobs.find((dj) => {
+            const djNorm = (dj.address || "").toUpperCase().trim();
+            return djNorm === addrNorm || djNorm.includes(addrNorm) || addrNorm.includes(djNorm);
+          });
           if (dj && dj.status !== "cancelled") {
             dj.status = "done";
           }
@@ -4022,6 +4016,22 @@
           if (status) status.innerHTML =
             `<div style="color:var(--green);font-size:12px;padding:4px 0">${msg}</div>`;
           showToast(msg);
+
+          // Mark matching board jobs as savedToHistory
+          let boardUpdated = false;
+          jobsWithTech.forEach(importedJob => {
+            const addrNorm = (importedJob.address || "").toUpperCase().trim();
+            const match = jobs.find(j =>
+              (j.address || "").toUpperCase().trim() === addrNorm ||
+              (j.address || "").toUpperCase().includes(addrNorm.split(" ")[1] || "____")
+            );
+            if (match && !match.savedToHistory) {
+              match.savedToHistory = "imported";
+              match.status = "done";
+              boardUpdated = true;
+            }
+          });
+          if (boardUpdated) { save(); renderBoard(); updateStats(); }
 
           // Refresh low stock badge since import may deduct inventory
           checkLowStock();
