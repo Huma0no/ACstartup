@@ -1970,6 +1970,23 @@
               </div>
             </div>
           </div>
+          <!-- Technician selector -->
+          <div class="card" style="margin-top:0">
+            <div class="card-title">Who completed this route?</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select id="completion-tech-select" style="flex:1;min-width:160px"
+                onchange="completionTechChanged()">
+                <option value="">— Select technician —</option>
+              </select>
+              <span style="color:var(--text-dim);font-size:11px">or</span>
+              <input type="text" id="completion-tech-input"
+                placeholder="Type name manually..."
+                style="flex:1;min-width:160px"
+                oninput="completionTechChanged()" />
+            </div>
+            <div id="completion-tech-preview" style="margin-top:6px;font-size:11px;color:var(--text-dim)"></div>
+          </div>
+
           <div id="completion-output">
             <div class="empty">
               <div class="empty-icon">✓</div>
@@ -2565,6 +2582,7 @@
         const navEl = document.querySelector(`[data-panel="${name}"]`);
         if (navEl) navEl.classList.add("active");
         document.getElementById("panel-" + name)?.classList.add("active");
+        if (name === "completion") populateCompletionTechSelect();
         if (name === "export") renderExportPanel();
         if (name === "inventory") loadInventoryPanel();
         if (name === "history") loadHistoryPanel();
@@ -3801,6 +3819,39 @@
 
       let _lastImportedJobs = []; // keep reference for DB save
 
+      // Populate tech selector from techs array
+      function populateCompletionTechSelect() {
+        const sel = document.getElementById("completion-tech-select");
+        if (!sel) return;
+        // Keep first placeholder option, rebuild the rest
+        sel.innerHTML = '<option value="">— Select technician —</option>';
+        techs.forEach(t => {
+          const opt = document.createElement("option");
+          opt.value = t.name;
+          opt.textContent = t.name;
+          sel.appendChild(opt);
+        });
+      }
+
+      function completionTechChanged() {
+        const sel   = document.getElementById("completion-tech-select");
+        const inp   = document.getElementById("completion-tech-input");
+        const prev  = document.getElementById("completion-tech-preview");
+        // Manual input takes priority if filled
+        const name  = inp?.value.trim() || sel?.value || "";
+        if (prev) prev.textContent = name ? `✓ Will be saved as: ${name}` : "";
+        // If user chose from select, clear manual input
+        if (sel?.value && !inp?.value.trim()) {
+          if (inp) inp.value = "";
+        }
+      }
+
+      function getCompletionTech() {
+        const inp = document.getElementById("completion-tech-input");
+        const sel = document.getElementById("completion-tech-select");
+        return inp?.value.trim() || sel?.value || "";
+      }
+
       function handleJSONImport(file) {
         if (!file) return;
         const reader = new FileReader();
@@ -3938,23 +3989,36 @@
           return;
         }
 
+        const techName = getCompletionTech();
+        if (!techName) {
+          alert("Please select or type the technician's name before saving.");
+          document.getElementById("completion-tech-select")?.focus();
+          return;
+        }
+
         const btn    = document.getElementById("save-db-btn");
         const status = document.getElementById("save-db-status");
         btn.disabled    = true;
         btn.textContent = "Saving...";
         if (status) status.innerHTML = "";
 
+        // Inject technician into every job before sending
+        const jobsWithTech = _lastImportedJobs.map(j => ({
+          ...j,
+          technician: techName,
+        }));
+
         try {
           const res = await fetch(API_BASE + "/import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(_lastImportedJobs),
+            body: JSON.stringify(jobsWithTech),
           });
 
           if (!res.ok) throw new Error("Server error " + res.status);
           const result = await res.json();
 
-          const msg = `✓ ${result.imported} jobs saved to history${result.skipped ? ` · ${result.skipped} already existed` : ""}`;
+          const msg = `✓ ${result.imported} jobs saved · tech: ${techName}${result.skipped ? ` · ${result.skipped} skipped` : ""}`;
           if (status) status.innerHTML =
             `<div style="color:var(--green);font-size:12px;padding:4px 0">${msg}</div>`;
           showToast(msg);
