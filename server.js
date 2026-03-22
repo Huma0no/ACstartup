@@ -619,6 +619,20 @@ app.delete("/api/dispatch/jobs", (req, res) => {
   });
 });
 
+// FACTORY RESET — wipe all tables and re-seed inventory
+app.post("/api/factory-reset", (req, res) => {
+  db.serialize(() => {
+    db.run("DELETE FROM dispatch_jobs");
+    db.run("DELETE FROM job_items");
+    db.run("DELETE FROM jobs");
+    db.run("DELETE FROM inventory", [], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      seedInventory();
+      res.json({ ok: true });
+    });
+  });
+});
+
 // 13b. REFRIGERANT USAGE BY ADDRESS — for restock report
 app.get("/api/reports/refrigerant-usage", (req, res) => {
   const type = (req.query.type || "").trim();

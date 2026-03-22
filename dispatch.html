@@ -1629,6 +1629,18 @@
               </div>
             </div>
           </div>
+
+          <!-- Danger Zone -->
+          <div style="margin:24px 20px 20px;border:1px solid var(--red-dim,#5a1a1a);border-radius:6px;padding:16px 20px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:10px">⚠ Danger Zone</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Factory Reset</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px">Wipe all board jobs, history, inventory and tech list. Cannot be undone.</div>
+              </div>
+              <button class="btn btn-red btn-sm" onclick="openFactoryReset()">🗑 Factory Reset</button>
+            </div>
+          </div>
         </div>
 
         <!-- ══════════ PANEL: JOB BOARD ══════════ -->
@@ -2617,6 +2629,31 @@
           <button type="button" class="btn btn-ghost" onclick="closeRestockModal()">Cancel</button>
           <button type="button" class="btn btn-outline" onclick="rstAutofill()">✎ Auto-fill Report</button>
           <button type="button" class="btn btn-primary" onclick="rstPrint()">🖨 Print</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACTORY RESET MODAL -->
+    <div class="modal-bg" id="factory-reset-modal" role="dialog" aria-modal="true">
+      <div class="modal" style="max-width:400px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">💥</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:6px">Factory Reset</div>
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px">
+          This will permanently delete:<br>
+          <span style="color:var(--text)">All board jobs · All history · All inventory data · All technicians</span><br><br>
+          Inventory will be restored to defaults. <strong style="color:var(--red)">This cannot be undone.</strong>
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:14px;margin-bottom:20px">
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">Type this code to confirm:</div>
+          <div id="fr-code" style="font-size:32px;font-weight:900;letter-spacing:10px;color:var(--red);font-family:monospace"></div>
+        </div>
+        <input id="fr-input" type="text" maxlength="4" placeholder="_ _ _ _"
+          style="text-align:center;font-size:24px;letter-spacing:8px;font-family:monospace;width:120px;padding:10px;background:var(--bg2);border:2px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:16px"
+          oninput="frCheck()"/>
+        <div id="fr-error" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-ghost" onclick="closeFactoryReset()">Cancel</button>
+          <button id="fr-confirm-btn" class="btn btn-red" disabled onclick="frExecute()">💥 Reset Everything</button>
         </div>
       </div>
     </div>
@@ -3989,6 +4026,57 @@
 
       function closeClrModal() {
         document.getElementById("clear-confirm-modal").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      // ── FACTORY RESET ──
+      let _frCode = "";
+
+      function openFactoryReset() {
+        _frCode = String(Math.floor(1000 + Math.random() * 9000));
+        document.getElementById("fr-code").textContent = _frCode;
+        document.getElementById("fr-input").value = "";
+        document.getElementById("fr-error").textContent = "";
+        document.getElementById("fr-confirm-btn").disabled = true;
+        document.getElementById("factory-reset-modal").classList.add("open");
+        document.body.style.overflow = "hidden";
+        setTimeout(() => document.getElementById("fr-input").focus(), 100);
+      }
+
+      function frCheck() {
+        const val = document.getElementById("fr-input").value;
+        const match = val === _frCode;
+        document.getElementById("fr-confirm-btn").disabled = !match;
+        document.getElementById("fr-error").textContent =
+          val.length === 4 && !match ? "Incorrect code — try again" : "";
+      }
+
+      async function frExecute() {
+        if (document.getElementById("fr-input").value !== _frCode) return;
+        const btn = document.getElementById("fr-confirm-btn");
+        btn.disabled = true;
+        btn.textContent = "Resetting...";
+        try {
+          await fetch(API_BASE + "/factory-reset", { method: "POST" });
+        } catch (e) { /* offline fallback below */ }
+        // Wipe localStorage
+        localStorage.removeItem(STORE);
+        localStorage.removeItem(TECH_STORE);
+        localStorage.removeItem(EQ_CUSTOM_KEY);
+        // Reset in-memory state
+        jobs = [];
+        techs = [];
+        save();
+        renderBoard();
+        updateStats();
+        closeFactoryReset();
+        switchPanel("home");
+        showToast("✓ Factory reset complete");
+        setTimeout(loadHomePanel, 400);
+      }
+
+      function closeFactoryReset() {
+        document.getElementById("factory-reset-modal").classList.remove("open");
         document.body.style.overflow = "";
       }
 
@@ -6754,6 +6842,8 @@
           closeSaveRecord();
         else if (document.getElementById("clear-confirm-modal").classList.contains("open"))
           closeClrModal();
+        else if (document.getElementById("factory-reset-modal").classList.contains("open"))
+          closeFactoryReset();
       });
     </script>
 
