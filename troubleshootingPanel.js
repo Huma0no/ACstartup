@@ -614,7 +614,7 @@ function openTstatMenu(e, tstatKey, builder) {
     btn.innerHTML = `<span style="font-size:16px">${icon}</span><span>${label}</span>`;
     btn.onmouseenter = () => btn.style.background = "rgba(56,190,255,0.1)";
     btn.onmouseleave = () => btn.style.background = "transparent";
-    btn.onclick = () => { closeTstatMenu(); action(); };
+    btn.onclick = () => closeTstatMenuThen(action);
     menu.appendChild(btn);
   });
 
@@ -629,8 +629,21 @@ function openTstatMenu(e, tstatKey, builder) {
   setTimeout(() => document.addEventListener("click", closeTstatMenu, { once: true }), 0);
 }
 
+function closeTstatMenuThen(callback) {
+  const menu = document.getElementById("_tstat-menu");
+  if (!menu) { callback(); return; }
+  menu.style.transition = "opacity 0.1s ease, transform 0.1s ease";
+  menu.style.opacity = "0";
+  menu.style.transform = "scale(0.95)";
+  setTimeout(() => { menu.remove(); callback(); }, 110);
+}
+
 function closeTstatMenu() {
-  document.getElementById("_tstat-menu")?.remove();
+  const menu = document.getElementById("_tstat-menu");
+  if (!menu) return;
+  menu.style.transition = "opacity 0.1s ease";
+  menu.style.opacity = "0";
+  setTimeout(() => menu.remove(), 110);
 }
 
 // ─── Wiring modal ───────────────────────────
