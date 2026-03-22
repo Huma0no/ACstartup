@@ -2621,6 +2621,27 @@
       </div>
     </div>
 
+    <!-- CLEAR CONFIRMATION MODAL -->
+    <div class="modal-bg" id="clear-confirm-modal" role="dialog" aria-modal="true">
+      <div class="modal" style="max-width:380px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:6px">Delete All Jobs</div>
+        <div id="clr-desc" style="font-size:13px;color:var(--text-dim);margin-bottom:20px"></div>
+        <div style="background:var(--bg3);border-radius:6px;padding:14px;margin-bottom:20px">
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">Type this code to confirm:</div>
+          <div id="clr-code" style="font-size:32px;font-weight:900;letter-spacing:10px;color:var(--amber);font-family:monospace"></div>
+        </div>
+        <input id="clr-input" type="text" maxlength="4" placeholder="_ _ _ _"
+          style="text-align:center;font-size:24px;letter-spacing:8px;font-family:monospace;width:120px;padding:10px;background:var(--bg2);border:2px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:16px"
+          oninput="clrCheck()"/>
+        <div id="clr-error" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-ghost" onclick="closeClrModal()">Cancel</button>
+          <button id="clr-confirm-btn" class="btn btn-red" disabled onclick="clrExecute()">Delete</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SAVE RECORD MODAL -->
     <div class="modal-bg" id="save-record-modal" role="dialog" aria-modal="true"
          onclick="if(event.target===this)closeSaveRecord()">
@@ -3920,21 +3941,55 @@
         closeModal();
       }
 
+      let _clrCode = "";
+      let _clrScope = null; // "day" | "all"
+
       function clearAllJobs() {
         const filtered = _filteredJobs();
-        const label = _boardDate === "today" ? "today's" : _boardDate === "yesterday" ? "yesterday's" : _boardDate || "all";
-        if (!confirm(`Clear ${label} jobs from the board?`)) return;
-        if (!_boardDate) {
-          // Clear everything
+        const count = filtered.length || jobs.length;
+        _clrScope = _boardDate ? "day" : "all";
+        const label = _boardDate === "today" ? "today's" : _boardDate === "yesterday" ? "yesterday's" : _boardDate ? _boardDate : "ALL";
+        const jobWord = count === 1 ? "job" : "jobs";
+
+        _clrCode = String(Math.floor(1000 + Math.random() * 9000));
+        document.getElementById("clr-code").textContent = _clrCode;
+        document.getElementById("clr-desc").textContent =
+          `This will permanently delete ${count} ${label} ${jobWord} from the board.`;
+        document.getElementById("clr-input").value = "";
+        document.getElementById("clr-error").textContent = "";
+        document.getElementById("clr-confirm-btn").disabled = true;
+        document.getElementById("clear-confirm-modal").classList.add("open");
+        document.body.style.overflow = "hidden";
+        setTimeout(() => document.getElementById("clr-input").focus(), 100);
+      }
+
+      function clrCheck() {
+        const val = document.getElementById("clr-input").value;
+        const match = val === _clrCode;
+        document.getElementById("clr-confirm-btn").disabled = !match;
+        document.getElementById("clr-error").textContent =
+          val.length === 4 && !match ? "Incorrect code — try again" : "";
+      }
+
+      function clrExecute() {
+        if (document.getElementById("clr-input").value !== _clrCode) return;
+        if (_clrScope === "all") {
           jobs = [];
           fetch(API_BASE + "/dispatch/jobs", { method: "DELETE" }).catch(() => {});
         } else {
-          const ids = new Set(filtered.map((j) => j.id));
+          const ids = new Set(_filteredJobs().map((j) => j.id));
           jobs = jobs.filter((j) => !ids.has(j.id));
         }
         save();
         renderBoard();
         updateStats();
+        closeClrModal();
+        showToast("✓ Jobs deleted");
+      }
+
+      function closeClrModal() {
+        document.getElementById("clear-confirm-modal").classList.remove("open");
+        document.body.style.overflow = "";
       }
 
       // ═══════════════════════════════════════
@@ -6697,6 +6752,8 @@
           closeHistDetail();
         else if (document.getElementById("save-record-modal").classList.contains("open"))
           closeSaveRecord();
+        else if (document.getElementById("clear-confirm-modal").classList.contains("open"))
+          closeClrModal();
       });
     </script>
 
