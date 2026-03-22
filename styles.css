@@ -3403,6 +3403,59 @@ html[data-theme="darkMode"] ::-webkit-scrollbar-track {
 }
 
 /* Claude section */
+/* ── Provider selector ── */
+#ts-provider-selector {
+  margin: 8px 0 6px;
+}
+.ts-provider-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.ts-provider-row.hidden { display: none; }
+
+.ts-provider-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ts-provider-chip:hover {
+  border-color: var(--pc, #fff);
+  color: var(--pc, #fff);
+  background: color-mix(in srgb, var(--pc, #fff) 10%, transparent);
+}
+.ts-provider-chip.active {
+  border-color: var(--pc, #fff);
+  color: var(--pc, #fff);
+  background: color-mix(in srgb, var(--pc, #fff) 15%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--pc, #fff) 30%, transparent);
+}
+.ts-provider-icon {
+  font-style: normal;
+  font-size: 12px;
+}
+.ts-provider-more-btn {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+.ts-provider-more-btn:hover { color: rgba(255,255,255,0.7); }
+
 .ts-claude-header {
   display: flex;
   align-items: center;

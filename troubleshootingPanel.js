@@ -13,12 +13,17 @@ import {
   diagnose,
 } from "./troubleshootingEngine.js";
 import {
-  askClaude,
-  saveApiKey,
-  getApiKey,
-  hasApiKey,
-  clearApiKey,
-} from "./claudeAssist.js";
+  MAIN_PROVIDERS,
+  EXTENDED_PROVIDERS,
+  askAI,
+  saveProviderKey,
+  getProviderKey,
+  clearProviderKey,
+  hasProviderKey,
+  getActiveProvider,
+  setActiveProvider,
+} from "./aiProviders.js";
+import { buildUserMessage } from "./claudeAssist.js";
 
 // ─────────────────────────────────────────────
 // DOM REFERENCES
@@ -406,17 +411,78 @@ function renderResults(result) {
 }
 
 // ─────────────────────────────────────────────
+// PROVIDER SELECTOR UI
+// ─────────────────────────────────────────────
+function renderProviderSelector() {
+  const mainRow     = document.getElementById("ts-provider-main");
+  const extRow      = document.getElementById("ts-provider-extended");
+  const moreBtn     = document.getElementById("ts-provider-more");
+  if (!mainRow) return;
+
+  const active = getActiveProvider();
+
+  const makeChip = (p) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "ts-provider-chip" + (p.id === active.id ? " active" : "");
+    chip.dataset.provider = p.id;
+    chip.style.setProperty("--pc", p.color);
+    chip.innerHTML = `<span class="ts-provider-icon">${p.icon}</span>${p.label}`;
+    chip.addEventListener("click", () => selectProvider(p.id));
+    return chip;
+  };
+
+  mainRow.innerHTML = "";
+  MAIN_PROVIDERS.forEach(p => mainRow.appendChild(makeChip(p)));
+
+  extRow.innerHTML = "";
+  EXTENDED_PROVIDERS.forEach(p => extRow.appendChild(makeChip(p)));
+
+  moreBtn?.addEventListener("click", () => {
+    const hidden = extRow.classList.toggle("hidden");
+    moreBtn.textContent = hidden ? "More ▾" : "Less ▴";
+  });
+}
+
+function selectProvider(id) {
+  setActiveProvider(id);
+  // Update chip active states
+  document.querySelectorAll(".ts-provider-chip").forEach(c => {
+    c.classList.toggle("active", c.dataset.provider === id);
+  });
+  // Update key panel placeholder + note
+  const p = getActiveProvider();
+  const input = el.apiKeyInput();
+  const note  = document.getElementById("ts-api-key-note");
+  if (input) {
+    const saved = getProviderKey(id);
+    input.value = saved ? "••••••••••••••••" : "";
+    input.placeholder = p.keyPlaceholder;
+  }
+  if (note) {
+    const hasKey = hasProviderKey(id);
+    note.innerHTML = hasKey
+      ? `✓ Key saved for ${p.label} · <a href="${p.keyHintUrl}" target="_blank" style="color:inherit">${p.keyHint}</a>`
+      : `⚠️ No key saved · <a href="${p.keyHintUrl}" target="_blank" style="color:inherit">${p.keyHint}</a>`;
+  }
+  // Update button label
+  const btnText = el.claudeBtnText();
+  if (btnText) btnText.textContent = `✨ Ask ${p.label}`;
+}
+
+// ─────────────────────────────────────────────
 // API KEY MANAGEMENT UI
 // ─────────────────────────────────────────────
 function toggleApiKeyPanel() {
   const panel = el.apiKeyPanel();
   const isHidden = panel.classList.toggle("hidden");
   if (!isHidden) {
-    const key = getApiKey();
+    const p   = getActiveProvider();
+    const key = getProviderKey(p.id);
     el.apiKeyInput().value = key ? "••••••••••••••••" : "";
     el.apiKeyInput().placeholder = key
-      ? "API key guardada (ingresa nueva para cambiar)"
-      : "sk-ant-api03-...";
+      ? "Key saved — type new key to replace"
+      : p.keyPlaceholder;
     el.apiKeyInput().focus();
   }
 }
@@ -427,13 +493,11 @@ function saveKey() {
     el.apiKeyPanel().classList.add("hidden");
     return;
   }
-  if (!val.startsWith("sk-ant-")) {
-    alert("La API key debe comenzar con 'sk-ant-'");
-    return;
-  }
-  saveApiKey(val);
+  const p = getActiveProvider();
+  saveProviderKey(p.id, val);
   el.apiKeyPanel().classList.add("hidden");
-  showToastLocal("API key guardada ✓");
+  selectProvider(p.id); // refresh note
+  showToastLocal(`${p.label} key saved ✓`);
 }
 
 function showToastLocal(msg) {
@@ -449,25 +513,27 @@ function showToastLocal(msg) {
 }
 
 // ─────────────────────────────────────────────
-// LEVEL 2 — CLAUDE ASSIST
+// LEVEL 2 — AI ASSIST
 // ─────────────────────────────────────────────
 function handleAskClaude() {
   if (isStreaming) return;
 
-  if (!hasApiKey()) {
+  const provider = getActiveProvider();
+
+  if (!hasProviderKey(provider.id)) {
     el.apiKeyPanel().classList.remove("hidden");
     el.apiKeyInput().focus();
     return;
   }
 
   if (!activeSymptom) {
-    showToastLocal("Selecciona un síntoma primero");
+    showToastLocal("Select a symptom first");
     return;
   }
 
   isStreaming = true;
   el.askClaudeBtn().disabled = true;
-  el.claudeBtnText().textContent = "Consultando…";
+  el.claudeBtnText().textContent = "Asking…";
   el.claudeSpinner().classList.remove("hidden");
 
   const responseEl = el.claudeResponse();
@@ -476,17 +542,15 @@ function handleAskClaude() {
 
   const symptomLabel = SYMPTOM_LABELS[activeSymptom] || activeSymptom;
   const detail = activeSymptom === SYMPTOM.FAULT_CODE ? activeFaultCode : "";
-
-  // Include job address in the label for Claude context
   const jobLabel = selectedJob
     ? `${symptomLabel} — ${selectedJob.address}`
     : symptomLabel;
 
-  askClaude({
-    symptomLabel: jobLabel,
-    detail,
-    context:  currentContext,
-    l1Result: currentL1Result,
+  const userMessage = buildUserMessage(jobLabel, detail, currentContext, currentL1Result);
+
+  askAI({
+    providerId: provider.id,
+    userMessage,
     onChunk: (chunk) => {
       responseEl.textContent += chunk;
       responseEl.scrollTop = responseEl.scrollHeight;
@@ -494,13 +558,13 @@ function handleAskClaude() {
     onDone: () => {
       isStreaming = false;
       el.askClaudeBtn().disabled = false;
-      el.claudeBtnText().textContent = "✨ Consultar Claude";
+      el.claudeBtnText().textContent = `✨ Ask ${provider.label}`;
       el.claudeSpinner().classList.add("hidden");
     },
     onError: (err) => {
       isStreaming = false;
       el.askClaudeBtn().disabled = false;
-      el.claudeBtnText().textContent = "✨ Consultar Claude";
+      el.claudeBtnText().textContent = `✨ Ask ${provider.label}`;
       el.claudeSpinner().classList.add("hidden");
       responseEl.textContent = `Error: ${err.message}`;
     },
@@ -568,12 +632,17 @@ function init() {
 
   el.resetBtn()?.addEventListener("click", resetToSymptomSelection);
 
+  renderProviderSelector();
+  selectProvider(getActiveProvider().id); // init button label + note
+
   el.apiKeyToggle()?.addEventListener("click", toggleApiKeyPanel);
   el.saveKeyBtn()?.addEventListener("click", saveKey);
   el.clearKeyBtn()?.addEventListener("click", () => {
-    clearApiKey();
+    const p = getActiveProvider();
+    clearProviderKey(p.id);
     el.apiKeyInput().value = "";
-    showToastLocal("API key eliminada");
+    selectProvider(p.id);
+    showToastLocal(`${p.label} key cleared`);
   });
 
   el.askClaudeBtn()?.addEventListener("click", handleAskClaude);

@@ -54,7 +54,7 @@ Response format:
 Do NOT give generic HVAC advice. Be specific to the equipment context provided.`;
 }
 
-function buildUserMessage(symptomLabel, detail, context, l1Result) {
+export function buildUserMessage(symptomLabel, detail, context, l1Result) {
   const lines = [];
 
   lines.push(`## Situación en Campo`);

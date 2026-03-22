@@ -1293,8 +1293,15 @@
         <!-- SECTION 3: Claude Assist (Level 2) -->
         <div class="ts-section hidden" id="ts-claude-section">
           <div class="ts-claude-header">
-            <div class="ts-claude-title">✨ Nivel 2 — Ask Claude</div>
-            <button type="button" id="ts-api-key-toggle" class="ts-key-btn" title="Configurar API Key">🔑</button>
+            <div class="ts-claude-title">✨ Level 2 — AI Assistant</div>
+            <button type="button" id="ts-api-key-toggle" class="ts-key-btn" title="API Key">🔑</button>
+          </div>
+
+          <!-- Provider selector -->
+          <div id="ts-provider-selector">
+            <div id="ts-provider-main" class="ts-provider-row"></div>
+            <div id="ts-provider-extended" class="ts-provider-row ts-provider-extended hidden"></div>
+            <button type="button" id="ts-provider-more" class="ts-provider-more-btn">More ▾</button>
           </div>
 
           <!-- API key panel (collapsible) -->
@@ -1303,22 +1310,21 @@
               type="password"
               id="ts-api-key-input"
               class="ts-api-key-field"
-              placeholder="sk-ant-api03-..."
+              placeholder="API Key..."
               autocomplete="off"
             />
             <div class="ts-api-key-actions">
-              <button type="button" id="ts-save-key-btn" class="btn">Guardar</button>
-              <button type="button" id="ts-clear-key-btn" class="btn">Limpiar</button>
+              <button type="button" id="ts-save-key-btn" class="btn">Save</button>
+              <button type="button" id="ts-clear-key-btn" class="btn">Clear</button>
             </div>
-            <p class="ts-api-key-note">
-              ⚠️ La API key se guarda en localStorage de este dispositivo.
-              No la compartas en dispositivos públicos.
+            <p class="ts-api-key-note" id="ts-api-key-note">
+              ⚠️ Key stored in localStorage on this device only.
             </p>
           </div>
 
-          <!-- Ask Claude button -->
+          <!-- Ask AI button -->
           <button type="button" id="ts-ask-claude-btn" class="ts-ask-claude-btn">
-            <span id="ts-claude-btn-text">✨ Consultar Claude</span>
+            <span id="ts-claude-btn-text">✨ Ask AI</span>
             <span id="ts-claude-spinner" class="ts-spinner hidden"></span>
           </button>
 
