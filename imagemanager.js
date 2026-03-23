@@ -80,6 +80,9 @@ export function initImageManager(context) {
     extras: new Map(),
   };
 
+  // Track whether the current set of images has been downloaded
+  let _zipDownloaded = false;
+
   // Factory para crear inputs de imagen (reutilizable)
   const createFileInput = (label, key, onDelete = null) => {
     const uniqueId = `file-input-${key.replace(/[^a-zA-Z0-9]/g, "-")}`;
@@ -277,6 +280,7 @@ export function initImageManager(context) {
         }
 
         saveImageToDB(getDbKey(key), file, gpsData);
+        _zipDownloaded = false; // New image added — ZIP is now stale
         updateDownloadButtonState();
 
         // 5. Mostrar thumbnail
@@ -461,6 +465,7 @@ export function initImageManager(context) {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      _zipDownloaded = true;
     } catch (err) {
       console.error(err);
       alert("Error al crear el ZIP de respaldo.");
@@ -601,6 +606,12 @@ export function initImageManager(context) {
   return {
     getCurrentImages: () => currentImages,
     addExtraPhoto,
+    getUndownloadedCount: () => {
+      if (_zipDownloaded) return 0;
+      const fixed = ["weight", "fan", "weight2", "fan2"].filter(k => currentImages[k]).length;
+      return fixed + currentImages.extras.size;
+    },
+    triggerDownload: () => downloadBtn.click(),
     resetImages: () => {
       currentImages = {
         weight: null,
@@ -609,6 +620,7 @@ export function initImageManager(context) {
         fan2: null,
         extras: new Map(),
       };
+      _zipDownloaded = false;
       clearImagesFromDB(); // Limpiar DB al resetear
 
       // Limpiar inputs y thumbnails en ambos contenedores
