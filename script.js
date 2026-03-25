@@ -1537,17 +1537,26 @@ const init = () => {
 
     document.body.appendChild(overlay);
 
+    const closeModal = (cb) => {
+      // pointer-events:none primero para bloquear tap-through en mobile
+      overlay.style.pointerEvents = "none";
+      setTimeout(() => {
+        overlay.remove();
+        if (cb) cb();
+      }, 80);
+    };
+
     overlay.querySelector("#_img-warn-dl").onclick = () => {
-      overlay.remove();
-      imageManager.triggerDownload();
-      setTimeout(generateReportProcess, 300);
+      closeModal(() => {
+        imageManager.triggerDownload();
+        setTimeout(generateReportProcess, 300);
+      });
     };
     overlay.querySelector("#_img-warn-skip").onclick = () => {
-      overlay.remove();
-      generateReportProcess();
+      closeModal(generateReportProcess);
     };
-    overlay.querySelector("#_img-warn-cancel").onclick = () => overlay.remove();
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector("#_img-warn-cancel").onclick = () => closeModal();
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
   }
 
   function generateReportProcess() {

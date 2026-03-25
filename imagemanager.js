@@ -117,6 +117,7 @@ export function initImageManager(context) {
     const btnEl = document.createElement("button");
     btnEl.type = "button";
     btnEl.textContent = label;
+    btnEl.dataset.origLabel = label; // Guardado para restaurar en resetImages()
     btnEl.className = "btn btn-file-upload";
     btnEl.style.flex = "1";
     btnEl.style.marginBottom = "0";
@@ -285,6 +286,9 @@ export function initImageManager(context) {
 
         // 5. Mostrar thumbnail
         showPreview(file, gpsData, gpsSource);
+
+        // Resetear value para que el mismo archivo pueda seleccionarse de nuevo
+        e.target.value = "";
 
       } catch (error) {
         console.error("Error procesando imagen:", error);

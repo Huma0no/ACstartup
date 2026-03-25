@@ -375,18 +375,42 @@ function renderResults(result) {
   if (result.steps.length === 0) {
     stepsContainer.innerHTML = `<p style="font-size:0.83em;opacity:0.6;">No hay pasos específicos para esta combinación.</p>`;
   } else {
+    // Header with reset button
+    const header = document.createElement("div");
+    header.className = "ts-steps-header";
+    header.innerHTML = `
+      <span class="ts-steps-label">Pasos — toca para marcar</span>
+      <button class="ts-steps-reset" id="ts-steps-reset-btn">↺ Reset</button>
+    `;
+    stepsContainer.appendChild(header);
+
     result.steps.forEach(s => {
       const item = document.createElement("div");
       item.className = "ts-step-item";
+      item.dataset.stepIdx = s.step;
       item.innerHTML = `
-        <div class="ts-step-num">${s.step}</div>
+        <div class="ts-step-num"><span class="ts-step-num-inner">${s.step}</span></div>
         <div class="ts-step-content">
           <div class="ts-step-action">${escapeHtml(s.action)}</div>
           ${s.detail ? `<div class="ts-step-detail">${escapeHtml(s.detail)}</div>` : ""}
-          ${s.tool  ? `<span class="ts-step-tool">🔧 ${escapeHtml(s.tool)}</span>` : ""}
+          ${s.tool   ? `<span class="ts-step-tool">🔧 ${escapeHtml(s.tool)}</span>` : ""}
+          ${s.branches ? renderBranchButtons(s.branches) : ""}
         </div>
       `;
+      // Only allow check-toggle on click if not clicking a branch button
+      item.addEventListener("click", (e) => {
+        if (e.target.closest(".ts-branch-btn, .ts-branch-substeps")) return;
+        item.classList.toggle("ts-checked");
+      });
       stepsContainer.appendChild(item);
+
+      // Wire branch buttons after inserting into DOM
+      if (s.branches) wireBranchButtons(item, s.branches);
+    });
+
+    document.getElementById("ts-steps-reset-btn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      stepsContainer.querySelectorAll(".ts-step-item").forEach(el => el.classList.remove("ts-checked"));
     });
   }
 
@@ -607,6 +631,59 @@ function resetToSymptomSelection() {
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// BRANCH BUTTONS — Yes/No decision steps
+// ─────────────────────────────────────────────
+function renderBranchButtons(branches) {
+  return `
+    <div class="ts-branch-wrap">
+      <div class="ts-branch-question">${escapeHtml(branches.question)}</div>
+      <div class="ts-branch-btns">
+        <button class="ts-branch-btn ts-branch-yes" type="button">✓ ${escapeHtml(branches.yes.label)}</button>
+        <button class="ts-branch-btn ts-branch-no"  type="button">✗ ${escapeHtml(branches.no.label)}</button>
+      </div>
+      <div class="ts-branch-substeps" style="display:none"></div>
+    </div>
+  `;
+}
+
+function wireBranchButtons(item, branches) {
+  const yesBtn  = item.querySelector(".ts-branch-yes");
+  const noBtn   = item.querySelector(".ts-branch-no");
+  const subWrap = item.querySelector(".ts-branch-substeps");
+
+  function showBranch(chosen, otherBtn) {
+    // Toggle off if already active
+    if (yesBtn.classList.contains("ts-branch-active") || noBtn.classList.contains("ts-branch-active")) {
+      const alreadyThis = chosen.classList.contains("ts-branch-active");
+      yesBtn.classList.remove("ts-branch-active");
+      noBtn.classList.remove("ts-branch-active");
+      if (alreadyThis) { subWrap.style.display = "none"; subWrap.innerHTML = ""; return; }
+    }
+    chosen.classList.add("ts-branch-active");
+    const stepsData = chosen === yesBtn ? branches.yes.steps : branches.no.steps;
+    subWrap.innerHTML = stepsData.map(s => `
+      <div class="ts-branch-step" data-checked="false">
+        <div class="ts-branch-step-num"><span>${s.step}</span></div>
+        <div class="ts-branch-step-body">
+          <div class="ts-branch-step-action">${escapeHtml(s.action)}</div>
+          ${s.detail ? `<div class="ts-step-detail">${escapeHtml(s.detail)}</div>` : ""}
+          ${s.tool   ? `<span class="ts-step-tool">🔧 ${escapeHtml(s.tool)}</span>` : ""}
+        </div>
+      </div>
+    `).join("");
+    subWrap.style.display = "block";
+
+    // Make sub-steps checkable too
+    subWrap.querySelectorAll(".ts-branch-step").forEach(el => {
+      el.addEventListener("click", () => el.classList.toggle("ts-checked"));
+    });
+  }
+
+  yesBtn.addEventListener("click", () => showBranch(yesBtn, noBtn));
+  noBtn.addEventListener("click",  () => showBranch(noBtn,  yesBtn));
+}
+
 function escapeHtml(str) {
   if (!str) return "";
   return String(str)
@@ -675,7 +752,7 @@ if (document.readyState === "loading") {
 // ─────────────────────────────────────────────
 function initAISettingsModal() {
   const modal    = document.getElementById("ai-settings-modal");
-  const openBtn  = document.getElementById("btn-ai-settings");
+  const openBtn  = document.getElementById("btn-settings");
   const closeBtn = document.getElementById("ai-settings-close");
   const mainRow  = document.getElementById("ai-settings-main-row");
   const extRow   = document.getElementById("ai-settings-ext-row");

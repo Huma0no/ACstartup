@@ -6,8 +6,8 @@ const path = require("path");
 const app = express();
 const port = 3000;
 
-// Permite que tu HTML acceda a este servidor
-app.use(cors());
+// Solo permite acceso desde localhost
+app.use(cors({ origin: ["http://localhost:3000", "null", "http://127.0.0.1:3000"] }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "."))); // Servir frontend localmente
 
@@ -147,6 +147,10 @@ function seedInventory() {
 
 // 0. PING — health check rápido
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
+
+// Rutas sin extensión
+app.get("/dispatch", (req, res) => res.sendFile(path.join(__dirname, "dispatch.html")));
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 // 1. IMPORTAR DATOS (Desde el JSON exportado por la App)
 app.post("/api/import", async (req, res) => {

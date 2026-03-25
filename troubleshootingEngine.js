@@ -16,25 +16,27 @@ import {
 // SYMPTOM CATEGORIES
 // ─────────────────────────────────────────────
 export const SYMPTOM = {
-  NO_COOLING:   "no_cooling",
-  NO_HEATING:   "no_heating",
-  FAULT_CODE:   "fault_code",
-  NO_FAN:       "no_fan",
-  FLOAT_SWITCH: "float_switch",
-  ZONING:       "zoning",
-  A2L_SAFETY:   "a2l_safety",
-  TSTAT:        "tstat",
+  NO_COOLING:        "no_cooling",
+  NO_HEATING:        "no_heating",
+  FAULT_CODE:        "fault_code",
+  NO_FAN:            "no_fan",
+  FLOAT_SWITCH:      "float_switch",
+  ZONING:            "zoning",
+  A2L_SAFETY:        "a2l_safety",
+  TSTAT:             "tstat",
+  CONDENSER_NO_START:"condenser_no_start",
 };
 
 export const SYMPTOM_LABELS = {
-  [SYMPTOM.NO_COOLING]:   "❄️ No Enfría",
-  [SYMPTOM.NO_HEATING]:   "🔥 No Calienta",
-  [SYMPTOM.FAULT_CODE]:   "⚠️ Fault Code",
-  [SYMPTOM.NO_FAN]:       "💨 Fan No Arranca",
-  [SYMPTOM.FLOAT_SWITCH]: "💧 Float Switch",
-  [SYMPTOM.ZONING]:       "🏠 Zoning Issue",
-  [SYMPTOM.A2L_SAFETY]:   "🔐 A2L Safety",
-  [SYMPTOM.TSTAT]:        "🌡️ Tstat Issue",
+  [SYMPTOM.NO_COOLING]:        "❄️ No Enfría",
+  [SYMPTOM.NO_HEATING]:        "🔥 No Calienta",
+  [SYMPTOM.FAULT_CODE]:        "⚠️ Fault Code",
+  [SYMPTOM.NO_FAN]:            "💨 Fan No Arranca",
+  [SYMPTOM.FLOAT_SWITCH]:      "💧 Float Switch",
+  [SYMPTOM.ZONING]:            "🏠 Zoning Issue",
+  [SYMPTOM.A2L_SAFETY]:        "🔐 A2L Safety",
+  [SYMPTOM.TSTAT]:             "🌡️ Tstat Issue",
+  [SYMPTOM.CONDENSER_NO_START]:"🔌 Condensadora No Arranca",
 };
 
 // ─────────────────────────────────────────────
@@ -91,7 +93,8 @@ export function diagnose({ symptom, detail = "", context = {} }) {
     case SYMPTOM.FLOAT_SWITCH: return diagnoseFloatSwitch(detail, context);
     case SYMPTOM.ZONING:       return diagnoseZoning(detail, context);
     case SYMPTOM.A2L_SAFETY:   return diagnoseA2LSafety(detail, context);
-    case SYMPTOM.TSTAT:        return diagnoseTstat(detail, context);
+    case SYMPTOM.TSTAT:             return diagnoseTstat(detail, context);
+    case SYMPTOM.CONDENSER_NO_START:return diagnoseCondenserNoStart(detail, context);
     default:
       return {
         title: "Diagnóstico General",
@@ -107,8 +110,14 @@ export function diagnose({ symptom, detail = "", context = {} }) {
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
-function step(n, action, detail = null, tool = null) {
-  return { step: n, action, detail, tool };
+function step(n, action, detail = null, tool = null, branches = null) {
+  return { step: n, action, detail, tool, branches };
+}
+
+// branches format:
+// { question: "¿Hay 24V?", yes: { label:"Sí", steps:[] }, no: { label:"No", steps:[] } }
+function branch(question, yesLabel, yesSteps, noLabel, noSteps) {
+  return { question, yes: { label: yesLabel, steps: yesSteps }, no: { label: noLabel, steps: noSteps } };
 }
 
 function equipmentNote(label, text) {
@@ -193,11 +202,32 @@ function diagnoseNoCooling(detail, ctx) {
   // 5. Power at outdoor unit
   steps.push(step(i++, "Verificar alimentación eléctrica en condensadora", "Medir L1-L2 en disconnect. Debe ser 208-240VAC. Revisar fuses del disconnect.", "multimeter"));
 
-  // 6. Contactor
-  steps.push(step(i++, "Revisar contactor en condensadora", "Con el sistema llamando cooling: medir 24VAC en bobina del contactor (A1-A2). Si tiene voltaje pero no cierra → contactor malo.", "multimeter"));
+  // 6. Contactor — medir 24V bobina
+  steps.push(step(i++, "Medir 24VAC en bobina del contactor (A1-A2) en condensadora", "Con el sistema llamando cooling: medir entre A1 y A2 del contactor. Resultado determina si la señal llega o no a la unidad exterior.", "multimeter"));
 
-  // 7. Low voltage signal
-  steps.push(step(i++, "Medir 24VAC en bornes Y y C del furnace board", "Si no hay voltaje → problema está en el control circuit aguas arriba (tstat, zone board, harness).", "multimeter"));
+  // 7. BRANCH — 24V at contactor?
+  steps.push(step(i++,
+    "Medir 24VAC en bornes Y y C del furnace board — terminales de salida hacia condensadora",
+    "Con el tstat llamando cooling: medir Y-C en los bornes de salida del furnace board (el cable que va al outdoor unit).",
+    "multimeter",
+    branch(
+      "¿Hay 24VAC en Y-C en los bornes de salida del furnace board?",
+      "Sí — hay 24V en el board",
+      [
+        { step: "A", action: "El board funciona — problema en el cable o conexiones exteriores", detail: "La señal sale del board pero no llega al contactor. Rastrear el cable low voltage entre furnace y condensadora.", tool: null },
+        { step: "B", action: "Verificar continuidad del cable Y de furnace a condensadora", detail: "Apagar sistema. Desconectar cable Y en ambos extremos. Multímetro en continuidad: punta a punta. Sin continuidad → cable cortado, stapled-through, o terminal dañado. Revisar recorrido en attic y cerca del outdoor unit.", tool: "multimeter" },
+        { step: "C", action: "Verificar continuidad del cable C (común)", detail: "Sin C funcional el circuito no cierra aunque Y tenga señal. Mismo procedimiento: desconectar ambos extremos, medir continuidad. En new construction el C frecuentemente queda suelto en la condensadora.", tool: "multimeter" },
+        { step: "D", action: "Revisar conexiones Y y C en el control board de la condensadora", detail: "Con continuidad confirmada: verificar que los cables estén firmemente apretados en los terminales. Terminal flojo o mal pelado es la causa más frecuente en new construction.", tool: "visual" },
+      ],
+      "No — no hay 24V en el board",
+      [
+        { step: "A", action: "Revisar fusible de baja tensión en el furnace board", detail: "Buscar fusible 3A o 5A (generalmente amarillo o azul, marcado FUSE). Medir continuidad. Si quemado: antes de reemplazar, desconectar cable Y del outdoor unit para verificar que no haya cortocircuito en el exterior.", tool: "visual" },
+        { step: "B", action: "Leer fault codes en el furnace board", detail: "Un fault activo puede bloquear la salida Y aunque haya señal entrando. Contar blinks del LED o leer display LCD.", tool: "visual" },
+        { step: "C", action: "Verificar señal Y en la entrada del board — medir Y-C en input", detail: "Si hay 24V entrando pero no saliendo con fusible OK y sin fault codes → el board no está cerrando el relay internamente → board dañado.", tool: "multimeter" },
+        { step: "D", action: "Confirmar señal Y en el tstat — medir Y-C directamente en los cables del tstat", detail: "Si no hay señal en el input del board: rastrear hacia el tstat. Verificar modo Cool, setpoint correcto, y que el tstat tenga voltaje R-C.", tool: "multimeter" },
+      ]
+    )
+  ));
 
   // 8. Refrigerant hint
   steps.push(step(i++, "Si condensadora arranca pero no enfría — conectar manómetros", `Verificar presiones y subcooling. ${ctx.outdoor ? `OEM subcooling goal: ${ctx.outdoor.subcooling}°F. Refrigerante: ${ctx.outdoor.freon}.` : "Confirmar tipo de refrigerante antes de conectar manómetros."}`, "gauges"));
@@ -502,6 +532,130 @@ function diagnoseA2LSafety(detail, ctx) {
     title: "A2L Safety — Diagnóstico",
     severity: "critical",
     summary: "Sistema con refrigerante A2L (R-454B). Los dispositivos de seguridad pueden cortar la llamada de cooling.",
+    steps,
+    equipmentNotes: notes,
+    faultCodeInfo: null,
+  };
+}
+
+// ─────────────────────────────────────────────
+// DIAGNOSE: CONDENSER NO START — no 24V at contactor
+// Precondition: blower runs, tstat calls for cooling
+// Focus: Y-circuit path from furnace board → outdoor unit
+// ─────────────────────────────────────────────
+function diagnoseCondenserNoStart(_detail, ctx) {
+  const steps = [];
+  const notes = [];
+  let i = 1;
+  let severity = "warning";
+
+  // Context banner
+  notes.push(equipmentNote(
+    "Condición confirmada",
+    "Blower opera ✓ | Tstat llama cooling ✓ | Sin 24V en bobina del contactor ✗ — rastrear circuito Y desde tstat hasta condensadora."
+  ));
+
+  // Step 1 — Confirm tstat IS sending Y
+  steps.push(step(i++,
+    "Confirmar señal Y en el tstat — medir Y a C",
+    "Con el tstat en modo Cool y setpoint bajo la temp ambiente: medir entre terminal Y y C directamente en los cables del tstat. Debe ser 24VAC. Si no hay voltaje aquí → problema en el tstat mismo.",
+    "multimeter"
+  ));
+
+  // Step 2 — Float switch (interrupts Y before board)
+  if (ctx.hasFloatSwitch) {
+    severity = "warning";
+    steps.push(step(i++,
+      "Float Switch — verificar que el pan esté vacío y el switch cerrado",
+      "El float switch está en serie con Y. Con pan vacío, medir continuidad del switch: debe estar cerrado. Si está abierto con pan vacío → switch malo. Si el pan tiene agua → drenar primero.",
+      "multimeter"
+    ));
+  }
+
+  // Step 3 — Y arrives at furnace board input
+  steps.push(step(i++,
+    "Confirmar Y llega al furnace board — medir Y-C en terminales de entrada del board",
+    "Medir en los terminales del furnace board donde llega el cable del tstat (Y y C). 24VAC confirma que la señal llegó. Sin voltaje aquí: revisar cableado entre tstat y board (posible cable dañado, terminal flojo o float switch interrumpiendo).",
+    "multimeter"
+  ));
+
+  // Step 4 — A2L harness check (sits between board and Y-out)
+  if (ctx.isA2L && ctx.hasTraneHarness) {
+    severity = "critical";
+    steps.push(step(i++,
+      "Trane Harness (A2L) — verificar continuidad del harness",
+      "El Trane Harness está en serie con Y entre el furnace board y la condensadora. Con el sistema apagado y harness desconectado: medir continuidad de extremo a extremo. Si está abierto → revisar conexiones en ambos extremos o reemplazar harness. Causa en new construction: falso positivo del sensor del evap coil (E6).",
+      "multimeter"
+    ));
+    notes.push(equipmentNote("Trane Harness (A2L)", accessories["Trane Harness"]?.troubleshootingNotes || ""));
+    notes.push(equipmentNote("Circuito Y completo", accessories["Trane Harness"]?.circuitPath || "Tstat Y → Float Sw → Zone Board Y1-OUT → Trane Harness → Furnace Board Y-out → Cable low voltage → Contactor A1-A2"));
+  }
+
+  // Step 5 — Zone board Y1-OUT
+  if (ctx.hasZoning && ctx.zoningBoard) {
+    steps.push(step(i++,
+      `Zone Board (${ctx.zoningBoard.name}) — medir Y1-OUT vs C`,
+      "Con el tstat pidiendo cooling: medir entre Y1-OUT y C en el zone board. 24VAC = board está pasando la señal. Sin voltaje: revisar que al menos una zona esté llamando y que el board tenga alimentación R-C.",
+      "multimeter"
+    ));
+  }
+
+  // Step 6 — KEY BRANCH: 24V at furnace board Y output?
+  steps.push(step(i++,
+    "Medir 24V en terminales de salida del furnace board — bornes Y y C hacia condensadora",
+    "Con el tstat llamando cooling: medir entre Y y C en los terminales del board donde conecta el cable que va al outdoor unit. Este resultado determina si el problema está en el board o en el cable exterior.",
+    "multimeter",
+    branch(
+      "¿Hay 24VAC en Y-C en los bornes de salida del furnace board?",
+      "Sí — hay 24V en el board",
+      [
+        { step: "A", action: "El board está funcionando — el problema está en el cable o conexiones exteriores", detail: "La señal sale del board pero no llega al contactor. Rastrear el cable low voltage.", tool: null },
+        { step: "B", action: "Verificar continuidad del cable Y de furnace a condensadora", detail: "Apagar sistema. Desconectar cable Y en AMBOS extremos. Multímetro en continuidad: punta a punta del cable. Sin continuidad → cable cortado, stapled-through, o terminal oxidado. Revisar recorrido en attic y cerca del outdoor unit.", tool: "multimeter" },
+        { step: "C", action: "Verificar continuidad del cable C (común)", detail: "Sin cable C funcional el circuito no cierra aunque Y tenga señal. Mismo procedimiento: desconectar ambos extremos, medir continuidad. En new construction: C frecuentemente queda suelto en la condensadora.", tool: "multimeter" },
+        { step: "D", action: "Revisar conexiones en la condensadora — terminales Y y C", detail: "Con continuidad confirmada: verificar que los cables estén firmemente apretados en los terminales del control board de la condensadora. Terminal flojo o mal pelado es la causa más frecuente en new construction.", tool: "visual" },
+      ],
+      "No — no hay 24V en el board",
+      [
+        { step: "A", action: "Revisar fusible de baja tensión en el furnace board", detail: "Buscar fusible 3A o 5A en el board (marcado FUSE, generalmente amarillo o azul). Medir continuidad del fusible. Si está quemado: antes de reemplazarlo, desconectar el cable Y del outdoor unit y verificar que no haya cortocircuito en el cableado exterior que lo haya quemado.", tool: "visual" },
+        { step: "B", action: "Confirmar que la señal Y llega a la entrada del board — medir Y-C en input", detail: "Medir en los terminales de entrada del board (lado del tstat). Si hay 24V entrando pero no saliendo con fusible OK → el board no está pasando la señal → board dañado o en fault.", tool: "multimeter" },
+        { step: "C", action: "Leer fault codes en el board", detail: "Un fault code activo puede bloquear la salida Y. Contar los blinks del LED de diagnóstico o leer el display LCD y buscar el código.", tool: "visual" },
+        { step: "D", action: "Si fusible OK, señal llega al board, y no hay fault code → board dañado", detail: "El board no está cerrando el relay de Y internamente. Requiere reemplazo del control board.", tool: null },
+      ]
+    )
+  ));
+
+  // Step 10 — Connections at outdoor unit
+  steps.push(step(i++,
+    "Revisar conexiones en la condensadora — terminales Y y C en el control board",
+    "Verificar que los cables Y y C estén firmemente conectados en los terminales del control board de la condensadora. Terminal flojo o mal pelado es la causa más frecuente en new construction.",
+    "visual"
+  ));
+
+  // Step 11 — 240V at outdoor unit (sanity check)
+  steps.push(step(i++,
+    "Verificar alimentación 240VAC en el disconnect de la condensadora",
+    "Aunque el contactor no tenga 24V, confirmar que llega 240V al disconnect. Medir L1-L2: debe ser 208-240VAC. Sin voltaje: revisar breaker dedicado del outdoor unit.",
+    "multimeter"
+  ));
+
+  // Equipment notes
+  if (ctx.outdoor) {
+    notes.push(equipmentNote(
+      ctx.outdoorModel,
+      `${ctx.outdoor.tons} ton | ${ctx.outdoor.freon} | Contactor: medir 24VAC entre A1-A2 durante llamada de cooling`
+    ));
+  }
+  if (ctx.heater) {
+    notes.push(equipmentNote(
+      ctx.heaterModel,
+      `Board: ${ctx.heater.boardType}${ctx.heater.isA2L ? " | ⚠️ A2L — Trane Harness en circuito Y" : ""}`
+    ));
+  }
+
+  return {
+    title: "Condensadora No Arranca — Sin 24V en Contactor",
+    severity,
+    summary: "Blower corre y tstat llama cooling pero la unidad exterior no arranca. Árbol de continuidad del circuito Y: tstat → furnace board → cable low voltage → contactor.",
     steps,
     equipmentNotes: notes,
     faultCodeInfo: null,
