@@ -1655,6 +1655,15 @@ input.input-lg {
   text-align: right;
 }
 
+/* Extra top margin on the Next button in weight-in to prevent
+   accidental camera trigger when tapping near photo upload buttons */
+.weightin-next-row {
+  text-align: right;
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--container-border-light, #ccc);
+}
+
 /* Validation Error Highlight */
 .input-error {
   border-color: #ff4444 !important;

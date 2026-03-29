@@ -2108,6 +2108,7 @@ const init = () => {
         return {
           techName: exportTechName,
           address: r.address || "Unknown",
+          reportText: r.reportText || "",
           subdivision: r.subdivision || "",
           builder: r.builder || "",
           heaterModel: r.heaterModel || "",

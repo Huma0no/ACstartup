@@ -51,12 +51,24 @@ function initDB() {
       "outdoor_model TEXT",
       "weight_in_json TEXT",
       "weight_in_2_json TEXT",
+      "report_text TEXT",
     ];
     columnsToAdd.forEach((col) =>
       db.run(`ALTER TABLE jobs ADD COLUMN ${col}`, () => {})
     );
 
-    // 2. Tabla de Ítems del Trabajo (Detalle granular)
+    // 2. Audit log de ediciones a trabajos guardados
+    db.run(`CREATE TABLE IF NOT EXISTS job_edits (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id     INTEGER NOT NULL,
+      field      TEXT NOT NULL,
+      old_value  TEXT,
+      new_value  TEXT,
+      edited_by  TEXT,
+      edited_at  INTEGER
+    )`);
+
+    // 3. Tabla de Ítems del Trabajo (Detalle granular)
     db.run(`CREATE TABLE IF NOT EXISTS job_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       job_id INTEGER,
@@ -165,8 +177,9 @@ app.post("/api/import", async (req, res) => {
   const insertJob = db.prepare(
     `INSERT INTO jobs (
       address, date, technician, total_price, notes, created_at,
-      subdivision, builder, indoor_model, outdoor_model, weight_in_json, weight_in_2_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      subdivision, builder, indoor_model, outdoor_model, weight_in_json, weight_in_2_json,
+      report_text
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertItem = db.prepare(
     `INSERT INTO job_items (job_id, category, item_name, quantity, price) VALUES (?, ?, ?, ?, ?)`
@@ -215,6 +228,7 @@ app.post("/api/import", async (req, res) => {
           job.outdoorModel || "",
           JSON.stringify(state.weightInData || {}),
           JSON.stringify(state.weightInData2 || {}),
+          job.reportText || "",
         ]);
 
         const jobId = result.lastID;
@@ -421,8 +435,17 @@ app.get("/api/jobs/by-address", (req, res) => {
 });
 
 // 5. OBTENER TODOS LOS TRABAJOS (Datasheet)
+// total_price is computed live from job_items so edits are always reflected
 app.get("/api/jobs", (req, res) => {
-  const sql = "SELECT * FROM jobs ORDER BY date DESC";
+  const sql = `
+    SELECT j.*,
+      COALESCE(SUM(CASE WHEN ji.category != 'Refrigerant' THEN ji.price * ji.quantity ELSE 0 END), 0)
+        AS total_price
+    FROM jobs j
+    LEFT JOIN job_items ji ON ji.job_id = j.id
+    GROUP BY j.id
+    ORDER BY j.date DESC
+  `;
   db.all(sql, [], (err, rows) => {
     if (err) return res.status(400).json({ error: err.message });
     res.json(rows);
@@ -479,6 +502,134 @@ app.put("/api/jobs/:id", (req, res) => {
       }
     );
   });
+});
+
+// Helper: writes one row to job_edits audit log
+function logEdit(jobId, field, oldVal, newVal, editedBy) {
+  db.run(
+    `INSERT INTO job_edits (job_id, field, old_value, new_value, edited_by, edited_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [jobId, field, String(oldVal ?? ""), String(newVal ?? ""), editedBy || "dispatcher", Date.now()]
+  );
+}
+
+// 9a. PATCH report_text of a saved job
+app.patch("/api/jobs/:id/report_text", (req, res) => {
+  const id = req.params.id;
+  const { report_text, edited_by } = req.body;
+  if (report_text === undefined) return res.status(400).json({ error: "report_text required" });
+
+  db.get("SELECT report_text FROM jobs WHERE id = ?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Job not found" });
+
+    db.run("UPDATE jobs SET report_text = ? WHERE id = ?", [report_text, id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logEdit(id, "report_text", row.report_text, report_text, edited_by);
+      res.json({ ok: true });
+    });
+  });
+});
+
+// 9b. PATCH notes of a saved job (full replace, not append)
+app.patch("/api/jobs/:id/notes", (req, res) => {
+  const id = req.params.id;
+  const { notes, edited_by } = req.body;
+  if (notes === undefined) return res.status(400).json({ error: "notes required" });
+
+  db.get("SELECT notes FROM jobs WHERE id = ?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Job not found" });
+
+    db.run("UPDATE jobs SET notes = ? WHERE id = ?", [notes, id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logEdit(id, "notes", row.notes, notes, edited_by);
+      res.json({ ok: true });
+    });
+  });
+});
+
+// 9c. PATCH a single job_item (price, quantity, item_name, category)
+app.patch("/api/jobs/:id/items/:itemId", (req, res) => {
+  const { id, itemId } = req.params;
+  const { item_name, category, quantity, price, edited_by } = req.body;
+
+  db.get("SELECT * FROM job_items WHERE id = ? AND job_id = ?", [itemId, id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Item not found" });
+
+    const newName     = item_name  !== undefined ? item_name  : row.item_name;
+    const newCat      = category   !== undefined ? category   : row.category;
+    const newQty      = quantity   !== undefined ? parseFloat(quantity)  : row.quantity;
+    const newPrice    = price      !== undefined ? parseFloat(price)     : row.price;
+
+    db.run(
+      "UPDATE job_items SET item_name = ?, category = ?, quantity = ?, price = ? WHERE id = ?",
+      [newName, newCat, newQty, newPrice, itemId],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        // Log each changed field individually for clarity
+        if (item_name !== undefined && item_name !== row.item_name)
+          logEdit(id, `item[${itemId}].name`,     row.item_name, newName,  edited_by);
+        if (category  !== undefined && category  !== row.category)
+          logEdit(id, `item[${itemId}].category`, row.category,  newCat,   edited_by);
+        if (quantity  !== undefined && newQty    !== row.quantity)
+          logEdit(id, `item[${itemId}].quantity`, row.quantity,  newQty,   edited_by);
+        if (price     !== undefined && newPrice  !== row.price)
+          logEdit(id, `item[${itemId}].price`,    row.price,     newPrice, edited_by);
+        res.json({ ok: true });
+      }
+    );
+  });
+});
+
+// 9d. POST add a new item to a saved job
+app.post("/api/jobs/:id/items", (req, res) => {
+  const id = req.params.id;
+  const { item_name, category, quantity, price, edited_by } = req.body;
+  if (!item_name) return res.status(400).json({ error: "item_name required" });
+
+  const qty = parseFloat(quantity) || 1;
+  const prc = parseFloat(price)    || 0;
+
+  db.run(
+    "INSERT INTO job_items (job_id, category, item_name, quantity, price) VALUES (?, ?, ?, ?, ?)",
+    [id, category || "Service", item_name, qty, prc],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logEdit(id, "item.add", null, `${item_name} qty=${qty} price=${prc}`, edited_by);
+      res.json({ ok: true, id: this.lastID });
+    }
+  );
+});
+
+// 9e. DELETE a job_item from a saved job
+app.delete("/api/jobs/:id/items/:itemId", (req, res) => {
+  const { id, itemId } = req.params;
+  const { edited_by } = req.body;
+
+  db.get("SELECT * FROM job_items WHERE id = ? AND job_id = ?", [itemId, id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Item not found" });
+
+    db.run("DELETE FROM job_items WHERE id = ?", [itemId], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logEdit(id, "item.delete", `${row.item_name} qty=${row.quantity} price=${row.price}`, null, edited_by);
+      res.json({ ok: true });
+    });
+  });
+});
+
+// 9f. GET audit log for a saved job
+app.get("/api/jobs/:id/edits", (req, res) => {
+  db.all(
+    "SELECT * FROM job_edits WHERE job_id = ? ORDER BY edited_at DESC",
+    [req.params.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
 });
 
 // Helper simple para adivinar tipo de gas si no viene explícito
@@ -708,7 +859,7 @@ app.get("/api/stats/home", (req, res) => {
 // 14b. GUARDAR REGISTRO DESDE DISPATCH — un job completado → history
 app.post("/api/jobs/save-record", (req, res) => {
   const {
-    address, date, technician, notes,
+    address, date, technician, notes, report_text,
     subdivision, builder, indoor_model, outdoor_model,
     items = [],
   } = req.body;
@@ -719,10 +870,10 @@ app.post("/api/jobs/save-record", (req, res) => {
   const totalPrice = items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 1), 0);
 
   db.run(
-    `INSERT INTO jobs (address, date, technician, total_price, notes, created_at, subdivision, builder, indoor_model, outdoor_model)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO jobs (address, date, technician, total_price, notes, created_at, subdivision, builder, indoor_model, outdoor_model, report_text)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [address, jobDate, technician || "", totalPrice, notes || "", Date.now(),
-     subdivision || "", builder || "", indoor_model || "", outdoor_model || ""],
+     subdivision || "", builder || "", indoor_model || "", outdoor_model || "", report_text || ""],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const jobId = this.lastID;
@@ -802,6 +953,94 @@ app.get("/api/reports/techs", (req, res) => {
         refrigerant_lbs: parseFloat(r.refrigerant_lbs || 0).toFixed(1),
       })));
     });
+  });
+});
+
+// ─── CUSTOM REPORTS ─────────────────────────────────────────────────────────
+
+// CR-1. INCOME REPORT — date, address, total (optional filter: technician)
+app.get("/api/reports/custom/income", (req, res) => {
+  const { from, to, tech } = req.query;
+  if (!from || !to) return res.status(400).json({ error: "from and to dates required" });
+
+  const sql = `
+    SELECT j.date, j.address,
+           COALESCE(SUM(ji.price * ji.quantity), 0) AS total
+    FROM jobs j
+    LEFT JOIN job_items ji ON ji.job_id = j.id AND ji.category != 'Refrigerant'
+    WHERE j.date BETWEEN ? AND ?
+      AND (? = '' OR LOWER(j.technician) LIKE LOWER(?))
+    GROUP BY j.id
+    ORDER BY j.date DESC
+  `;
+  const t = tech ? `%${tech}%` : "";
+  db.all(sql, [from, to, t, t], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => ({ ...r, total: parseFloat(r.total).toFixed(2) })));
+  });
+});
+
+// CR-2. EQUIPMENT REPORT — date, address, item, qty (Thermostat + Accessory)
+// Accepts comma-separated ?items= list for checklist multi-select
+app.get("/api/reports/custom/equipment", (req, res) => {
+  const { from, to, items } = req.query;
+  if (!from || !to) return res.status(400).json({ error: "from and to dates required" });
+
+  const selected = items ? items.split(",").map(s => s.trim()).filter(Boolean) : [];
+  if (!selected.length) return res.json([]);
+
+  const placeholders = selected.map(() => "?").join(",");
+  // Group all matching items per job into one row using GROUP_CONCAT
+  const sql = `
+    SELECT j.date, j.address,
+           GROUP_CONCAT(
+             CASE WHEN CAST(ji.quantity AS INTEGER) > 1
+                  THEN ji.item_name || ' x' || CAST(CAST(ji.quantity AS INTEGER) AS TEXT)
+                  ELSE ji.item_name
+             END,
+             ', '
+           ) AS items_list,
+           COUNT(DISTINCT ji.item_name) AS item_count
+    FROM job_items ji
+    JOIN jobs j ON ji.job_id = j.id
+    WHERE ji.category IN ('Thermostat', 'Accessory')
+      AND j.date BETWEEN ? AND ?
+      AND ji.item_name IN (${placeholders})
+    GROUP BY j.id
+    ORDER BY j.date DESC
+  `;
+  db.all(sql, [from, to, ...selected], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// CR-3. REFRIGERANT REPORT — date, address, type, oz used
+// Accepts comma-separated ?types= for checkbox multi-select (exact match)
+app.get("/api/reports/custom/refrigerant", (req, res) => {
+  const { from, to, types } = req.query;
+  if (!from || !to) return res.status(400).json({ error: "from and to dates required" });
+
+  const selected = types ? types.split(",").map(s => s.trim()).filter(Boolean) : [];
+  if (!selected.length) return res.json([]);
+
+  const placeholders = selected.map(() => "?").join(",");
+  const sql = `
+    SELECT j.date, j.address, ji.item_name AS ref_type, ji.quantity AS oz_used
+    FROM job_items ji
+    JOIN jobs j ON ji.job_id = j.id
+    WHERE ji.category = 'Refrigerant'
+      AND j.date BETWEEN ? AND ?
+      AND ji.item_name IN (${placeholders})
+    ORDER BY j.date DESC
+  `;
+  db.all(sql, [from, to, ...selected], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => ({
+      ...r,
+      oz_used: parseFloat(r.oz_used || 0),
+      lbs_display: (parseFloat(r.oz_used || 0) / 16).toFixed(2) + " lb",
+    })));
   });
 });
 

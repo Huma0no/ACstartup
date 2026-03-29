@@ -343,6 +343,9 @@
         border-color: var(--amber);
         background: var(--amber-glow);
       }
+      .cr-tab { color: var(--text-dim); border-color: var(--border2); background: transparent; }
+      .cr-tab:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+      .cr-tab-active { color: var(--amber) !important; border-color: var(--amber-dim) !important; background: var(--amber-glow) !important; }
       .btn-ice {
         background: transparent;
         color: var(--ice);
@@ -1550,6 +1553,9 @@
         <div class="nav-item" data-panel="reports">
           <span class="nav-icon">📊</span> Reports
         </div>
+        <div class="nav-item" data-panel="legacy-import">
+          <span class="nav-icon">📥</span> Text Import
+        </div>
         <div class="sidebar-sec">Stock &amp; Records</div>
         <div class="nav-item" data-panel="inventory">
           <span class="nav-icon">📦</span> Inventory
@@ -2305,6 +2311,7 @@
                     <th>Address</th>
                     <th>Tech</th>
                     <th>Notes</th>
+                    <th style="text-align:right">Total</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -2443,6 +2450,111 @@
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <!-- ── Custom Reports ── -->
+          <div class="card" style="margin:12px 20px 20px">
+            <div class="card-title" style="margin-bottom:12px">Custom Reports</div>
+
+            <!-- Report type tabs -->
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+              <button type="button" id="cr-tab-income"      class="btn btn-sm cr-tab cr-tab-active" onclick="setCrTab('income')">$ Income</button>
+              <button type="button" id="cr-tab-equipment"   class="btn btn-sm cr-tab"              onclick="setCrTab('equipment')">⚙ Equipment Used</button>
+              <button type="button" id="cr-tab-refrigerant" class="btn btn-sm cr-tab"              onclick="setCrTab('refrigerant')">❄ Refrigerant</button>
+            </div>
+
+            <!-- Filters row -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+              <div>
+                <div class="label">From</div>
+                <input type="date" id="cr-from" style="width:140px" />
+              </div>
+              <div>
+                <div class="label">To</div>
+                <input type="date" id="cr-to" style="width:140px" />
+              </div>
+              <!-- Income: tech filter -->
+              <div id="cr-filter-income">
+                <div class="label">Technician (optional)</div>
+                <input type="text" id="cr-tech" placeholder="All" style="width:150px" />
+              </div>
+              <!-- Equipment: checklist filter -->
+              <div id="cr-filter-equipment" style="display:none;width:100%">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span class="label" style="margin:0">Equipment</span>
+                  <span style="display:flex;gap:8px">
+                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crCheckAll(true)">All</button>
+                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crCheckAll(false)">None</button>
+                  </span>
+                </div>
+                <div id="cr-eq-checklist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:4px 16px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 12px;max-height:180px;overflow-y:auto"></div>
+              </div>
+              <!-- Refrigerant: checklist filter -->
+              <div id="cr-filter-refrigerant" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span class="label" style="margin:0">Refrigerant Type</span>
+                  <span style="display:flex;gap:8px">
+                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crRefCheckAll(true)">All</button>
+                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crRefCheckAll(false)">None</button>
+                  </span>
+                </div>
+                <div style="display:flex;gap:16px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 12px">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px">
+                    <input type="checkbox" class="cr-ref-cb" value="R410A" checked style="accent-color:var(--amber);cursor:pointer" /> R410A
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px">
+                    <input type="checkbox" class="cr-ref-cb" value="454B" checked style="accent-color:var(--amber);cursor:pointer" /> 454B
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px">
+                    <input type="checkbox" class="cr-ref-cb" value="R32" checked style="accent-color:var(--amber);cursor:pointer" /> R32
+                  </label>
+                </div>
+              </div>
+              <div>
+                <button type="button" class="btn btn-amber btn-sm" onclick="runCustomReport()">▶ Generate</button>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button type="button" class="btn btn-outline btn-sm" id="cr-export-btn" style="display:none" onclick="exportCustomReportCSV()">↓ CSV</button>
+                <button type="button" class="btn btn-ghost btn-sm"   id="cr-print-btn"  style="display:none" onclick="crOpenPrintWindow(false)">🖨 Print</button>
+                <button type="button" class="btn btn-ghost btn-sm"   id="cr-pdf-btn"    style="display:none" onclick="crOpenPrintWindow(true)">↓ PDF</button>
+              </div>
+            </div>
+
+            <!-- Results table -->
+            <div class="tbl-wrap" id="cr-tbl-wrap" style="display:none;max-height:340px;overflow-y:auto">
+              <table id="cr-table">
+                <thead id="cr-thead"></thead>
+                <tbody id="cr-tbody"></tbody>
+              </table>
+            </div>
+            <div id="cr-empty" style="color:var(--text-dim);font-size:12px;padding:14px 0 4px">Select report type and date range.</div>
+          </div>
+        </div>
+
+        <!-- ══════════ PANEL: LEGACY TEXT IMPORT ══════════ -->
+        <div class="panel" id="panel-legacy-import">
+          <div class="sec-header">
+            <div class="sec-title">Text Import</div>
+            <div class="sec-sub">Convert legacy completion notes → database records</div>
+          </div>
+
+          <div class="card" style="margin:16px 20px 0">
+            <div class="card-title" style="margin-bottom:10px">Paste completion notes</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Format: ADDRESS, SUBDIVISION, BUILDER → notes with $prices. Separate jobs with a blank line. Multiple visits per job: use date lines (11/06/25).</div>
+            <textarea id="li-textarea" placeholder="4814 PEARL CRESCENT CT, MONARCH LANDING, LENNAR&#10;AC started 1 T-6 tstat $30, fin180p $10, float switch $5, total $45&#10;&#10;1535 AMBER SKIES, SYNOVA, LENNAR&#10;..." style="width:100%;height:200px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:4px;padding:10px;font-family:var(--mono);font-size:12px;resize:vertical;outline:none"></textarea>
+            <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn btn-amber btn-sm" onclick="liParse()">⚙ Parse</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('li-textarea').value='';liClear()">✕ Clear</button>
+              <span id="li-msg" style="font-size:11px;color:var(--text-dim)"></span>
+            </div>
+          </div>
+
+          <div class="card" id="li-preview-card" style="margin:12px 20px 20px;display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="card-title">Preview — <span id="li-count">0</span> records</div>
+              <button type="button" class="btn btn-amber btn-sm" id="li-import-all-btn" onclick="liImportAll()">↑ Import All</button>
+            </div>
+            <div id="li-list"></div>
           </div>
         </div>
 
@@ -4265,10 +4377,6 @@
           (ss.selectedFixes || []).forEach((f) =>
             parts.push(`${f.name} $${f.basePrice}`)
           );
-          const oz1 = parseFloat(ss.weightInData?.adjustedOz) || 0;
-          const oz2 = parseFloat(ss.weightInData2?.adjustedOz) || 0;
-          if (oz1 + oz2 > 0) parts.push("weigh-in data recorded");
-
           const total =
             (ss.selectedServices || []).reduce(
               (s, i) => s + (i.basePrice || 0),
@@ -6499,6 +6607,243 @@
       // ═══════════════════════════════════════
       // REPORTS PANEL
       // ═══════════════════════════════════════
+      // CUSTOM REPORTS
+      // ═══════════════════════════════════════
+      let _crTab = "income";
+      let _crData = [];
+
+      const CR_EQUIPMENT_GROUPS = [
+        { label: "Tstats", items: ["T-4","T-6","T-10","T-8321","Ecobee","Daikin One","TH2110","Otro"] },
+        { label: "Zone Boards", items: ["HZ322","UT3000","Harmony"] },
+        { label: "Accessories", items: ["Float Switch","RDS","DAPC","Bypass Damper","Trane Harness","A2L R32 Sensor","A2L R445B Sensor"] },
+      ];
+
+      function buildCrChecklist() {
+        const container = document.getElementById("cr-eq-checklist");
+        container.innerHTML = CR_EQUIPMENT_GROUPS.map(g => `
+          <div style="grid-column:1/-1;font-size:9px;letter-spacing:.08em;color:var(--text-dim);text-transform:uppercase;margin-top:6px;margin-bottom:2px">${g.label}</div>
+          ${g.items.map(item => `
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px;white-space:nowrap">
+              <input type="checkbox" class="cr-eq-cb" value="${item}" checked style="accent-color:var(--amber);cursor:pointer" />
+              ${item}
+            </label>`).join("")}
+        `).join("");
+      }
+
+      function crCheckAll(state) {
+        document.querySelectorAll(".cr-eq-cb").forEach(cb => cb.checked = state);
+      }
+
+      function getCrSelectedItems() {
+        return Array.from(document.querySelectorAll(".cr-eq-cb:checked")).map(cb => cb.value);
+      }
+
+      function crRefCheckAll(state) {
+        document.querySelectorAll(".cr-ref-cb").forEach(cb => cb.checked = state);
+      }
+
+      function getCrSelectedRefTypes() {
+        return Array.from(document.querySelectorAll(".cr-ref-cb:checked")).map(cb => cb.value);
+      }
+
+      // Set default date range to current month on first load
+      (function initCrDates() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+        document.getElementById("cr-from").value = `${y}-${m}-01`;
+        document.getElementById("cr-to").value   = `${y}-${m}-${String(lastDay).padStart(2,"0")}`;
+      })();
+
+      function setCrTab(tab) {
+        _crTab = tab;
+        document.querySelectorAll(".cr-tab").forEach(b => b.classList.remove("cr-tab-active"));
+        document.getElementById("cr-tab-" + tab).classList.add("cr-tab-active");
+        document.getElementById("cr-filter-income").style.display      = tab === "income"      ? "" : "none";
+        document.getElementById("cr-filter-equipment").style.display   = tab === "equipment"   ? "" : "none";
+        document.getElementById("cr-filter-refrigerant").style.display = tab === "refrigerant" ? "" : "none";
+        if (tab === "equipment" && !document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
+        // clear previous results
+        document.getElementById("cr-tbl-wrap").style.display = "none";
+        document.getElementById("cr-export-btn").style.display = "none";
+        document.getElementById("cr-print-btn").style.display = "none";
+        document.getElementById("cr-pdf-btn").style.display = "none";
+        document.getElementById("cr-empty").textContent = "Select report type and date range.";
+        _crData = [];
+      }
+
+      async function runCustomReport() {
+        const from = document.getElementById("cr-from").value;
+        const to   = document.getElementById("cr-to").value;
+        if (!from || !to) { alert("Select a date range"); return; }
+
+        const empty   = document.getElementById("cr-empty");
+        const tblWrap = document.getElementById("cr-tbl-wrap");
+        const tbody   = document.getElementById("cr-tbody");
+        const thead   = document.getElementById("cr-thead");
+
+        empty.textContent = "Loading...";
+        tblWrap.style.display = "none";
+        document.getElementById("cr-export-btn").style.display = "none";
+        document.getElementById("cr-print-btn").style.display = "none";
+        document.getElementById("cr-pdf-btn").style.display = "none";
+
+        try {
+          let url, headers, colFn;
+
+          if (_crTab === "income") {
+            const tech = (document.getElementById("cr-tech").value || "").trim();
+            url = `${API_BASE}/reports/custom/income?from=${from}&to=${to}&tech=${encodeURIComponent(tech)}`;
+            headers = `<tr><th>Date</th><th>Address</th><th style="text-align:right">Income</th></tr>`;
+            colFn = r => `<tr>
+              <td class="amber">${r.date}</td>
+              <td>${esc(r.address)}</td>
+              <td style="text-align:right;color:var(--green)">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+            </tr>`;
+          } else if (_crTab === "equipment") {
+            const selected = getCrSelectedItems();
+            if (!selected.length) { empty.textContent = "Select at least one item."; return; }
+            url = `${API_BASE}/reports/custom/equipment?from=${from}&to=${to}&items=${encodeURIComponent(selected.join(","))}`;
+            headers = `<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>`;
+            colFn = r => `<tr>
+              <td class="amber" style="white-space:nowrap">${r.date}</td>
+              <td>${esc(r.address)}</td>
+              <td style="color:var(--ice)">${esc(r.items_list)}</td>
+            </tr>`;
+          } else {
+            const selectedRef = getCrSelectedRefTypes();
+            if (!selectedRef.length) { empty.textContent = "Select at least one refrigerant type."; return; }
+            url = `${API_BASE}/reports/custom/refrigerant?from=${from}&to=${to}&types=${encodeURIComponent(selectedRef.join(","))}`;
+            headers = `<tr><th>Date</th><th>Address</th><th>Type</th><th style="text-align:right">oz</th><th style="text-align:right">lbs</th></tr>`;
+            colFn = r => `<tr>
+              <td class="amber">${r.date}</td>
+              <td>${esc(r.address)}</td>
+              <td style="color:var(--ice)">${esc(r.ref_type)}</td>
+              <td style="text-align:right">${r.oz_used}</td>
+              <td style="text-align:right;color:var(--amber)">${r.lbs_display}</td>
+            </tr>`;
+          }
+
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(await res.text());
+          _crData = await res.json();
+
+          if (!_crData.length) {
+            empty.textContent = "No results for the selected range.";
+            return;
+          }
+
+          thead.innerHTML = headers;
+          tbody.innerHTML = _crData.map(colFn).join("");
+
+          // totals footer
+          if (_crTab === "income") {
+            const total = _crData.reduce((s, r) => s + parseFloat(r.total), 0);
+            tbody.innerHTML += `<tr style="border-top:1px solid var(--border2);font-weight:600">
+              <td colspan="2" style="color:var(--text-dim)">TOTAL — ${_crData.length} jobs</td>
+              <td style="text-align:right;color:var(--green)">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+            </tr>`;
+          } else if (_crTab === "refrigerant") {
+            const totalOz = _crData.reduce((s, r) => s + r.oz_used, 0);
+            tbody.innerHTML += `<tr style="border-top:1px solid var(--border2);font-weight:600">
+              <td colspan="3" style="color:var(--text-dim)">TOTAL — ${_crData.length} records</td>
+              <td style="text-align:right">${totalOz.toFixed(1)}</td>
+              <td style="text-align:right;color:var(--amber)">${(totalOz/16).toFixed(2)} lb</td>
+            </tr>`;
+          }
+
+          empty.textContent = "";
+          tblWrap.style.display = "";
+          document.getElementById("cr-export-btn").style.display = "";
+          document.getElementById("cr-print-btn").style.display = "";
+          document.getElementById("cr-pdf-btn").style.display = "";
+
+        } catch(e) {
+          empty.textContent = "Error: " + e.message;
+        }
+      }
+
+      function exportCustomReportCSV() {
+        if (!_crData.length) return;
+        let header, rowFn;
+
+        if (_crTab === "income") {
+          header = "Date,Address,Income";
+          rowFn  = r => `${r.date},"${r.address}",${r.total}`;
+        } else if (_crTab === "equipment") {
+          header = "Date,Address,Equipment used";
+          rowFn  = r => `${r.date},"${r.address}","${r.items_list}"`;
+        } else {
+          header = "Date,Address,Type,oz,lbs";
+          rowFn  = r => `${r.date},"${r.address}","${r.ref_type}",${r.oz_used},${r.lbs_display}`;
+        }
+
+        const from = document.getElementById("cr-from").value;
+        const to   = document.getElementById("cr-to").value;
+        const csv  = [header, ..._crData.map(rowFn)].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `reporte_${_crTab}_${from}_${to}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function crOpenPrintWindow(autoPrint) {
+        if (!_crData.length) return;
+        const from = document.getElementById("cr-from").value;
+        const to   = document.getElementById("cr-to").value;
+
+        const TITLES = { income: "Generated Income", equipment: "Equipment Used", refrigerant: "Refrigerant Used" };
+        const title  = TITLES[_crTab] || "Report";
+
+        // Build table HTML
+        let thead, rowsFn, footerHtml = "";
+        if (_crTab === "income") {
+          thead  = "<tr><th>Date</th><th>Address</th><th>Income</th></tr>";
+          rowsFn = r => `<tr><td>${r.date}</td><td>${r.address}</td><td class="num">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`;
+          const total = _crData.reduce((s,r) => s + parseFloat(r.total), 0);
+          footerHtml = `<tr class="total"><td colspan="2">TOTAL — ${_crData.length} jobs</td><td class="num">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`;
+        } else if (_crTab === "equipment") {
+          thead  = "<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>";
+          rowsFn = r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`;
+          footerHtml = `<tr class="total"><td colspan="3">${_crData.length} records</td></tr>`;
+        } else {
+          thead  = "<tr><th>Date</th><th>Address</th><th>Type</th><th>oz</th><th>lbs</th></tr>";
+          rowsFn = r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.ref_type}</td><td class="num">${r.oz_used}</td><td class="num">${r.lbs_display}</td></tr>`;
+          const totalOz = _crData.reduce((s,r) => s + r.oz_used, 0);
+          footerHtml = `<tr class="total"><td colspan="3">TOTAL — ${_crData.length} records</td><td class="num">${totalOz.toFixed(1)}</td><td class="num">${(totalOz/16).toFixed(2)} lb</td></tr>`;
+        }
+
+        const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<title>${title} ${from} – ${to}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: "DM Mono", "Courier New", monospace; font-size: 12px; color: #111; padding: 32px; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .meta { font-size: 11px; color: #555; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1a1a2e; color: #f5a623; text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  td { padding: 6px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f7fa; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { border-top: 2px solid #1a1a2e; font-weight: 700; background: #f0f0f8; }
+  @media print { body { padding: 16px; } button { display: none; } }
+</style></head><body>
+<h1>${title}</h1>
+<div class="meta">Period: ${from} → ${to} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"})}</div>
+<table><thead>${thead}</thead><tbody>${_crData.map(rowsFn).join("")}${footerHtml}</tbody></table>
+${autoPrint ? "" : '<div style="margin-top:16px;text-align:right"><button onclick="window.print()" style="padding:6px 18px;background:#1a1a2e;color:#f5a623;border:none;cursor:pointer;font-size:12px;border-radius:3px">🖨 Print</button></div>'}
+${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
+</body></html>`;
+
+        const w = window.open("", "_blank", "width=820,height=640");
+        w.document.write(html);
+        w.document.close();
+      }
+
+      // ═══════════════════════════════════════
       const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
       async function loadReportsPanel() {
@@ -6587,6 +6932,384 @@
       }
 
       // ═══════════════════════════════════════
+      // ═══════════════════════════════════════
+      // LEGACY TEXT IMPORT
+      // ═══════════════════════════════════════
+      let _liJobs = [];
+
+      // Known item patterns — order matters (more specific first)
+      const LI_PATTERNS = [
+        // Thermostats
+        { re: /(\d+)\s+T[-]?4\s+tstat/i,  cat:'Thermostat', name:'T-4',       qty: m=>+m[1] },
+        { re: /(\d+)\s+T[-]?6\s+tstat/i,  cat:'Thermostat', name:'T-6',       qty: m=>+m[1] },
+        { re: /(\d+)\s+T[-]?10\s+tstat/i, cat:'Thermostat', name:'T-10',      qty: m=>+m[1] },
+        { re: /1t6\s+tstat/i,              cat:'Thermostat', name:'T-6',       qty:()=>1 },
+        { re: /T[-]?4\s+tstat/i,           cat:'Thermostat', name:'T-4',       qty:()=>1 },
+        { re: /T[-]?6\s+tstat/i,           cat:'Thermostat', name:'T-6',       qty:()=>1 },
+        { re: /T[-]?10\s+tstat/i,          cat:'Thermostat', name:'T-10',      qty:()=>1 },
+        { re: /Ecobee/i,                   cat:'Thermostat', name:'Ecobee',    qty:()=>1 },
+        { re: /Daikin\s+One/i,             cat:'Thermostat', name:'Daikin One',qty:()=>1 },
+        // Accessories
+        { re: /fin[\s-]?180p/i,                    cat:'Accessory', name:'Fin180p',      qty:()=>1 },
+        { re: /float\s+switch/i,                    cat:'Accessory', name:'Float Switch', qty:()=>1 },
+        { re: /\bzoning\b/i,                         cat:'Accessory', name:'Zoning',       qty:()=>1 },
+        { re: /bypass\s+(?:control|damper)/i,        cat:'Accessory', name:'Bypass Damper',qty:()=>1 },
+        { re: /\bRDS\b/,                             cat:'Accessory', name:'RDS',           qty:()=>1 },
+        { re: /\bDAPC\b/i,                           cat:'Accessory', name:'DAPC',          qty:()=>1 },
+        { re: /energy\s+star/i,                      cat:'Accessory', name:'Energy Star',   qty:()=>1 },
+        { re: /\bHZ322\b/i,                          cat:'Accessory', name:'HZ322',         qty:()=>1 },
+        { re: /\bUT3000\b/i,                         cat:'Accessory', name:'UT3000',        qty:()=>1 },
+        { re: /\bharmony\b/i,                        cat:'Accessory', name:'Harmony',       qty:()=>1 },
+        // Services
+        { re: /weight[\s-]in(?:[\s-]data)?/i,        cat:'Service', name:'Weight-In Data',         qty:()=>1 },
+        { re: /\bAC\s*\(temporarily\)/i,              cat:'Service', name:'Prestart',               qty:()=>1 },
+        { re: /\bprestart\b/i,                        cat:'Service', name:'Prestart',               qty:()=>1 },
+        { re: /\bAC\s+started\b/i,                   cat:'Service', name:'Finish',                 qty:()=>1 },
+        { re: /\bheat\s+started\b/i,                 cat:'Service', name:'Heat',                   qty:()=>1 },
+        { re: /\bAC\s+&\s+[Hh]eat\s+started\b/,     cat:'Service', name:'Prestart',               qty:()=>1 },
+        { re: /\btrip\s+fee\b/i,                     cat:'Service', name:'Trip Fee',               qty:()=>1 },
+        { re: /cond\w*\s+wired/i,                    cat:'Service', name:'Cond Wired & Vacuumed',  qty:()=>1 },
+        // Fixes
+        { re: /open(?:ed)?\s+ecoil/i,               cat:'Fix', name:'Open Ecoil',     qty:()=>1 },
+        { re: /fix(?:ed)?\s+freon\s+leak/i,          cat:'Fix', name:'Fix Freon Leak', qty:()=>1 },
+        { re: /freon\s+leak/i,                       cat:'Fix', name:'Fix Freon Leak', qty:()=>1 },
+        { re: /pressure\s+test/i,                    cat:'Fix', name:'Pressure Test',  qty:()=>1 },
+        { re: /cut\s+sheetrock/i,                    cat:'Fix', name:'Cut Sheetrock',  qty:()=>1 },
+      ];
+
+      function liParseDate(str) {
+        const p = str.split('/');
+        if (p.length !== 3) return null;
+        let [m, d, y] = p;
+        if (y.length === 2) y = '20' + y;
+        return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+      }
+
+      function liExtractItems(text) {
+        const items = [];
+        const seen  = new Set();
+        for (const p of LI_PATTERNS) {
+          const m = text.match(p.re);
+          if (!m) continue;
+          const key = `${p.cat}:${p.name}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const qty     = p.qty ? p.qty(m) : 1;
+          const nearby  = text.slice(m.index + m[0].length, m.index + m[0].length + 60);
+          const priceM  = nearby.match(/\$(\d+)/);
+          const price   = priceM ? parseInt(priceM[1]) : 0;
+          items.push({ category: p.cat, item_name: p.name, quantity: qty, price });
+        }
+        return items;
+      }
+
+      function liParseBlocks(raw) {
+        const jobs   = [];
+        const blocks = raw.trim().split(/\n{2,}/);
+        const dateRe = /^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*(.*)/;
+        const modelRe= /^\d{5,}[a-zA-Z]/;
+
+        for (const block of blocks) {
+          const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+          if (lines.length < 1) continue;
+
+          // Line 1: ADDRESS, SUBDIVISION, BUILDER
+          const hParts = lines[0].split(',');
+          if (hParts.length < 2) continue;
+          const address    = hParts[0].trim();
+          const subdivision= (hParts[1] || '').trim();
+          const builder    = (hParts[2] || '').trim();
+
+          // Group remaining lines into visits by date markers
+          const visits = [];
+          let cur = null;
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            const dm = line.match(dateRe);
+            if (dm) {
+              if (cur) visits.push(cur);
+              cur = { date: liParseDate(dm[1]), label: dm[2].trim(), noteLines: [] };
+            } else {
+              if (!cur) cur = { date: null, label: '', noteLines: [] };
+              cur.noteLines.push(line);
+            }
+          }
+          if (cur) visits.push(cur);
+
+          for (const v of visits) {
+            const allText = v.noteLines.join(' ');
+
+            // Outdoor/indoor model: line starting with 6+ digits + letter
+            const modelLine = v.noteLines.find(l => modelRe.test(l));
+            let outdoorModel = '', indoorModel = '';
+            if (modelLine) {
+              const mp = modelLine.split(',');
+              outdoorModel = mp[0].trim();
+              // indoor typically: Fxx NNNN
+              const indoorM = modelLine.match(/[FfNn]\d{2}\s+\d{3,}/);
+              if (indoorM) indoorModel = indoorM[0].trim();
+            }
+
+            // XS weight-in line
+            const xsLine = v.noteLines.find(l => /^Xs\d|^XS\d/i.test(l));
+
+            // Notes: exclude model line, XS line, and pure-number lines
+            const notes = v.noteLines
+              .filter(l => l !== modelLine && !/^Xs\d|^XS\d/i.test(l) && !/^[\d,\s.\/\/]+$/.test(l))
+              .join(' ');
+
+            const fullNotes = [notes, xsLine ? `WI: ${xsLine}` : ''].filter(Boolean).join(' | ');
+            const items = liExtractItems(allText);
+
+            jobs.push({ address, subdivision, builder, date: v.date || '', notes: fullNotes.trim(), outdoor_model: outdoorModel, indoor_model: indoorModel, items, _raw: allText });
+          }
+        }
+        return jobs;
+      }
+
+      function liParse() {
+        const raw = (document.getElementById('li-textarea').value || '').trim();
+        if (!raw) return;
+        _liJobs = liParseBlocks(raw);
+        liRenderPreview();
+      }
+
+      const LI_CATS = ['Service','Thermostat','Accessory','Fix','Refrigerant'];
+      const LI_CAT_COLOR = { Service:'var(--amber)', Thermostat:'var(--purple)', Accessory:'var(--ice)', Fix:'var(--red)', Refrigerant:'var(--ice-dim)' };
+
+      function liRenderPreview() {
+        const card    = document.getElementById('li-preview-card');
+        const list    = document.getElementById('li-list');
+        const countEl = document.getElementById('li-count');
+        const msg     = document.getElementById('li-msg');
+
+        if (!_liJobs.length) {
+          msg.textContent = 'No records detected — check format.';
+          card.style.display = 'none';
+          return;
+        }
+        msg.style.color  = 'var(--green)';
+        msg.textContent  = `${_liJobs.length} record${_liJobs.length !== 1 ? 's' : ''} detected`;
+        countEl.textContent = _liJobs.length;
+        card.style.display  = '';
+        list.innerHTML = _liJobs.map((_, i) => liCardHTML(i)).join('');
+      }
+
+      function liCardHTML(i) {
+        const job   = _liJobs[i];
+        const total = job.items.reduce((s, it) => s + it.price * it.quantity, 0);
+        return `
+        <div id="li-card-${i}" style="border:1px solid var(--border2);border-radius:4px;margin-bottom:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);cursor:pointer" onclick="liToggle(${i})">
+            <span style="color:var(--amber);font-weight:600;flex:1;font-size:12px">${esc(job.address)}</span>
+            <span style="color:var(--text-dim);font-size:11px;white-space:nowrap">${job.date || '(no date)'}</span>
+            <span style="color:var(--ice);font-size:11px;white-space:nowrap">${job.items.length} items</span>
+            <span style="color:var(--green);font-size:11px;white-space:nowrap">$${total}</span>
+            <span id="li-st-${i}" style="font-size:10px;min-width:55px;text-align:right"></span>
+            <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;white-space:nowrap" onclick="event.stopPropagation();liStartEdit(${i})">✎ Edit</button>
+            <button type="button" class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 7px;white-space:nowrap" onclick="event.stopPropagation();liImportOne(${i})">Import</button>
+          </div>
+          <div id="li-det-${i}" style="display:none">${liViewHTML(i)}</div>
+        </div>`;
+      }
+
+      function liViewHTML(i) {
+        const job = _liJobs[i];
+        const itemsHtml = job.items.length
+          ? job.items.map(it => `
+              <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+                <span><span style="color:${LI_CAT_COLOR[it.category]||'var(--text-dim)'};font-size:10px">[${it.category}]</span> ${esc(it.item_name)} ×${it.quantity}</span>
+                <span style="color:var(--green)">$${it.price}</span>
+              </div>`).join('')
+          : `<div style="color:var(--text-dim);font-size:11px">No items detected</div>`;
+        return `<div style="padding:10px 12px;background:var(--bg2)">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;font-size:11px">
+            <div><span style="color:var(--text-dim)">Subdivision:</span> ${esc(job.subdivision)}</div>
+            <div><span style="color:var(--text-dim)">Builder:</span> ${esc(job.builder)}</div>
+            ${job.outdoor_model ? `<div><span style="color:var(--text-dim)">Outdoor:</span> ${esc(job.outdoor_model)}</div>` : ''}
+            ${job.indoor_model  ? `<div><span style="color:var(--text-dim)">Indoor:</span>  ${esc(job.indoor_model)}</div>`  : ''}
+          </div>
+          <div style="font-size:12px;margin-bottom:8px">${itemsHtml}</div>
+          ${job.notes ? `<div style="font-size:10px;color:var(--text-dim);line-height:1.5">${esc(job.notes)}</div>` : ''}
+        </div>`;
+      }
+
+      function liEditHTML(i) {
+        const job   = _liJobs[i];
+        const catOpts = LI_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+        const itemRows = job.items.map((it, k) => `
+          <tr id="li-irow-${i}-${k}">
+            <td style="padding:2px 4px">
+              <select style="background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;width:100%" id="li-icat-${i}-${k}">
+                ${LI_CATS.map(c => `<option value="${c}"${c===it.category?' selected':''}>${c}</option>`).join('')}
+              </select>
+            </td>
+            <td style="padding:2px 4px"><input type="text" value="${esc(it.item_name)}" id="li-iname-${i}-${k}" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:2px 4px" /></td>
+            <td style="padding:2px 4px;width:44px"><input type="number" value="${it.quantity}" id="li-iqty-${i}-${k}" min="1" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:2px 4px" /></td>
+            <td style="padding:2px 4px;width:54px"><input type="number" value="${it.price}" id="li-iprice-${i}-${k}" min="0" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:2px 4px" /></td>
+            <td style="padding:2px 4px;width:24px"><button type="button" onclick="liDelItem(${i},${k})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;line-height:1">✕</button></td>
+          </tr>`).join('');
+
+        return `<div style="padding:12px 14px;background:var(--bg2)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-bottom:12px">
+            ${['address','date','subdivision','builder','outdoor_model','indoor_model'].map(f => `
+            <div>
+              <div class="label" style="margin-bottom:2px">${f.replace('_',' ')}</div>
+              <input type="${f==='date'?'date':'text'}" id="li-f-${i}-${f}" value="${esc(job[f]||'')}"
+                style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:4px 6px;border-radius:3px" />
+            </div>`).join('')}
+            <div style="grid-column:1/-1">
+              <div class="label" style="margin-bottom:2px">notes</div>
+              <input type="text" id="li-f-${i}-notes" value="${esc(job.notes||'')}"
+                style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:4px 6px;border-radius:3px" />
+            </div>
+          </div>
+
+          <div class="label" style="margin-bottom:6px">Items</div>
+          <div style="overflow-x:auto;margin-bottom:8px">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="font-size:10px;color:var(--text-dim);text-align:left">
+                <th style="padding:2px 4px;width:115px">Category</th>
+                <th style="padding:2px 4px">Name</th>
+                <th style="padding:2px 4px;width:44px">Qty</th>
+                <th style="padding:2px 4px;width:54px">Price</th>
+                <th style="width:24px"></th>
+              </tr></thead>
+              <tbody id="li-itbody-${i}">${itemRows}</tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px" onclick="liAddItem(${i})">＋ Add Item</button>
+            <button type="button" class="btn btn-amber btn-sm" style="font-size:10px" onclick="liApplyEdit(${i})">✓ Apply</button>
+            <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px" onclick="liCancelEdit(${i})">Cancel</button>
+          </div>
+        </div>`;
+      }
+
+      function liToggle(i) {
+        const d = document.getElementById(`li-det-${i}`);
+        if (!d) return;
+        if (d.style.display === 'none') {
+          d.innerHTML = liViewHTML(i);
+          d.style.display = '';
+        } else {
+          d.style.display = 'none';
+        }
+      }
+
+      function liStartEdit(i) {
+        const d = document.getElementById(`li-det-${i}`);
+        if (!d) return;
+        d.innerHTML = liEditHTML(i);
+        d.style.display = '';
+      }
+
+      function liCancelEdit(i) {
+        const d = document.getElementById(`li-det-${i}`);
+        if (d) { d.innerHTML = liViewHTML(i); }
+      }
+
+      function liAddItem(i) {
+        _liJobs[i].items.push({ category:'Service', item_name:'', quantity:1, price:0 });
+        const tbody = document.getElementById(`li-itbody-${i}`);
+        if (!tbody) return;
+        const k = _liJobs[i].items.length - 1;
+        const tr = document.createElement('tr');
+        tr.id = `li-irow-${i}-${k}`;
+        tr.innerHTML = `
+          <td style="padding:2px 4px">
+            <select style="background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;width:100%" id="li-icat-${i}-${k}">
+              ${LI_CATS.map(c=>`<option value="${c}">${c}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:2px 4px"><input type="text" value="" id="li-iname-${i}-${k}" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:2px 4px" /></td>
+          <td style="padding:2px 4px"><input type="number" value="1" id="li-iqty-${i}-${k}" min="1" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:2px 4px" /></td>
+          <td style="padding:2px 4px"><input type="number" value="0" id="li-iprice-${i}-${k}" min="0" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);font-size:11px;padding:2px 4px" /></td>
+          <td style="padding:2px 4px"><button type="button" onclick="liDelItem(${i},${k})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px">✕</button></td>`;
+        tbody.appendChild(tr);
+        document.getElementById(`li-iname-${i}-${k}`)?.focus();
+      }
+
+      function liDelItem(i, k) {
+        const row = document.getElementById(`li-irow-${i}-${k}`);
+        if (row) row.remove();
+      }
+
+      function liApplyEdit(i) {
+        const job = _liJobs[i];
+        // Save top-level fields
+        ['address','date','subdivision','builder','outdoor_model','indoor_model','notes'].forEach(f => {
+          const el = document.getElementById(`li-f-${i}-${f}`);
+          if (el) job[f] = el.value.trim();
+        });
+        // Save items from visible rows
+        const tbody = document.getElementById(`li-itbody-${i}`);
+        if (tbody) {
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          job.items = rows.map(row => {
+            const rowId = row.id.replace(`li-irow-${i}-`,'');
+            return {
+              category:  document.getElementById(`li-icat-${i}-${rowId}`)?.value   || 'Service',
+              item_name: document.getElementById(`li-iname-${i}-${rowId}`)?.value  || '',
+              quantity:  parseFloat(document.getElementById(`li-iqty-${i}-${rowId}`)?.value)  || 1,
+              price:     parseFloat(document.getElementById(`li-iprice-${i}-${rowId}`)?.value) || 0,
+            };
+          }).filter(it => it.item_name.trim());
+        }
+        // Re-render this card in place
+        const card = document.getElementById(`li-card-${i}`);
+        if (card) card.outerHTML = liCardHTML(i);
+        // Re-open detail in view mode
+        const d = document.getElementById(`li-det-${i}`);
+        if (d) { d.innerHTML = liViewHTML(i); d.style.display = ''; }
+      }
+
+      async function liImportOne(i) {
+        const job = _liJobs[i];
+        const st  = document.getElementById(`li-st-${i}`);
+        st.textContent = '...';
+        st.style.color = 'var(--text-dim)';
+        try {
+          const res = await fetch(API_BASE + '/jobs/save-record', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              address:       job.address,
+              date:          job.date || new Date().toISOString().slice(0,10),
+              technician:    '',
+              notes:         job.notes,
+              subdivision:   job.subdivision,
+              builder:       job.builder,
+              indoor_model:  job.indoor_model,
+              outdoor_model: job.outdoor_model,
+              items:         job.items,
+            }),
+          });
+          if (!res.ok) throw new Error(await res.text());
+          st.textContent = '✓ Saved';
+          st.style.color  = 'var(--green)';
+        } catch(e) {
+          st.textContent = '✕ Error';
+          st.style.color  = 'var(--red)';
+          console.error('liImportOne', e);
+        }
+      }
+
+      async function liImportAll() {
+        const btn = document.getElementById('li-import-all-btn');
+        btn.disabled = true;
+        btn.textContent = 'Importing...';
+        for (let i = 0; i < _liJobs.length; i++) await liImportOne(i);
+        btn.disabled = false;
+        btn.textContent = '↑ Import All';
+      }
+
+      function liClear() {
+        _liJobs = [];
+        document.getElementById('li-preview-card').style.display = 'none';
+        document.getElementById('li-msg').textContent = '';
+      }
+
       // PROPERTY PANEL
       // ═══════════════════════════════════════
       function openPropertySearch(addr) {
@@ -6711,6 +7434,9 @@
       <td class="dim" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         ${esc(j.notes || "")}
       </td>
+      <td style="text-align:right;color:var(--green);font-family:var(--head);white-space:nowrap">
+        ${j.total_price ? `$${parseFloat(j.total_price).toFixed(0)}` : "—"}
+      </td>
       <td style="display:flex;gap:4px">
         <button type="button" class="btn btn-ghost btn-sm"
           onclick="event.stopPropagation();showHistDetail(${
@@ -6784,56 +7510,181 @@
               day: "numeric",
             });
 
+            const recId = `hd-rec-${record.id}`;
             html += `
-        <div style="background:var(--bg3);border:1px solid var(--border);
+        <div id="${recId}" style="background:var(--bg3);border:1px solid var(--border);
                     border-radius:4px;padding:14px;margin-bottom:12px">
+          <!-- Header row: date + tech + Edit toggle -->
           <div style="display:flex;justify-content:space-between;align-items:center;
                       margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
             <span style="font-family:var(--head);font-size:14px;font-weight:700;
                          color:var(--amber)">${esc(dateStr)}</span>
-            <span style="font-size:11px;color:var(--text-dim)">◎ ${esc(
-              record.technician || "—"
-            )}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:var(--text-dim)">◎ ${esc(record.technician || "—")}</span>
+              <button type="button" class="btn btn-ghost btn-sm"
+                onclick="hdToggleEdit(${record.id})"
+                id="hd-edit-btn-${record.id}"
+                style="font-size:10px;padding:2px 8px">✏️ Edit</button>
+            </div>
           </div>
-          ${
-            record.notes
-              ? `
+
+          <!-- VIEW mode -->
+          <div id="hd-view-${record.id}">
+            ${record.report_text ? `
+            <div style="font-size:12px;color:var(--text);margin-bottom:12px;
+                        line-height:1.6;padding:10px 12px;background:var(--bg2);
+                        border-radius:3px;border-left:3px solid var(--amber);
+                        word-break:break-word">${esc(record.report_text)}</div>` : ""}
+            ${record.notes ? `
             <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;
-                        line-height:1.6;white-space:pre-wrap">${esc(
-                          record.notes
-                        )}</div>
-          `
-              : ""
-          }
-          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-            ${billable
-              .map(
-                (i) => `
+                        line-height:1.6;white-space:pre-wrap">${esc(record.notes)}</div>` : ""}
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+              ${billable.map(i => `
               <span style="background:var(--bg2);border:1px solid var(--border2);
                            border-radius:2px;padding:2px 8px;font-size:11px">
                 ${i.quantity > 1 ? `${i.quantity}× ` : ""}${esc(i.item_name)}
-                ${
-                  i.price
-                    ? `<span style="color:var(--amber)"> $${i.price}</span>`
-                    : ""
-                }
-              </span>
-            `
-              )
-              .join("")}
-            ${ref
-              .map(
-                (r) => `
+                ${i.price ? `<span style="color:var(--amber)"> $${i.price}</span>` : ""}
+              </span>`).join("")}
+              ${ref.map(r => `
               <span style="background:var(--ice-dim);border:1px solid var(--ice-dim);
                            border-radius:2px;padding:2px 8px;font-size:11px;color:var(--ice)">
                 ❄ ${esc(r.item_name)} ${r.quantity} oz
-              </span>
-            `
-              )
-              .join("")}
+              </span>`).join("")}
+            </div>
+            <div style="font-family:var(--head);font-size:16px;font-weight:700;
+                        color:var(--green)">Total: $${total}</div>
           </div>
-          <div style="font-family:var(--head);font-size:16px;font-weight:700;
-                      color:var(--green)">Total: $${total}</div>
+
+          <!-- EDIT mode (hidden by default) -->
+          <div id="hd-edit-${record.id}" style="display:none">
+
+            <!-- Report Text -->
+            <div style="margin-bottom:10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                          color:var(--text-dim);margin-bottom:4px">Report Text</div>
+              <textarea id="hd-rt-${record.id}" rows="3"
+                style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text);
+                       padding:8px;resize:vertical;box-sizing:border-box"
+              >${esc(record.report_text || "")}</textarea>
+            </div>
+
+            <!-- Notes -->
+            <div style="margin-bottom:12px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                          color:var(--text-dim);margin-bottom:4px">Notes</div>
+              <textarea id="hd-notes-${record.id}" rows="2"
+                style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text);
+                       padding:8px;resize:vertical;box-sizing:border-box"
+              >${esc(record.notes || "")}</textarea>
+            </div>
+
+            <!-- Items table -->
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:6px">Items</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px"
+                   id="hd-items-tbl-${record.id}">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="text-align:left;padding:3px 4px;color:var(--text-dim);font-weight:500">Name</th>
+                  <th style="text-align:left;padding:3px 4px;color:var(--text-dim);font-weight:500;width:90px">Category</th>
+                  <th style="text-align:right;padding:3px 4px;color:var(--text-dim);font-weight:500;width:52px">Qty</th>
+                  <th style="text-align:right;padding:3px 4px;color:var(--text-dim);font-weight:500;width:60px">Price</th>
+                  <th style="width:28px"></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${record.items.map(i => `
+                <tr data-item-id="${i.id}" style="border-bottom:1px solid var(--border)">
+                  <td style="padding:3px 4px">
+                    <input type="text" value="${esc(i.item_name)}"
+                      style="width:100%;background:transparent;border:none;color:var(--text);
+                             font-size:12px;outline:none;border-bottom:1px solid var(--border2)"
+                      data-field="item_name" />
+                  </td>
+                  <td style="padding:3px 4px">
+                    <select data-field="category"
+                      style="background:transparent;border:none;color:var(--text-dim);
+                             font-size:11px;width:100%">
+                      ${["Service","Accessory","Fix","Thermostat","Refrigerant"].map(c =>
+                        `<option value="${c}" ${i.category===c?"selected":""}>${c}</option>`
+                      ).join("")}
+                    </select>
+                  </td>
+                  <td style="padding:3px 4px;text-align:right">
+                    <input type="number" value="${i.quantity}" min="0" step="any"
+                      style="width:48px;text-align:right;background:transparent;border:none;
+                             color:var(--text);font-size:12px;outline:none;
+                             border-bottom:1px solid var(--border2)"
+                      data-field="quantity" />
+                  </td>
+                  <td style="padding:3px 4px;text-align:right">
+                    <input type="number" value="${i.price}" min="0" step="any"
+                      style="width:52px;text-align:right;background:transparent;border:none;
+                             color:var(--amber);font-size:12px;outline:none;
+                             border-bottom:1px solid var(--border2)"
+                      data-field="price" />
+                  </td>
+                  <td style="padding:3px 4px;text-align:center">
+                    <button type="button"
+                      onclick="hdDeleteItem(${record.id}, ${i.id})"
+                      style="background:none;border:none;color:var(--red);cursor:pointer;
+                             font-size:13px;padding:0 2px" title="Remove item">✕</button>
+                  </td>
+                </tr>`).join("")}
+              </tbody>
+            </table>
+
+            <!-- Add item row -->
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+              <input type="text" id="hd-new-name-${record.id}" placeholder="Item name"
+                style="flex:2;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+              <select id="hd-new-cat-${record.id}"
+                style="flex:1;min-width:80px;font-size:11px;padding:4px 4px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text-dim)">
+                <option>Service</option><option>Accessory</option><option>Fix</option>
+                <option>Thermostat</option><option>Refrigerant</option>
+              </select>
+              <input type="number" id="hd-new-qty-${record.id}" placeholder="Qty" value="1" min="0" step="any"
+                style="width:48px;font-size:12px;padding:4px 4px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text);text-align:right" />
+              <input type="number" id="hd-new-price-${record.id}" placeholder="$" value="0" min="0" step="any"
+                style="width:52px;font-size:12px;padding:4px 4px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--amber);text-align:right" />
+              <button type="button" class="btn btn-sm"
+                onclick="hdAddItem(${record.id})"
+                style="font-size:11px;padding:4px 10px">＋ Add</button>
+            </div>
+
+            <!-- Edited by -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span style="font-size:11px;color:var(--text-dim)">Edited by:</span>
+              <input type="text" id="hd-editor-${record.id}" placeholder="Your name"
+                style="flex:1;font-size:12px;padding:4px 6px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+            </div>
+
+            <!-- Save / Cancel -->
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button type="button" class="btn btn-ghost btn-sm"
+                onclick="hdToggleEdit(${record.id})">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm"
+                onclick="hdSave(${record.id})">💾 Save Changes</button>
+            </div>
+          </div>
+
+          <!-- Audit log (collapsible) -->
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+            <button type="button"
+              onclick="hdToggleAudit(${record.id})"
+              style="background:none;border:none;color:var(--text-dim);font-size:10px;
+                     cursor:pointer;padding:0;letter-spacing:.05em;text-transform:uppercase">
+              🕓 Edit History ▾
+            </button>
+            <div id="hd-audit-${record.id}" style="display:none;margin-top:8px"></div>
+          </div>
         </div>`;
           });
 
@@ -6846,6 +7697,124 @@
           ).innerHTML = `<div style="color:var(--red);padding:20px">Error: ${esc(
             e.message
           )}</div>`;
+        }
+      }
+
+      // Toggle between view/edit mode for a history record
+      function hdToggleEdit(jobId) {
+        const view = document.getElementById(`hd-view-${jobId}`);
+        const edit = document.getElementById(`hd-edit-${jobId}`);
+        const btn  = document.getElementById(`hd-edit-btn-${jobId}`);
+        const isEditing = edit.style.display !== "none";
+        view.style.display = isEditing ? "" : "none";
+        edit.style.display = isEditing ? "none" : "";
+        btn.textContent = isEditing ? "✏️ Edit" : "✕ Cancel";
+      }
+
+      // Save all changes for a record
+      async function hdSave(jobId) {
+        const editedBy = document.getElementById(`hd-editor-${jobId}`).value.trim() || "dispatcher";
+
+        // 1. Save report_text
+        const rt = document.getElementById(`hd-rt-${jobId}`).value;
+        await fetch(`${API_BASE}/jobs/${jobId}/report_text`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ report_text: rt, edited_by: editedBy }),
+        });
+
+        // 2. Save notes
+        const notes = document.getElementById(`hd-notes-${jobId}`).value;
+        await fetch(`${API_BASE}/jobs/${jobId}/notes`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes, edited_by: editedBy }),
+        });
+
+        // 3. Save each item row
+        const tbl = document.getElementById(`hd-items-tbl-${jobId}`);
+        const rows = tbl.querySelectorAll("tbody tr[data-item-id]");
+        const itemPatches = [];
+        rows.forEach(row => {
+          const itemId = row.dataset.itemId;
+          const patch = { edited_by: editedBy };
+          row.querySelectorAll("input[data-field],select[data-field]").forEach(el => {
+            patch[el.dataset.field] = el.value;
+          });
+          itemPatches.push(
+            fetch(`${API_BASE}/jobs/${jobId}/items/${itemId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(patch),
+            })
+          );
+        });
+        await Promise.all(itemPatches);
+
+        // Reload the modal to reflect saved state
+        await showHistDetail(jobId);
+      }
+
+      // Add a new item to a record
+      async function hdAddItem(jobId) {
+        const name  = document.getElementById(`hd-new-name-${jobId}`).value.trim();
+        if (!name) return;
+        const cat   = document.getElementById(`hd-new-cat-${jobId}`).value;
+        const qty   = document.getElementById(`hd-new-qty-${jobId}`).value;
+        const price = document.getElementById(`hd-new-price-${jobId}`).value;
+        const editedBy = document.getElementById(`hd-editor-${jobId}`).value.trim() || "dispatcher";
+
+        await fetch(`${API_BASE}/jobs/${jobId}/items`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_name: name, category: cat, quantity: qty, price, edited_by: editedBy }),
+        });
+        await showHistDetail(jobId);
+      }
+
+      // Delete an item from a record
+      async function hdDeleteItem(jobId, itemId) {
+        if (!confirm("Remove this item?")) return;
+        const editedBy = document.getElementById(`hd-editor-${jobId}`)?.value.trim() || "dispatcher";
+        await fetch(`${API_BASE}/jobs/${jobId}/items/${itemId}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ edited_by: editedBy }),
+        });
+        await showHistDetail(jobId);
+      }
+
+      // Load and show audit log for a record
+      async function hdToggleAudit(jobId) {
+        const el = document.getElementById(`hd-audit-${jobId}`);
+        if (el.style.display !== "none") { el.style.display = "none"; return; }
+        el.innerHTML = '<span style="font-size:11px;color:var(--text-dim)">Loading…</span>';
+        el.style.display = "";
+        try {
+          const res  = await fetch(`${API_BASE}/jobs/${jobId}/edits`);
+          const edits = await res.json();
+          if (!edits.length) {
+            el.innerHTML = '<span style="font-size:11px;color:var(--text-dim)">No edits recorded yet.</span>';
+            return;
+          }
+          el.innerHTML = edits.map(e => {
+            const when = new Date(e.edited_at).toLocaleString("en-US", {
+              month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"
+            });
+            const oldSnip = e.old_value ? `"${e.old_value.slice(0,60)}${e.old_value.length>60?"…":""}"` : "—";
+            const newSnip = e.new_value ? `"${e.new_value.slice(0,60)}${e.new_value.length>60?"…":""}"` : "—";
+            return `
+            <div style="font-size:11px;padding:6px 0;border-bottom:1px solid var(--border);
+                        display:flex;flex-wrap:wrap;gap:4px;align-items:baseline">
+              <span style="color:var(--text-dim);min-width:110px">${when}</span>
+              <span style="color:var(--ice)">${esc(e.edited_by)}</span>
+              <span style="color:var(--text-dim)">·</span>
+              <span style="color:var(--amber)">${esc(e.field)}</span>
+              <span style="color:var(--text-dim)">${oldSnip} → ${newSnip}</span>
+            </div>`;
+          }).join("");
+        } catch(e) {
+          el.innerHTML = `<span style="color:var(--red);font-size:11px">Error loading edits</span>`;
         }
       }
 

@@ -349,8 +349,6 @@ export function generateReportText(state) {
   );
   data.fixes.forEach((f) => reportItems.push(`${f.displayName} $${f.price}`));
 
-  if (data.weightInText) reportItems.push(data.weightInText);
-
   reportItems.push(`total $${data.totalPrice}`);
   return reportItems.join(", ");
 }
@@ -846,10 +844,6 @@ export function exportToCSV(wrappers) {
     // Override notes from parser with the one from the payload, which is more reliable.
     if (payload && typeof payload.notes !== "undefined") {
       data.notes = payload.notes ? [payload.notes] : [];
-    }
-
-    if (data.weightInText) {
-      data.notes.push(data.weightInText);
     }
 
     return data;
