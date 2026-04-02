@@ -20,13 +20,6 @@ import {
   populateSelect,
   setupDynamicModelVisibility,
 } from "./ui.js";
-import {
-  generateReportText,
-  generateReportData,
-  createReportCard,
-  exportToCSV,
-  shareReportVia,
-} from "./reports.js";
 import { initQuickCalc } from "./quickCalc.js";
 import {
   saveJobState,
@@ -56,6 +49,7 @@ import { validateState } from "./validation.js";
 import { Components } from "./components.js";
 import { initImageManager } from "./imageManager.js";
 import { initJobManager } from "./jobManager.js";
+import { initReportManager } from "./reportmanager.js";
 
 // Objeto central para referencias del DOM (Mejora de Mantenimiento y Escalado)
 const UI = {};
@@ -523,11 +517,10 @@ const init = () => {
     }
   }
 
-  // State para imágenes (No persiste en localStorage)
-  const reportImagesMap = new Map(); // Key: reportId, Value: { weight: File, fan: File }
 
-  // Referencia al JobManager
+  // Referencia al JobManager y ReportManager
   let jobManager;
+  let reportManager;
 
   // Configurar Icono de la WebApp (Favicon y Apple Touch)
   const setAppIcon = () => {
@@ -629,72 +622,6 @@ const init = () => {
   const getAllFixButtons = () =>
     UI.fixesSection.querySelectorAll(".btn[data-fix]");
 
-  let selectedReportId = null;
-
-  const getReportWrappers = () =>
-    Array.from(UI.reportContent.querySelectorAll(".report-wrapper"));
-
-  const getSelectedReport = () =>
-    selectedReportId
-      ? UI.reportContent.querySelector(
-          `.report-wrapper[data-report-id="${selectedReportId}"]`
-        )
-      : null;
-
-  function clearSelection() {
-    getReportWrappers().forEach((wrap) => wrap.classList.remove("selected"));
-    selectedReportId = null;
-
-    // Ocultar y devolver opciones de compartir al contenedor principal
-    if (UI.shareOptions) {
-      UI.shareOptions.classList.add("hidden");
-      UI.reportContainer.appendChild(UI.shareOptions);
-    }
-    if (UI.reportActions) {
-      UI.reportActions.classList.add("hidden");
-      UI.reportContainer.appendChild(UI.reportActions);
-    }
-    refreshReportActions();
-  }
-
-  function selectReport(reportId) {
-    selectedReportId = reportId;
-    getReportWrappers().forEach((wrap) => {
-      wrap.classList.toggle("selected", wrap.dataset.reportId === reportId);
-    });
-
-    // Mover opciones de compartir justo debajo del reporte seleccionado
-    const selectedWrapper = getSelectedReport();
-    if (selectedWrapper) {
-      if (UI.reportActions) {
-        selectedWrapper.insertAdjacentElement("afterend", UI.reportActions);
-        UI.reportActions.classList.remove("hidden");
-      }
-      if (UI.shareOptions) {
-        const target = UI.reportActions || selectedWrapper;
-        target.insertAdjacentElement("afterend", UI.shareOptions);
-      }
-    }
-    refreshReportActions();
-  }
-
-  // Click outside to clear selection
-  if (UI.reportContainer) {
-    UI.reportContainer.addEventListener("click", (e) => {
-      if (
-        e.target.closest(".report-card") ||
-        e.target.closest("button") ||
-        e.target.closest(".btn") ||
-        e.target.closest("#report-actions") ||
-        e.target.closest("#share-options") ||
-        e.target.closest(".report-share-options")
-      ) {
-        return;
-      }
-      clearSelection();
-    });
-  }
-
   // Catálogos completos (derivados de weightInData.js)
   const heatersData = heaters || {};
   const outdoorData = unidadesExteriores || {};
@@ -703,26 +630,6 @@ const init = () => {
   const outdoorModels = Object.keys(outdoorData);
 
   window.showLightbox = showLightbox;
-
-  function refreshReportActions() {
-    const hasReports = getReportWrappers().length > 0;
-    const hasSelection = !!getSelectedReport();
-    if (UI.reportActions) {
-      UI.reportActions.classList.toggle("hidden", !hasSelection);
-    }
-    [UI.reportEditButton, UI.reportDeleteButton].forEach((btn) => {
-      if (!btn) return;
-      btn.disabled = !hasSelection;
-      btn.title = hasSelection ? "" : "Selecciona un reporte";
-    });
-    if (!hasSelection && UI.shareOptions) {
-      UI.shareOptions.classList.add("hidden");
-    }
-    if (UI.reportExportCsvButton) {
-      // Mostrar botón CSV solo si hay reportes (ahora está en el header)
-      UI.reportExportCsvButton.classList.toggle("hidden", !hasReports);
-    }
-  }
 
   let state = getState();
 
@@ -789,7 +696,6 @@ const init = () => {
     // 2. Guardar el estado actual (backup/estado activo)
     localStorage.setItem(STORAGE_KEYS.STATE, JSON.stringify(state));
     localStorage.setItem(STORAGE_KEYS.ACTIVE_JOB, activeJobAddress || "");
-    saveReportsToLocalStorage();
   }
 
   const saveToLocalStorageDebounced = debounce(saveToLocalStorage, 800);
@@ -838,60 +744,9 @@ const init = () => {
       }
     }
 
-    if (savedReports) {
-      try {
-        const reports = JSON.parse(savedReports);
-        reports.forEach((item) => {
-          // Soportar datos antiguos (solo texto) y nuevos (objeto)
-          const isObject = item && typeof item === "object" && item.reportText;
-          const reportText = isObject ? item.reportText : item;
-          const address =
-            (isObject && item.address) ||
-            (reportText && reportText.split(",")[0]) ||
-            "Completion Report";
-          const totals =
-            isObject && item.totals
-              ? item.totals
-              : {
-                  total: "",
-                  totalServicePrice: "",
-                  totalAccessoryPrice: "",
-                  totalFixPrice: "",
-                };
-          const wrapper = createReportCard({
-            reportText,
-            address,
-            totals,
-            services: isObject && item.services ? item.services : [],
-            accessories: isObject && item.accessories ? item.accessories : [],
-            fixes: isObject && item.fixes ? item.fixes : [],
-            notes: isObject && item.notes ? item.notes : "",
-            timestamp: isObject && item.timestamp ? item.timestamp : null,
-            payload: isObject
-              ? {
-                  ...item,
-                  timestamp: item.timestamp || null,
-                }
-              : null,
-            callbacks: {
-              onSelect: selectReport,
-              onEdit: editReport,
-              onDelete: deleteReport,
-            },
-          });
-          UI.reportContent.appendChild(wrapper);
-        });
-        if (reports.length > 0) {
-          UI.reportContainer.classList.remove("hidden");
-        }
-      } catch (e) {
-        console.error("Error parsing savedReports:", e);
-      }
+    if (savedReports && reportManager) {
+      reportManager.loadReportsFromLocalStorage(savedReports);
     }
-
-    // Cargar jobs al final
-    refreshReportActions();
-    updateGlobalActions();
 
     // Inicialización: Ocultar el espacio de trabajo hasta que se seleccione un trabajo
     toggleWorkspace(false);
@@ -937,6 +792,19 @@ const init = () => {
     resetSelections,
     restoreUIFromState,
     saveToLocalStorage,
+  });
+
+  // Inicializar Report Manager
+  reportManager = initReportManager({
+    UI,
+    getState,
+    saveToLocalStorage,
+    clearLocalStorage,
+    enablePostReportButtons,
+    disablePostReportButtons,
+    removeJobFromList: (addr) => jobManager && jobManager.removeJobFromList(addr),
+    getCurrentImages: () => imageManager ? imageManager.getCurrentImages() : {},
+    get imageManager() { return imageManager; },
   });
 
   loadFromLocalStorage();
@@ -1444,377 +1312,6 @@ const init = () => {
     saveToLocalStorage();
   });
 
-  UI.generateReportButton.addEventListener("click", (e) => {
-    e.preventDefault();
-
-    // Hide previous errors
-    hideValidationErrors();
-
-    // Determinar si los botones "Otro" están activos
-    const isOtroAccessoryActive = UI.accessoryButtons
-      .querySelector(`[data-accessory="${ACCESSORIES.OTRO}"]`)
-      ?.classList.contains("active");
-
-    const isOtroFixActive = UI.fixesSection
-      .querySelector(`[data-fix="${FIXES.OTRO}"]`)
-      ?.classList.contains("active");
-
-    // Validate data
-    const { blockingErrors } = validateState(
-      state,
-      isOtroAccessoryActive,
-      isOtroFixActive
-    );
-
-    // Si hay errores bloqueantes, mostrar y detener
-    if (blockingErrors.length > 0) {
-      showValidationErrors(blockingErrors);
-      return;
-    }
-
-    // Check for undownloaded images
-    const undownloaded = imageManager ? imageManager.getUndownloadedCount() : 0;
-    if (undownloaded > 0) {
-      showImageWarningModal(undownloaded);
-    } else {
-      generateReportProcess();
-    }
-  });
-
-  function showImageWarningModal(count) {
-    const existing = document.getElementById("_img-warn-modal");
-    if (existing) existing.remove();
-
-    const photoWord = count === 1 ? "photo has" : "photos have";
-    const overlay = document.createElement("div");
-    overlay.id = "_img-warn-modal";
-    overlay.style.cssText = `
-      position:fixed;inset:0;z-index:9999;
-      background:rgba(0,0,0,0.6);
-      display:flex;align-items:center;justify-content:center;
-      padding:16px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-      animation:fadeIn 0.15s ease;
-    `;
-
-    overlay.innerHTML = `
-      <div style="
-        background:var(--container-bg,#fff);
-        border:1px solid var(--border-color,#ddd);
-        border-radius:12px;
-        padding:28px 24px 22px;
-        max-width:360px;width:100%;
-        box-shadow:0 24px 64px rgba(0,0,0,0.5);
-        text-align:center;
-      ">
-        <div style="font-size:36px;margin-bottom:10px">📷</div>
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--text-color,#111)">
-          ${count} ${photoWord} not been downloaded
-        </div>
-        <div style="font-size:13px;color:var(--text-muted,#666);margin-bottom:22px;line-height:1.5">
-          Would you like to download the photos before generating the report?
-        </div>
-        <div style="display:flex;flex-direction:column;gap:9px">
-          <button id="_img-warn-dl" style="
-            width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;
-            background:var(--grad-primary,#0066ff);color:#fff;
-            font-weight:700;font-size:13px;letter-spacing:0.4px;
-            box-shadow:0 4px 16px rgba(56,190,255,0.35);
-          ">💾 Download Photos &amp; Generate Report</button>
-          <button id="_img-warn-skip" style="
-            width:100%;padding:10px;border-radius:8px;cursor:pointer;
-            background:transparent;
-            border:1px solid var(--border-color,#ccc);
-            color:var(--text-color,#333);font-size:13px;font-weight:600;
-          ">Generate Without Downloading</button>
-          <button id="_img-warn-cancel" style="
-            width:100%;padding:8px;border-radius:8px;cursor:pointer;
-            background:transparent;border:none;
-            color:var(--text-muted,#888);font-size:12px;
-          ">Cancel</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    const closeModal = (cb) => {
-      // pointer-events:none primero para bloquear tap-through en mobile
-      overlay.style.pointerEvents = "none";
-      setTimeout(() => {
-        overlay.remove();
-        if (cb) cb();
-      }, 80);
-    };
-
-    overlay.querySelector("#_img-warn-dl").onclick = () => {
-      closeModal(() => {
-        imageManager.triggerDownload();
-        setTimeout(generateReportProcess, 300);
-      });
-    };
-    overlay.querySelector("#_img-warn-skip").onclick = () => {
-      closeModal(generateReportProcess);
-    };
-    overlay.querySelector("#_img-warn-cancel").onclick = () => closeModal();
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
-  }
-
-  function generateReportProcess() {
-    // If everything is OK, generate the report.
-    const reportText = generateReportText(state);
-    const reportData = generateReportData(state);
-
-    const totals = reportData.totals; // Use totals from generateReportData for consistency
-    const currentImages = imageManager ? imageManager.getCurrentImages() : {};
-
-    const outdoorData = unidadesExteriores[state.outdoorModel];
-    const refrigerant = outdoorData ? outdoorData.freon : "";
-
-    const currentJob = getJobByAddress(state.address);
-    const builder = currentJob ? currentJob.builder : "";
-    const subdivision = currentJob ? currentJob.subdivision : "";
-
-    const reportWrapper = createReportCard({
-      reportText,
-      address: state.address.trim().toUpperCase(),
-      totals: totals,
-      services: reportData.services,
-      accessories: reportData.accessories,
-      fixes: reportData.fixes,
-      thermostat: reportData.thermostat,
-      weightInText: reportData.weightInText,
-      notes: state.notes,
-      weightInData: state.weightInData,
-      weightInData2: state.weightInData2,
-      refrigerant,
-      outdoorModel: state.outdoorModel,
-      heaterModel: state.heaterModel,
-      outdoorModel2: state.outdoorModel2,
-      heaterModel2: state.heaterModel2,
-      builder,
-      subdivision,
-      timestamp: new Date().toISOString(),
-      callbacks: {
-        onSelect: selectReport,
-        onEdit: editReport,
-        onDelete: deleteReport,
-      },
-    });
-
-    UI.reportContent.appendChild(reportWrapper);
-    UI.reportContainer.classList.remove("hidden");
-    if (reportWrapper.dataset.reportId) {
-      selectReport(reportWrapper.dataset.reportId);
-    }
-
-    // Guardar imágenes en el mapa global usando el ID del reporte
-    if (currentImages.weight || currentImages.fan) {
-      reportImagesMap.set(reportWrapper.dataset.reportId, { ...currentImages });
-    }
-
-    saveReportsToLocalStorage();
-    refreshReportActions();
-
-    // Actualizar botón "Delete All"
-    updateGlobalActions();
-
-    // NUEVO: Eliminar el job de la lista si está seleccionado
-    const activeJobAddress = getActiveJobAddress();
-    if (activeJobAddress && activeJobAddress === state.address) {
-      if (jobManager) {
-        jobManager.removeJobFromList(activeJobAddress);
-      }
-    }
-
-    // En lugar de resetear y ocultar todo, deshabilitamos los controles
-    // resetSelections();
-    disablePostReportButtons();
-    switchToTab("reports");
-    saveToLocalStorage();
-  }
-
-  // Función para editar reporte
-  function editReport(reportWrapper, currentText) {
-    if (!reportWrapper) return;
-    const reportDiv = reportWrapper.querySelector(".report-entry");
-    const newText = prompt(
-      "Editar reporte:",
-      currentText || reportDiv.textContent
-    );
-
-    if (newText && newText.trim() !== "") {
-      reportDiv.textContent = newText.trim();
-      const raw = reportWrapper.querySelector(".report-raw");
-      if (raw) raw.textContent = newText.trim();
-      saveReportsToLocalStorage();
-    }
-  }
-
-  // Función para eliminar reporte individual
-  function deleteReport(reportWrapper) {
-    if (!reportWrapper) return;
-    const wasSelected =
-      selectedReportId && reportWrapper.dataset.reportId === selectedReportId;
-    if (confirm("¿Seguro que quieres eliminar este reporte?")) {
-      // Guardar estado para deshacer
-      const parent = reportWrapper.parentNode;
-      const nextSibling = reportWrapper.nextSibling;
-      const reportId = reportWrapper.dataset.reportId;
-      const savedImages = reportImagesMap.get(reportId);
-
-      reportWrapper.remove();
-
-      // Si no quedan reportes, ocultar el contenedor
-      reportImagesMap.delete(reportWrapper.dataset.reportId); // Limpiar imágenes de memoria
-      if (UI.reportContent.children.length === 0) {
-        UI.reportContainer.classList.add("hidden");
-      }
-
-      updateGlobalActions();
-      saveReportsToLocalStorage();
-      if (wasSelected) {
-        clearSelection();
-      } else {
-        refreshReportActions();
-      }
-
-      showUndoToast("Reporte eliminado", () => {
-        if (nextSibling) parent.insertBefore(reportWrapper, nextSibling);
-        else parent.appendChild(reportWrapper);
-
-        if (savedImages) reportImagesMap.set(reportId, savedImages);
-
-        UI.reportContainer.classList.remove("hidden");
-        updateGlobalActions();
-        saveReportsToLocalStorage();
-        if (wasSelected) selectReport(reportId);
-        else refreshReportActions();
-      });
-    }
-  }
-
-  // Función para actualizar visibilidad de botones globales (Share All / Delete All)
-  function updateGlobalActions() {
-    const reportCount =
-      UI.reportContent.querySelectorAll(".report-wrapper").length;
-    let container = document.getElementById("global-actions-container");
-
-    if (reportCount > 1) {
-      if (!container) {
-        container = document.createElement("div");
-        container.id = "global-actions-container";
-        container.style.display = "flex";
-        container.style.gap = "10px";
-        container.style.marginTop = "20px";
-        UI.reportContainer.appendChild(container);
-      }
-
-      // Delete All Button (Left, Red, Small)
-      if (!document.getElementById("delete-all-reports")) {
-        const deleteAllBtn = document.createElement("button");
-        deleteAllBtn.type = "button";
-        deleteAllBtn.id = "delete-all-reports";
-        deleteAllBtn.classList.add("btn", "btn-delete-all");
-        deleteAllBtn.textContent = "🗑️ Delete All";
-
-        // Red styling
-        deleteAllBtn.style.backgroundColor = "#fee2e2";
-        deleteAllBtn.style.color = "#991b1b";
-        deleteAllBtn.style.border = "1px solid #f87171";
-        // Smaller size
-        deleteAllBtn.style.fontSize = "0.8em";
-        deleteAllBtn.style.padding = "4px 8px";
-        deleteAllBtn.style.flex = "0 0 auto";
-
-        deleteAllBtn.addEventListener("click", () => {
-          if (confirm("¿Seguro que quieres eliminar TODOS los reportes?")) {
-            // Guardar estado para deshacer
-            const children = Array.from(UI.reportContent.children);
-            const savedImages = new Map(reportImagesMap);
-
-            UI.reportContent.innerHTML = "";
-            UI.reportContainer.classList.add("hidden");
-            reportImagesMap.clear(); // Limpiar todas las imágenes
-
-            // Remove container instead of just button
-            container.remove();
-
-            clearReportsFromLocalStorage();
-            clearSelection();
-
-            showUndoToast("Todos los reportes eliminados", () => {
-              children.forEach((child) => UI.reportContent.appendChild(child));
-              UI.reportContainer.classList.remove("hidden");
-              savedImages.forEach((val, key) => {
-                reportImagesMap.set(key, val);
-              });
-              updateGlobalActions();
-              saveReportsToLocalStorage();
-            });
-          }
-        });
-
-        container.appendChild(deleteAllBtn);
-      }
-
-      // Share All Button (Right, Regular, Big)
-      if (!document.getElementById("share-all-reports")) {
-        const shareAllBtn = document.createElement("button");
-        shareAllBtn.type = "button";
-        shareAllBtn.id = "share-all-reports";
-        shareAllBtn.className = "btn";
-        shareAllBtn.textContent = "📤 Share All";
-        shareAllBtn.style.flex = "1";
-
-        shareAllBtn.addEventListener("click", () => {
-          shareContext = "all";
-          UI.shareOptions.classList.remove("hidden");
-          // Ensure options are visible near the buttons
-          container.insertAdjacentElement("afterend", UI.shareOptions);
-        });
-        container.appendChild(shareAllBtn);
-      }
-    } else {
-      if (container) {
-        container.remove();
-      }
-    }
-    refreshReportActions();
-  }
-
-  // Función para guardar reportes en localStorage
-  function saveReportsToLocalStorage() {
-    const reports = Array.from(
-      UI.reportContent.querySelectorAll(".report-wrapper")
-    ).map((wrap) => {
-      const payloadRaw = wrap.dataset.reportPayload;
-      let payloadObj = null;
-      if (payloadRaw) {
-        try {
-          payloadObj = JSON.parse(payloadRaw);
-        } catch (e) {
-          console.warn("No se pudo parsear payload, usando fallback");
-        }
-      }
-      const entry = wrap.querySelector(".report-entry");
-      const text = entry ? entry.textContent.trim() : "";
-      const timestamp =
-        wrap.dataset.timestamp ||
-        (payloadObj && payloadObj.timestamp) ||
-        new Date().toISOString();
-      if (payloadObj) {
-        payloadObj.timestamp = timestamp;
-        return payloadObj;
-      }
-      return { reportText: text, address: text.split(",")[0] || "", timestamp };
-    });
-    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
-  }
-
-  // Función para limpiar reportes de localStorage
-  function clearReportsFromLocalStorage() {
-    localStorage.removeItem(STORAGE_KEYS.REPORTS);
-  }
 
   // Funciones para controlar el estado de los botones post-reporte
   function disablePostReportButtons() {
@@ -1946,214 +1443,6 @@ const init = () => {
     updatePriceDisplay();
     switchToTab("jobs");
     saveToLocalStorage();
-  }
-
-  UI.reportEditButton.addEventListener("click", () => {
-    const selected = getSelectedReport();
-    if (!selected) {
-      alert("Selecciona un reporte primero");
-      return;
-    }
-    const text = getSelectedReportText();
-    editReport(selected, text);
-    refreshReportActions();
-  });
-
-  UI.reportDeleteButton.addEventListener("click", () => {
-    const selected = getSelectedReport();
-    if (selected) {
-      deleteReport(selected);
-      return;
-    }
-    if (confirm("¿Seguro que quieres eliminar todos los reportes?")) {
-      UI.reportContent.innerHTML = "";
-      UI.reportContainer.classList.add("hidden");
-      clearSelection();
-      clearLocalStorage();
-    }
-    updateGlobalActions();
-    refreshReportActions();
-  });
-
-  function getSelectedReportText() {
-    const selected = getSelectedReport();
-    if (!selected) return "";
-    const entry = selected.querySelector(".report-entry");
-    return entry ? entry.textContent.trim() : "";
-  }
-
-  function getAllReportsText() {
-    const entries = UI.reportContent.querySelectorAll(".report-entry");
-    return Array.from(entries)
-      .map((entry) => entry.textContent.trim())
-      .filter(Boolean)
-      .join("\n");
-  }
-
-  let shareContext = "auto"; // 'auto' | 'all'
-
-  UI.reportShareButton.addEventListener("click", () => {
-    if (!getReportWrappers().length) {
-      alert("No hay reportes para compartir");
-      return;
-    }
-    shareContext = "auto";
-    UI.shareOptions.classList.toggle("hidden");
-  });
-
-  // Configuración de botones de compartir (Refactorizado)
-  [
-    { btn: UI.shareWhatsappButton, method: "whatsapp" },
-    { btn: UI.shareSmsButton, method: "sms" },
-    { btn: UI.shareEmailButton, method: "email" },
-    { btn: UI.shareCopyButton, method: "copy" },
-  ].forEach(({ btn, method }) => {
-    if (btn) {
-      btn.addEventListener("click", () => {
-        const text =
-          shareContext === "all"
-            ? getAllReportsText()
-            : getSelectedReportText() || getAllReportsText();
-        shareReportVia(text, method);
-        UI.shareOptions.classList.add("hidden");
-        shareContext = "auto";
-      });
-    }
-  });
-
-  if (UI.reportExportCsvButton) {
-    UI.reportExportCsvButton.addEventListener("click", () => {
-      if (confirm("Generate a CSV file with all reports?")) {
-        exportToCSV(getReportWrappers());
-      }
-    });
-  }
-
-  if (UI.exportDbButton) {
-    UI.exportDbButton.addEventListener("click", (e) => {
-      e.preventDefault();
-
-      const reportsRaw = localStorage.getItem(STORAGE_KEYS.REPORTS);
-      if (!reportsRaw) {
-        alert("No reports found to export.");
-        return;
-      }
-
-      let reports = [];
-      try {
-        reports = JSON.parse(reportsRaw);
-      } catch (err) {
-        console.error("Error parsing reports", err);
-        alert("Error parsing reports data.");
-        return;
-      }
-
-      // Ask for tech name before export
-      const savedTechName = localStorage.getItem("dashboard_tech_name") || "";
-      const techName = prompt(
-        "Nombre del técnico para este export:",
-        savedTechName
-      );
-      if (techName === null) return; // cancelled
-      if (techName.trim()) {
-        localStorage.setItem("dashboard_tech_name", techName.trim());
-      }
-
-      if (
-        !confirm(
-          `¿Exportar ${reports.length} reportes completados para el Dashboard?`
-        )
-      ) {
-        return;
-      }
-
-      const exportTechName = techName.trim() || "Sin nombre";
-      const jobsToExport = reports.map((r) => {
-        // Handle legacy string reports
-        if (typeof r === "string") {
-          return {
-            address: r.split(",")[0] || "Unknown",
-            savedState: {
-              notes: r,
-              date: new Date().toISOString().split("T")[0],
-            },
-          };
-        }
-
-        // Extract date
-        let dateStr = new Date().toISOString().split("T")[0];
-        if (r.timestamp) {
-          try {
-            dateStr = new Date(r.timestamp).toISOString().split("T")[0];
-          } catch (e) {}
-        }
-
-        // Extract Thermostat from services text if not explicit
-        let tstat = null;
-        let tstatQty = 1;
-
-        if (r.services && Array.isArray(r.services)) {
-          for (const s of r.services) {
-            const name = s.displayName || s.name || "";
-            // Regex matches "1 T-6 tstat" or "2 Ecobee tstats"
-            const match = name.match(/(\d+)\s+(.*?)\s+tstat/i);
-            if (match) {
-              tstatQty = parseInt(match[1]);
-              tstat = { name: match[2] };
-              break;
-            }
-          }
-        }
-
-        return {
-          techName: exportTechName,
-          address: r.address || "Unknown",
-          reportText: r.reportText || "",
-          subdivision: r.subdivision || "",
-          builder: r.builder || "",
-          heaterModel: r.heaterModel || "",
-          outdoorModel: r.outdoorModel || "",
-          refrigerant: r.refrigerant || "",
-          savedState: {
-            date: dateStr,
-            notes: Array.isArray(r.notes) ? r.notes.join("\n") : r.notes || "",
-            weightInData: r.weightInData || {},
-            weightInData2: r.weightInData2 || {},
-            selectedThermostat: tstat,
-            thermostatQuantity: tstatQty,
-            selectedServices: (r.services || []).map((s) => ({
-              name: s.name,
-              basePrice: s.price || s.basePrice || 0,
-            })),
-            selectedAccessories: (r.accessories || []).map((a) => ({
-              name: a.name,
-              basePrice: a.price,
-            })),
-            selectedFixes: (r.fixes || []).map((f) => ({
-              name: f.name,
-              basePrice: f.price,
-            })),
-          },
-        };
-      });
-
-      const dataStr =
-        "data:text/json;charset=utf-8," +
-        encodeURIComponent(JSON.stringify(jobsToExport, null, 2));
-      const downloadAnchorNode = document.createElement("a");
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute(
-        "download",
-        "dashboard_import_" +
-          new Date().toISOString().slice(0, 10) +
-          "_" +
-          exportTechName.replace(/\s+/g, "_") +
-          ".json"
-      );
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-    });
   }
 
   // --- COLLAPSIBLE JOB FORM LOGIC ---

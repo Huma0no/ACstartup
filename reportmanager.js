@@ -5,30 +5,34 @@ import {
   exportToCSV,
   shareReportVia,
 } from "./reports.js";
-import { calculateFinancials } from "./pricing.js";
-import { STORAGE_KEYS, ACCESSORIES, FIXES, SERVICES } from "./constants.js";
-import {
-  validateState,
-  hideValidationErrors,
-  showValidationErrors,
-} from "./validation.js";
+import { STORAGE_KEYS, ACCESSORIES, FIXES } from "./constants.js";
+import { validateState } from "./validation.js";
 import { getActiveJobAddress, getJobByAddress } from "./jobs.js";
 import { unidadesExteriores } from "./weightInData.js";
-import { showUndoToast } from "./ui.js";
+import {
+  showUndoToast,
+  switchToTab,
+  hideValidationErrors,
+  showValidationErrors,
+} from "./ui.js";
 
 export function initReportManager(context) {
   const {
     UI,
     getState,
-    saveToLocalStorage, // Para guardar estado global si es necesario
-    resetSelections,
+    saveToLocalStorage,
+    clearLocalStorage,
+    enablePostReportButtons,
+    disablePostReportButtons,
     removeJobFromList,
     getCurrentImages,
+    imageManager,
   } = context;
 
   // State local para reportes
-  const reportImagesMap = new Map(); // Key: reportId, Value: { weight: File, fan: File }
+  const reportImagesMap = new Map();
   let selectedReportId = null;
+  let shareContext = "auto"; // 'auto' | 'all'
 
   // --- Helpers del DOM ---
   const getReportWrappers = () =>
@@ -126,51 +130,75 @@ export function initReportManager(context) {
     });
   }
 
-  function updateDeleteAllButton() {
+  // --- Global Actions (Delete All + Share All) ---
+  function updateGlobalActions() {
     const reportCount =
       UI.reportContent.querySelectorAll(".report-wrapper").length;
+    let container = document.getElementById("global-actions-container");
 
     if (reportCount > 1) {
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "global-actions-container";
+        container.style.display = "flex";
+        container.style.gap = "10px";
+        container.style.marginTop = "20px";
+        UI.reportContainer.appendChild(container);
+      }
+
       if (!document.getElementById("delete-all-reports")) {
         const deleteAllBtn = document.createElement("button");
         deleteAllBtn.type = "button";
         deleteAllBtn.id = "delete-all-reports";
         deleteAllBtn.classList.add("btn", "btn-delete-all");
         deleteAllBtn.textContent = "🗑️ Delete All";
-        deleteAllBtn.style.marginTop = "20px";
-        deleteAllBtn.style.width = "100%";
+        deleteAllBtn.style.backgroundColor = "#fee2e2";
+        deleteAllBtn.style.color = "#991b1b";
+        deleteAllBtn.style.border = "1px solid #f87171";
+        deleteAllBtn.style.fontSize = "0.8em";
+        deleteAllBtn.style.padding = "4px 8px";
+        deleteAllBtn.style.flex = "0 0 auto";
 
         deleteAllBtn.addEventListener("click", () => {
           if (confirm("¿Seguro que quieres eliminar TODOS los reportes?")) {
-            // Guardar estado para deshacer
             const children = Array.from(UI.reportContent.children);
             const savedImages = new Map(reportImagesMap);
-
             UI.reportContent.innerHTML = "";
             UI.reportContainer.classList.add("hidden");
             reportImagesMap.clear();
-            deleteAllBtn.remove();
+            container.remove();
             clearReportsFromLocalStorage();
             clearSelection();
 
             showUndoToast("Todos los reportes eliminados", () => {
               children.forEach((child) => UI.reportContent.appendChild(child));
               UI.reportContainer.classList.remove("hidden");
-              savedImages.forEach((val, key) => {
-                reportImagesMap.set(key, val);
-              });
-              updateDeleteAllButton();
+              savedImages.forEach((val, key) => reportImagesMap.set(key, val));
+              updateGlobalActions();
               saveReportsToLocalStorage();
             });
           }
         });
+        container.appendChild(deleteAllBtn);
+      }
 
-        // Insertar al final del contenedor
-        UI.reportContainer.appendChild(deleteAllBtn);
+      if (!document.getElementById("share-all-reports")) {
+        const shareAllBtn = document.createElement("button");
+        shareAllBtn.type = "button";
+        shareAllBtn.id = "share-all-reports";
+        shareAllBtn.className = "btn";
+        shareAllBtn.textContent = "📤 Share All";
+        shareAllBtn.style.flex = "1";
+
+        shareAllBtn.addEventListener("click", () => {
+          shareContext = "all";
+          UI.shareOptions.classList.remove("hidden");
+          container.insertAdjacentElement("afterend", UI.shareOptions);
+        });
+        container.appendChild(shareAllBtn);
       }
     } else {
-      const deleteAllBtn = document.getElementById("delete-all-reports");
-      if (deleteAllBtn) deleteAllBtn.remove();
+      if (container) container.remove();
     }
     refreshReportActions();
   }
@@ -208,6 +236,84 @@ export function initReportManager(context) {
     localStorage.removeItem(STORAGE_KEYS.REPORTS);
   }
 
+  // --- Modal: Download Photos Warning ---
+  function showImageWarningModal(count, onConfirm) {
+    const existing = document.getElementById("_img-warn-modal");
+    if (existing) existing.remove();
+
+    const photoWord = count === 1 ? "photo has" : "photos have";
+    const overlay = document.createElement("div");
+    overlay.id = "_img-warn-modal";
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:9999;
+      background:rgba(0,0,0,0.6);
+      display:flex;align-items:center;justify-content:center;
+      padding:16px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+      animation:fadeIn 0.15s ease;
+    `;
+
+    overlay.innerHTML = `
+      <div style="
+        background:var(--container-bg,#fff);
+        border:1px solid var(--border-color,#ddd);
+        border-radius:12px;
+        padding:28px 24px 22px;
+        max-width:360px;width:100%;
+        box-shadow:0 24px 64px rgba(0,0,0,0.5);
+        text-align:center;
+      ">
+        <div style="font-size:36px;margin-bottom:10px">📷</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--text-color,#111)">
+          ${count} ${photoWord} not been downloaded
+        </div>
+        <div style="font-size:13px;color:var(--text-muted,#666);margin-bottom:22px;line-height:1.5">
+          Would you like to download the photos before generating the report?
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <button id="_img-warn-dl" style="
+            width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;
+            background:var(--grad-primary,#0066ff);color:#fff;
+            font-weight:700;font-size:13px;letter-spacing:0.4px;
+            box-shadow:0 4px 16px rgba(56,190,255,0.35);
+          ">💾 Download Photos &amp; Generate Report</button>
+          <button id="_img-warn-skip" style="
+            width:100%;padding:10px;border-radius:8px;cursor:pointer;
+            background:transparent;
+            border:1px solid var(--border-color,#ccc);
+            color:var(--text-color,#333);font-size:13px;font-weight:600;
+          ">Generate Without Downloading</button>
+          <button id="_img-warn-cancel" style="
+            width:100%;padding:8px;border-radius:8px;cursor:pointer;
+            background:transparent;border:none;
+            color:var(--text-muted,#888);font-size:12px;
+          ">Cancel</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = (cb) => {
+      overlay.style.pointerEvents = "none";
+      setTimeout(() => {
+        overlay.remove();
+        if (cb) cb();
+      }, 80);
+    };
+
+    overlay.querySelector("#_img-warn-dl").onclick = () => {
+      closeModal(() => {
+        if (imageManager) imageManager.triggerDownload();
+        setTimeout(onConfirm, 300);
+      });
+    };
+    overlay.querySelector("#_img-warn-skip").onclick = () => closeModal(onConfirm);
+    overlay.querySelector("#_img-warn-cancel").onclick = () => closeModal();
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeModal();
+    });
+  }
+
   // --- Acciones de Reporte ---
   function editReport(reportWrapper, currentText) {
     if (!reportWrapper) return;
@@ -216,7 +322,6 @@ export function initReportManager(context) {
       "Editar reporte:",
       currentText || reportDiv.textContent
     );
-
     if (newText && newText.trim() !== "") {
       reportDiv.textContent = newText.trim();
       const raw = reportWrapper.querySelector(".report-raw");
@@ -230,38 +335,97 @@ export function initReportManager(context) {
     const wasSelected =
       selectedReportId && reportWrapper.dataset.reportId === selectedReportId;
     if (confirm("¿Seguro que quieres eliminar este reporte?")) {
-      // Guardar estado para deshacer
       const parent = reportWrapper.parentNode;
       const nextSibling = reportWrapper.nextSibling;
       const reportId = reportWrapper.dataset.reportId;
       const savedImages = reportImagesMap.get(reportId);
 
       reportWrapper.remove();
-      reportImagesMap.delete(reportWrapper.dataset.reportId);
+      reportImagesMap.delete(reportId);
       if (UI.reportContent.children.length === 0) {
         UI.reportContainer.classList.add("hidden");
       }
-      updateDeleteAllButton();
+      updateGlobalActions();
       saveReportsToLocalStorage();
-      if (wasSelected) {
-        clearSelection();
-      } else {
-        refreshReportActions();
-      }
+      if (wasSelected) clearSelection();
+      else refreshReportActions();
 
       showUndoToast("Reporte eliminado", () => {
         if (nextSibling) parent.insertBefore(reportWrapper, nextSibling);
         else parent.appendChild(reportWrapper);
-
         if (savedImages) reportImagesMap.set(reportId, savedImages);
-
         UI.reportContainer.classList.remove("hidden");
-        updateDeleteAllButton();
+        updateGlobalActions();
         saveReportsToLocalStorage();
         if (wasSelected) selectReport(reportId);
         else refreshReportActions();
       });
     }
+  }
+
+  function generateReportProcess() {
+    const state = getState();
+    const reportText = generateReportText(state);
+    const reportData = generateReportData(state);
+    const totals = reportData.totals;
+    const currentImages = getCurrentImages ? getCurrentImages() : {};
+
+    const outdoorData = unidadesExteriores[state.outdoorModel];
+    const refrigerant = outdoorData ? outdoorData.freon : "";
+
+    const currentJob = getJobByAddress(state.address);
+    const builder = currentJob ? currentJob.builder : "";
+    const subdivision = currentJob ? currentJob.subdivision : "";
+
+    const reportWrapper = createReportCard({
+      reportText,
+      address: state.address.trim().toUpperCase(),
+      totals,
+      services: reportData.services,
+      accessories: reportData.accessories,
+      fixes: reportData.fixes,
+      thermostat: reportData.thermostat,
+      weightInText: reportData.weightInText,
+      notes: state.notes,
+      weightInData: state.weightInData,
+      weightInData2: state.weightInData2,
+      refrigerant,
+      outdoorModel: state.outdoorModel,
+      heaterModel: state.heaterModel,
+      outdoorModel2: state.outdoorModel2,
+      heaterModel2: state.heaterModel2,
+      builder,
+      subdivision,
+      timestamp: new Date().toISOString(),
+      callbacks: {
+        onSelect: selectReport,
+        onEdit: editReport,
+        onDelete: deleteReport,
+      },
+    });
+
+    UI.reportContent.appendChild(reportWrapper);
+    UI.reportContainer.classList.remove("hidden");
+    if (reportWrapper.dataset.reportId) {
+      selectReport(reportWrapper.dataset.reportId);
+    }
+
+    if (currentImages.weight || currentImages.fan) {
+      reportImagesMap.set(reportWrapper.dataset.reportId, { ...currentImages });
+    }
+
+    saveReportsToLocalStorage();
+    refreshReportActions();
+    updateGlobalActions();
+
+    const activeJobAddress = getActiveJobAddress();
+    if (activeJobAddress && activeJobAddress === state.address) {
+      if (removeJobFromList) removeJobFromList(activeJobAddress);
+    }
+
+    if (disablePostReportButtons) disablePostReportButtons();
+    switchToTab("reports");
+    saveToLocalStorage();
   }
 
   // --- Event Listeners ---
@@ -288,72 +452,13 @@ export function initReportManager(context) {
       return;
     }
 
-    executeReportGeneration();
+    const undownloaded = imageManager ? imageManager.getUndownloadedCount() : 0;
+    if (undownloaded > 0) {
+      showImageWarningModal(undownloaded, generateReportProcess);
+    } else {
+      generateReportProcess();
+    }
   });
-
-  function executeReportGeneration() {
-    const state = getState();
-    const reportText = generateReportText(state);
-    const reportData = generateReportData(state);
-    const totals = reportData.totals;
-    const currentImages = getCurrentImages();
-
-    const outdoorData = unidadesExteriores[state.outdoorModel];
-    const refrigerant = outdoorData ? outdoorData.freon : "";
-
-    const currentJob = getJobByAddress(state.address);
-    const builder = currentJob ? currentJob.builder : "";
-    const subdivision = currentJob ? currentJob.subdivision : "";
-
-    const reportWrapper = createReportCard({
-      reportText,
-      address: state.address.trim().toUpperCase(),
-      totals,
-      services: reportData.services,
-      accessories: reportData.accessories,
-      fixes: reportData.fixes,
-      thermostat: reportData.thermostat,
-      weightInText: reportData.weightInText,
-      notes: state.notes,
-      timestamp: new Date().toISOString(),
-      refrigerant,
-      outdoorModel: state.outdoorModel,
-      heaterModel: state.heaterModel,
-      outdoorModel2: state.outdoorModel2,
-      heaterModel2: state.heaterModel2,
-      weightInData: state.weightInData,
-      weightInData2: state.weightInData2,
-      builder,
-      subdivision,
-      callbacks: {
-        onSelect: selectReport,
-        onEdit: editReport,
-        onDelete: deleteReport,
-      },
-    });
-
-    UI.reportContent.appendChild(reportWrapper);
-    UI.reportContainer.classList.remove("hidden");
-    if (reportWrapper.dataset.reportId) {
-      selectReport(reportWrapper.dataset.reportId);
-    }
-
-    if (currentImages.weight || currentImages.fan) {
-      reportImagesMap.set(reportWrapper.dataset.reportId, { ...currentImages });
-    }
-
-    saveReportsToLocalStorage();
-    refreshReportActions();
-    updateDeleteAllButton();
-
-    const activeJobAddress = getActiveJobAddress();
-    if (activeJobAddress && activeJobAddress === state.address) {
-      removeJobFromList(activeJobAddress);
-    }
-
-    resetSelections();
-    saveToLocalStorage();
-  }
 
   UI.reportEditButton.addEventListener("click", () => {
     const selected = getSelectedReport();
@@ -361,8 +466,7 @@ export function initReportManager(context) {
       alert("Selecciona un reporte primero");
       return;
     }
-    const text = getSelectedReportText();
-    editReport(selected, text);
+    editReport(selected, getSelectedReportText());
     refreshReportActions();
   });
 
@@ -378,7 +482,7 @@ export function initReportManager(context) {
       clearSelection();
       clearReportsFromLocalStorage();
     }
-    updateDeleteAllButton();
+    updateGlobalActions();
     refreshReportActions();
   });
 
@@ -387,6 +491,7 @@ export function initReportManager(context) {
       alert("No hay reportes para compartir");
       return;
     }
+    shareContext = "auto";
     UI.shareOptions.classList.toggle("hidden");
   });
 
@@ -398,7 +503,13 @@ export function initReportManager(context) {
   ].forEach(({ btn, method }) => {
     if (btn) {
       btn.addEventListener("click", () => {
-        shareReportVia(getSelectedReportText() || getAllReportsText(), method);
+        const text =
+          shareContext === "all"
+            ? getAllReportsText()
+            : getSelectedReportText() || getAllReportsText();
+        shareReportVia(text, method);
+        UI.shareOptions.classList.add("hidden");
+        shareContext = "auto";
       });
     }
   });
@@ -411,13 +522,133 @@ export function initReportManager(context) {
     });
   }
 
+  if (UI.exportDbButton) {
+    UI.exportDbButton.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const reportsRaw = localStorage.getItem(STORAGE_KEYS.REPORTS);
+      if (!reportsRaw) {
+        alert("No reports found to export.");
+        return;
+      }
+
+      let reports = [];
+      try {
+        reports = JSON.parse(reportsRaw);
+      } catch (err) {
+        console.error("Error parsing reports", err);
+        alert("Error parsing reports data.");
+        return;
+      }
+
+      const savedTechName = localStorage.getItem("dashboard_tech_name") || "";
+      const techName = prompt(
+        "Nombre del técnico para este export:",
+        savedTechName
+      );
+      if (techName === null) return;
+      if (techName.trim()) {
+        localStorage.setItem("dashboard_tech_name", techName.trim());
+      }
+
+      if (
+        !confirm(
+          `¿Exportar ${reports.length} reportes completados para el Dashboard?`
+        )
+      ) {
+        return;
+      }
+
+      const exportTechName = techName.trim() || "Sin nombre";
+      const jobsToExport = reports.map((r) => {
+        if (typeof r === "string") {
+          return {
+            address: r.split(",")[0] || "Unknown",
+            savedState: {
+              notes: r,
+              date: new Date().toISOString().split("T")[0],
+            },
+          };
+        }
+
+        let dateStr = new Date().toISOString().split("T")[0];
+        if (r.timestamp) {
+          try {
+            dateStr = new Date(r.timestamp).toISOString().split("T")[0];
+          } catch (e) {}
+        }
+
+        let tstat = null;
+        let tstatQty = 1;
+        if (r.services && Array.isArray(r.services)) {
+          for (const s of r.services) {
+            const name = s.displayName || s.name || "";
+            const match = name.match(/(\d+)\s+(.*?)\s+tstat/i);
+            if (match) {
+              tstatQty = parseInt(match[1]);
+              tstat = { name: match[2] };
+              break;
+            }
+          }
+        }
+
+        return {
+          techName: exportTechName,
+          address: r.address || "Unknown",
+          reportText: r.reportText || "",
+          subdivision: r.subdivision || "",
+          builder: r.builder || "",
+          heaterModel: r.heaterModel || "",
+          outdoorModel: r.outdoorModel || "",
+          refrigerant: r.refrigerant || "",
+          savedState: {
+            date: dateStr,
+            notes: Array.isArray(r.notes) ? r.notes.join("\n") : r.notes || "",
+            weightInData: r.weightInData || {},
+            weightInData2: r.weightInData2 || {},
+            selectedThermostat: tstat,
+            thermostatQuantity: tstatQty,
+            selectedServices: (r.services || []).map((s) => ({
+              name: s.name,
+              basePrice: s.price || s.basePrice || 0,
+            })),
+            selectedAccessories: (r.accessories || []).map((a) => ({
+              name: a.name,
+              basePrice: a.price,
+            })),
+            selectedFixes: (r.fixes || []).map((f) => ({
+              name: f.name,
+              basePrice: f.price,
+            })),
+          },
+        };
+      });
+
+      const dataStr =
+        "data:text/json;charset=utf-8," +
+        encodeURIComponent(JSON.stringify(jobsToExport, null, 2));
+      const downloadAnchorNode = document.createElement("a");
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute(
+        "download",
+        "dashboard_import_" +
+          new Date().toISOString().slice(0, 10) +
+          "_" +
+          exportTechName.replace(/\s+/g, "_") +
+          ".json"
+      );
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    });
+  }
+
   return {
     loadReportsFromLocalStorage: (savedReports) => {
       if (!savedReports) return;
       try {
         const reports = JSON.parse(savedReports);
         reports.forEach((item) => {
-          // Soportar datos antiguos (solo texto) y nuevos (objeto)
           const isObject = item && typeof item === "object" && item.reportText;
           const reportText = isObject ? item.reportText : item;
           const address =
@@ -453,8 +684,11 @@ export function initReportManager(context) {
           });
           UI.reportContent.appendChild(wrapper);
         });
+        if (reports.length > 0) {
+          UI.reportContainer.classList.remove("hidden");
+        }
         refreshReportActions();
-        updateDeleteAllButton();
+        updateGlobalActions();
       } catch (e) {
         console.error("Error parsing savedReports:", e);
       }
