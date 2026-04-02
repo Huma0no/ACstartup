@@ -214,12 +214,18 @@ app.post("/api/import", async (req, res) => {
       const address = job.address;
       const date = state.date || new Date().toISOString().split("T")[0];
 
+      // Calcular total desde los ítems
+      const totalPrice =
+        (state.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+        (state.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+        (state.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0);
+
       try {
         const result = await runStmt(insertJob, [
           address,
           date,
           job.technician || "Default Tech",
-          0,
+          totalPrice,
           state.notes || "",
           Date.now(),
           job.subdivision || "",

@@ -317,7 +317,7 @@ export function renderJobsList(
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.classList.add("btn", "btn-delete");
-    deleteButton.textContent = "🗑️";
+    deleteButton.textContent = "";
     deleteButton.title = "Delete address";
     deleteButton.addEventListener("click", (e) => {
       e.stopPropagation();
