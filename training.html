@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HVAC Wiring Training</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --bg2:       #1a1d27;
+      --bg3:       #22263a;
+      --border:    #2e3347;
+      --border2:   #3a4060;
+      --text:      #e2e8f0;
+      --text-dim:  #7a8499;
+      --amber:     #f59e0b;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --ice:       #67e8f9;
+      --head:      'Courier New', monospace;
+
+      --wire-R:    #ef4444;
+      --wire-C:    #3b82f6;
+      --wire-Y:    #eab308;
+      --wire-W:    #f1f5f9;
+      --wire-G:    #22c55e;
+      --wire-O:    #f97316;
+      --wire-Br:   #92400e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .app-header a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 12px;
+    }
+    .app-header a:hover { color: var(--text); }
+    .app-title {
+      font-family: var(--head);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: .08em;
+    }
+
+    /* ── Layout ── */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sidebar-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .device-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color .15s, background .15s;
+      font-size: 13px;
+    }
+    .device-chip:hover { border-color: var(--amber); }
+    .device-chip.selected {
+      border-color: var(--amber);
+      background: rgba(245,158,11,.12);
+      color: var(--amber);
+    }
+    .device-chip .chip-icon { font-size: 16px; }
+
+    .btn-generate {
+      width: 100%;
+      padding: 10px;
+      background: var(--amber);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: opacity .15s;
+    }
+    .btn-generate:hover { opacity: .85; }
+    .btn-generate:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-reset {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .btn-reset:hover { color: var(--text); border-color: var(--text-dim); }
+
+    /* ── Canvas area ── */
+    .canvas-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .canvas-hint {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .canvas-hint .hint-icon { font-size: 40px; }
+    .canvas-hint .hint-text { font-size: 13px; }
+
+    /* Zoom/pan container */
+    .canvas-viewport {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    .canvas-world {
+      position: absolute;
+      transform-origin: 0 0;
+      /* size set by JS */
+    }
+
+    /* Zoom controls */
+    .zoom-controls {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 10;
+    }
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .1s;
+    }
+    .zoom-btn:hover { background: var(--bg3); }
+
+    /* ── Device boxes ── */
+    .device-box {
+      position: absolute;
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: 6px;
+      padding: 10px 12px;
+      min-width: 120px;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+      user-select: none;
+    }
+    .device-box:hover { border-color: var(--amber); }
+    .device-box.highlighted {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 2px rgba(245,158,11,.25);
+    }
+    .device-box .dev-label {
+      font-family: var(--head);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .terminal-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 3px 0;
+      font-size: 11px;
+    }
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      background: var(--bg3);
+      flex-shrink: 0;
+      transition: background .15s, transform .15s;
+    }
+    .terminal-dot.active {
+      transform: scale(1.3);
+    }
+    .terminal-label {
+      color: var(--text-dim);
+      font-family: var(--head);
+      font-size: 11px;
+      min-width: 28px;
+    }
+
+    /* ── SVG overlay ── */
+    .wiring-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .wire-line {
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      transition: opacity .2s, stroke-width .2s;
+      cursor: pointer;
+      pointer-events: stroke;
+    }
+    .wire-line.dimmed { opacity: .15; }
+    .wire-line.bold   { stroke-width: 3.5; }
+
+    /* ── Tooltip ── */
+    .wire-tooltip {
+      position: fixed;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--text);
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+      max-width: 220px;
+      line-height: 1.5;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 11px;
+      z-index: 10;
+      display: none;
+    }
+    .legend.visible { display: block; }
+    .legend-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 3px 0;
+    }
+    .legend-swatch {
+      width: 24px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    /* ── Info panel (bottom) ── */
+    .info-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+      display: none;
+      z-index: 10;
+    }
+    .info-bar.visible { display: flex; align-items: center; gap: 10px; }
+    .info-bar .info-wire-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <a href="dispatch.html">← Dispatch</a>
+    <span style="color:var(--border2)">|</span>
+    <span class="app-title">⚡ WIRING TRAINER</span>
+  </header>
+
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-label">Select Equipment</div>
+        <div style="display:flex;flex-direction:column;gap:6px" id="device-list">
+          <div class="device-chip" data-device="t10">
+            <span class="chip-icon">🌡</span> T10 Thermostat
+          </div>
+          <div class="device-chip" data-device="furnace">
+            <span class="chip-icon">🔥</span> Furnace (Lennox)
+          </div>
+          <div class="device-chip" data-device="condenser">
+            <span class="chip-icon">❄️</span> Condenser (1-stage)
+          </div>
+          <div class="device-chip" data-device="fin180p">
+            <span class="chip-icon">🌬</span> FIN180P
+          </div>
+          <div class="device-chip" data-device="dehum">
+            <span class="chip-icon">💧</span> DR65A3000 Dehum
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-generate" id="btn-generate" disabled>
+          ⚡ Generate Wiring
+        </button>
+        <button class="btn-reset" id="btn-reset">
+          ↺ Reset
+        </button>
+      </div>
+
+      <!-- Selected summary -->
+      <div id="selection-summary" style="font-size:11px;color:var(--text-dim);line-height:1.6"></div>
+    </aside>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="canvas-area">
+
+      <!-- Empty state -->
+      <div class="canvas-hint" id="canvas-hint">
+        <span class="hint-icon">🔌</span>
+        <span class="hint-text">Select equipment and press Generate Wiring</span>
+      </div>
+
+      <!-- Viewport for zoom/pan -->
+      <div class="canvas-viewport" id="canvas-viewport">
+        <div class="canvas-world" id="canvas-world">
+          <!-- Device boxes injected by JS -->
+          <svg class="wiring-svg" id="wiring-svg"></svg>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend" id="wire-legend">
+        <div class="legend-title">Wire Colors</div>
+      </div>
+
+      <!-- Zoom controls -->
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in"  title="Zoom in">+</button>
+        <button class="zoom-btn" id="zoom-fit" title="Fit to screen">⊡</button>
+        <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
+      </div>
+
+      <!-- Info bar -->
+      <div class="info-bar" id="info-bar">
+        <div class="info-wire-color" id="info-color"></div>
+        <span id="info-text"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tooltip -->
+  <div class="wire-tooltip" id="wire-tooltip"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA — Device definitions
+// ─────────────────────────────────────────────
+const DEVICES = {
+  t10: {
+    label: "T10 (Tstat)",
+    terminals: ["R","C","Y1","W","G","U","U2"],
+  },
+  furnace: {
+    label: "Furnace Lennox",
+    terminals: ["R","C","Y1","W","G"],
+  },
+  condenser: {
+    label: "Condenser",
+    terminals: ["C","Y"],
+  },
+  fin180p: {
+    label: "FIN180P",
+    terminals: ["R","C","Y","W"],
+  },
+  dehum: {
+    label: "DR65A3000",
+    terminals: ["R","DHUM"],
+  },
+};
+
+// Wire color map
+const WIRE_COLORS = {
+  R:    { color: "#ef4444", label: "Red   — 24V Hot" },
+  C:    { color: "#3b82f6", label: "Blue  — Common (24V)" },
+  Y:    { color: "#eab308", label: "Yellow — Cooling call" },
+  Y1:   { color: "#eab308", label: "Yellow — Cooling call" },
+  W:    { color: "#e2e8f0", label: "White — Heat call" },
+  G:    { color: "#22c55e", label: "Green — Fan call" },
+  O:    { color: "#f97316", label: "Orange — Dehum signal" },
+  Br:   { color: "#92400e", label: "Brown — Dehum signal" },
+  U:    { color: "#f97316", label: "Orange — Dehum/UWP (R)" },
+  U2:   { color: "#92400e", label: "Brown  — Dehum/UWP (DHUM)" },
+  DHUM: { color: "#92400e", label: "Brown — Dehumidification" },
+};
+
+// ─────────────────────────────────────────────
+// DATA — Wiring rules
+// Each rule: { from, to, wire }
+// from/to: { device, terminal }
+// wire: terminal name used for color lookup
+// ─────────────────────────────────────────────
+const WIRING_RULES = [
+  // T10 → Furnace
+  { from: { device:"t10", terminal:"Y1" }, to: { device:"furnace", terminal:"Y1" }, wire:"Y1" },
+  { from: { device:"t10", terminal:"R"  }, to: { device:"furnace", terminal:"R"  }, wire:"R"  },
+  { from: { device:"t10", terminal:"C"  }, to: { device:"furnace", terminal:"C"  }, wire:"C"  },
+  { from: { device:"t10", terminal:"W"  }, to: { device:"furnace", terminal:"W"  }, wire:"W"  },
+  // G only connects at tstat side (no furnace terminal needed — shown as stub)
+  { from: { device:"t10", terminal:"G"  }, to: null, wire:"G", note:"G — Fan only at tstat, not wired to furnace" },
+
+  // FIN180P → Furnace
+  { from: { device:"fin180p", terminal:"Y" }, to: { device:"furnace", terminal:"Y1" }, wire:"Y" },
+  { from: { device:"fin180p", terminal:"C" }, to: { device:"furnace", terminal:"C"  }, wire:"C" },
+  { from: { device:"fin180p", terminal:"R" }, to: { device:"furnace", terminal:"R"  }, wire:"R" },
+  { from: { device:"fin180p", terminal:"W" }, to: { device:"furnace", terminal:"W"  }, wire:"W" },
+
+  // Condenser → Furnace
+  { from: { device:"condenser", terminal:"C" }, to: { device:"furnace", terminal:"C"  }, wire:"C" },
+  { from: { device:"condenser", terminal:"Y" }, to: { device:"furnace", terminal:"Y1" }, wire:"Y" },
+
+  // T10 → Dehum
+  { from: { device:"t10", terminal:"U"  }, to: { device:"dehum", terminal:"R"    }, wire:"U",  note:"U → R (power)"          },
+  { from: { device:"t10", terminal:"U2" }, to: { device:"dehum", terminal:"DHUM" }, wire:"U2", note:"U2 (slider) → DHUM call" },
+];
+
+// ─────────────────────────────────────────────
+// LAYOUT — device positions on canvas (x, y)
+// ─────────────────────────────────────────────
+const LAYOUT = {
+  t10:      { x: 60,  y: 80  },
+  furnace:  { x: 340, y: 80  },
+  condenser:{ x: 340, y: 340 },
+  fin180p:  { x: 60,  y: 340 },
+  dehum:    { x: 620, y: 80  },
+};
+
+const WORLD_W = 820;
+const WORLD_H = 520;
+const BOX_W   = 150;
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let selected   = new Set();
+let scale      = 1;
+let panX       = 0;
+let panY       = 0;
+let isPanning  = false;
+let panStart   = { x:0, y:0 };
+let activeWire = null;
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+function terminalColor(wire) {
+  return (WIRE_COLORS[wire] || {}).color || "#888";
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  // Device chip selection
+  document.getElementById("device-list").addEventListener("click", e => {
+    const chip = e.target.closest(".device-chip");
+    if (!chip) return;
+    const dev = chip.dataset.device;
+    chip.classList.toggle("selected");
+    if (selected.has(dev)) selected.delete(dev);
+    else selected.add(dev);
+    updateSidebar();
+  });
+
+  document.getElementById("btn-generate").addEventListener("click", generateWiring);
+  document.getElementById("btn-reset").addEventListener("click", resetAll);
+
+  // Zoom buttons
+  document.getElementById("zoom-in").addEventListener("click",  () => applyZoom(1.25));
+  document.getElementById("zoom-out").addEventListener("click", () => applyZoom(0.8));
+  document.getElementById("zoom-fit").addEventListener("click", fitToScreen);
+
+  // Pan (mouse)
+  const vp = document.getElementById("canvas-viewport");
+  vp.addEventListener("mousedown", e => {
+    if (e.button !== 0) return;
+    isPanning = true;
+    panStart  = { x: e.clientX - panX, y: e.clientY - panY };
+    vp.style.cursor = "grabbing";
+  });
+  window.addEventListener("mousemove", e => {
+    if (!isPanning) return;
+    panX = e.clientX - panStart.x;
+    panY = e.clientY - panStart.y;
+    applyTransform();
+  });
+  window.addEventListener("mouseup", () => {
+    isPanning = false;
+    vp.style.cursor = "";
+  });
+
+  // Pinch / wheel zoom
+  vp.addEventListener("wheel", e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    applyZoom(factor, e.clientX, e.clientY);
+  }, { passive: false });
+
+  // Touch pan/pinch
+  let lastTouches = null;
+  vp.addEventListener("touchstart", e => {
+    lastTouches = e.touches;
+  }, { passive: true });
+  vp.addEventListener("touchmove", e => {
+    if (e.touches.length === 1 && lastTouches?.length === 1) {
+      const dx = e.touches[0].clientX - lastTouches[0].clientX;
+      const dy = e.touches[0].clientY - lastTouches[0].clientY;
+      panX += dx; panY += dy;
+      applyTransform();
+    } else if (e.touches.length === 2 && lastTouches?.length === 2) {
+      const prevDist = Math.hypot(
+        lastTouches[0].clientX - lastTouches[1].clientX,
+        lastTouches[0].clientY - lastTouches[1].clientY
+      );
+      const currDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      applyZoom(currDist / prevDist);
+    }
+    lastTouches = e.touches;
+  }, { passive: true });
+});
+
+// ─────────────────────────────────────────────
+// SIDEBAR UPDATES
+// ─────────────────────────────────────────────
+function updateSidebar() {
+  const btn = document.getElementById("btn-generate");
+  btn.disabled = selected.size < 2;
+
+  const summary = document.getElementById("selection-summary");
+  if (selected.size === 0) { summary.textContent = ""; return; }
+  summary.innerHTML = [...selected].map(d =>
+    `<span style="color:var(--amber)">▸</span> ${DEVICES[d]?.label || d}`
+  ).join("<br>");
+}
+
+function resetAll() {
+  selected.clear();
+  document.querySelectorAll(".device-chip").forEach(c => c.classList.remove("selected"));
+  updateSidebar();
+  clearCanvas();
+}
+
+// ─────────────────────────────────────────────
+// CANVAS CLEAR
+// ─────────────────────────────────────────────
+function clearCanvas() {
+  const world = document.getElementById("canvas-world");
+  // Remove device boxes
+  world.querySelectorAll(".device-box").forEach(el => el.remove());
+  // Clear SVG
+  const svg = document.getElementById("wiring-svg");
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  // Hide legend + info bar
+  document.getElementById("wire-legend").classList.remove("visible");
+  document.getElementById("info-bar").classList.remove("visible");
+  // Show hint
+  document.getElementById("canvas-hint").style.display = "";
+  activeWire = null;
+}
+
+// ─────────────────────────────────────────────
+// GENERATE WIRING
+// ─────────────────────────────────────────────
+function generateWiring() {
+  clearCanvas();
+  document.getElementById("canvas-hint").style.display = "none";
+
+  const world = document.getElementById("canvas-world");
+  world.style.width  = WORLD_W + "px";
+  world.style.height = WORLD_H + "px";
+
+  // Collect active rules for selected devices
+  const activeRules = WIRING_RULES.filter(r =>
+    selected.has(r.from.device) && (r.to === null || selected.has(r.to.device))
+  );
+
+  // Determine which terminals are connected per device
+  const connectedTerminals = {}; // device → Set of terminals
+  activeRules.forEach(r => {
+    if (!connectedTerminals[r.from.device]) connectedTerminals[r.from.device] = new Set();
+    connectedTerminals[r.from.device].add(r.from.terminal);
+    if (r.to) {
+      if (!connectedTerminals[r.to.device]) connectedTerminals[r.to.device] = new Set();
+      connectedTerminals[r.to.device].add(r.to.terminal);
+    }
+  });
+
+  // Render device boxes
+  const dotPositions = {}; // "device:terminal" → {x,y} in world coords
+  [...selected].forEach(devId => {
+    const dev    = DEVICES[devId];
+    const layout = LAYOUT[devId];
+    if (!dev || !layout) return;
+
+    const box = document.createElement("div");
+    box.className      = "device-box";
+    box.dataset.device = devId;
+    box.style.left     = layout.x + "px";
+    box.style.top      = layout.y + "px";
+    box.style.width    = BOX_W + "px";
+
+    const lbl = document.createElement("div");
+    lbl.className   = "dev-label";
+    lbl.textContent = dev.label;
+    box.appendChild(lbl);
+
+    dev.terminals.forEach((term, idx) => {
+      const isConnected = connectedTerminals[devId]?.has(term);
+      const row = document.createElement("div");
+      row.className = "terminal-row";
+
+      const dot = document.createElement("div");
+      dot.className      = "terminal-dot";
+      dot.dataset.device = devId;
+      dot.dataset.term   = term;
+      if (isConnected) {
+        dot.classList.add("active");
+        dot.style.background  = terminalColor(term);
+        dot.style.borderColor = terminalColor(term);
+      }
+
+      const termLbl = document.createElement("span");
+      termLbl.className   = "terminal-label";
+      termLbl.textContent = term;
+
+      row.appendChild(dot);
+      row.appendChild(termLbl);
+      box.appendChild(row);
+
+      // Store approximate dot position for wire routing
+      // Will be refined after DOM is painted
+      const dotKey = `${devId}:${term}`;
+      dotPositions[dotKey] = {
+        devId, term, idx,
+        // raw offsets relative to box origin, refined after paint
+        relX: layout.x,
+        relY: layout.y + 36 + idx * 19 + 4,
+      };
+    });
+
+    // Click to highlight device's wires
+    box.addEventListener("click", () => highlightDevice(devId));
+    world.appendChild(box);
+  });
+
+  // Draw wires after a tick to allow DOM layout
+  requestAnimationFrame(() => {
+    drawWires(activeRules, dotPositions);
+    buildLegend(activeRules);
+    fitToScreen();
+  });
+}
+
+// ─────────────────────────────────────────────
+// DRAW WIRES
+// ─────────────────────────────────────────────
+function drawWires(rules, dotPositions) {
+  const svg   = document.getElementById("wiring-svg");
+  const world = document.getElementById("canvas-world");
+
+  svg.setAttribute("width",  WORLD_W);
+  svg.setAttribute("height", WORLD_H);
+
+  // Refine dot positions from actual DOM
+  world.querySelectorAll(".terminal-dot").forEach(dot => {
+    const devId = dot.dataset.device;
+    const term  = dot.dataset.term;
+    const key   = `${devId}:${term}`;
+    if (!dotPositions[key]) return;
+    const rect      = dot.getBoundingClientRect();
+    const worldRect = world.getBoundingClientRect();
+    dotPositions[key].x = (rect.left - worldRect.left) / scale + rect.width / 2 / scale;
+    dotPositions[key].y = (rect.top  - worldRect.top)  / scale + rect.height / 2 / scale;
+  });
+
+  rules.forEach((rule, ruleIdx) => {
+    const fromKey = `${rule.from.device}:${rule.from.terminal}`;
+    const from    = dotPositions[fromKey];
+
+    // G — stub line (no destination device)
+    if (rule.to === null) {
+      if (!from || !from.x) return;
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", from.x);
+      line.setAttribute("y1", from.y);
+      line.setAttribute("x2", from.x - 30);
+      line.setAttribute("y2", from.y);
+      line.setAttribute("stroke", terminalColor(rule.wire));
+      line.setAttribute("stroke-dasharray", "4 3");
+      line.classList.add("wire-line");
+      line.dataset.ruleIdx = ruleIdx;
+      line.dataset.wire    = rule.wire;
+      line.dataset.note    = rule.note || "";
+      attachWireEvents(line);
+      svg.appendChild(line);
+      return;
+    }
+
+    const toKey = `${rule.to.device}:${rule.to.terminal}`;
+    const to    = dotPositions[toKey];
+    if (!from?.x || !to?.x) return;
+
+    // Curved path for cleaner routing
+    const mx   = (from.x + to.x) / 2;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const d    = `M ${from.x} ${from.y} C ${mx} ${from.y}, ${mx} ${to.y}, ${to.x} ${to.y}`;
+    path.setAttribute("d", d);
+    path.setAttribute("stroke", terminalColor(rule.wire));
+    path.classList.add("wire-line");
+    path.dataset.ruleIdx   = ruleIdx;
+    path.dataset.wire      = rule.wire;
+    path.dataset.fromDev   = rule.from.device;
+    path.dataset.toDev     = rule.to.device;
+    path.dataset.fromTerm  = rule.from.terminal;
+    path.dataset.toTerm    = rule.to.terminal;
+    path.dataset.note      = rule.note || "";
+    attachWireEvents(path);
+    svg.appendChild(path);
+  });
+}
+
+// ─────────────────────────────────────────────
+// WIRE INTERACTIVITY
+// ─────────────────────────────────────────────
+function attachWireEvents(el) {
+  const tooltip = document.getElementById("wire-tooltip");
+  const infoBar = document.getElementById("info-bar");
+
+  el.addEventListener("mouseenter", e => {
+    const wire  = el.dataset.wire;
+    const wInfo = WIRE_COLORS[wire] || {};
+    const from  = el.dataset.fromTerm || el.dataset.wire;
+    const to    = el.dataset.toTerm;
+    const note  = el.dataset.note;
+
+    const label = note || (to
+      ? `${from} → ${to}   (${DEVICES[el.dataset.fromDev]?.label || ""} → ${DEVICES[el.dataset.toDev]?.label || ""})`
+      : `${from} — tstat only`
+    );
+
+    tooltip.style.display = "block";
+    tooltip.innerHTML     = `<strong style="color:${wInfo.color}">${wInfo.label || wire}</strong><br>${label}`;
+
+    infoBar.classList.add("visible");
+    document.getElementById("info-color").style.background = wInfo.color || "#888";
+    document.getElementById("info-text").textContent       = note || label;
+
+    // Highlight this wire
+    document.querySelectorAll(".wire-line").forEach(l => {
+      l.classList.toggle("dimmed", l !== el);
+      l.classList.toggle("bold",   l === el);
+    });
+  });
+
+  el.addEventListener("mousemove", e => {
+    tooltip.style.left = (e.clientX + 14) + "px";
+    tooltip.style.top  = (e.clientY - 10) + "px";
+  });
+
+  el.addEventListener("mouseleave", () => {
+    tooltip.style.display = "none";
+    document.querySelectorAll(".wire-line").forEach(l => {
+      l.classList.remove("dimmed", "bold");
+    });
+    if (!activeWire) infoBar.classList.remove("visible");
+  });
+}
+
+// ─────────────────────────────────────────────
+// HIGHLIGHT BY DEVICE
+// ─────────────────────────────────────────────
+function highlightDevice(devId) {
+  const boxes = document.querySelectorAll(".device-box");
+  const lines = document.querySelectorAll(".wire-line");
+
+  // Toggle: if already highlighted, clear
+  const already = document.querySelector(`.device-box[data-device="${devId}"]`)
+    ?.classList.contains("highlighted");
+
+  boxes.forEach(b => b.classList.remove("highlighted"));
+  lines.forEach(l => l.classList.remove("dimmed", "bold"));
+
+  if (already) {
+    document.getElementById("info-bar").classList.remove("visible");
+    return;
+  }
+
+  document.querySelector(`.device-box[data-device="${devId}"]`)
+    ?.classList.add("highlighted");
+
+  lines.forEach(l => {
+    const related = l.dataset.fromDev === devId || l.dataset.toDev === devId;
+    l.classList.toggle("dimmed", !related);
+    l.classList.toggle("bold",    related);
+  });
+
+  document.getElementById("info-bar").classList.add("visible");
+  document.getElementById("info-color").style.background = "var(--amber)";
+  document.getElementById("info-text").textContent =
+    `Showing connections for: ${DEVICES[devId]?.label || devId}`;
+}
+
+// ─────────────────────────────────────────────
+// LEGEND
+// ─────────────────────────────────────────────
+function buildLegend(rules) {
+  const legend  = document.getElementById("wire-legend");
+  const usedMap = {};
+  rules.forEach(r => {
+    if (!usedMap[r.wire]) usedMap[r.wire] = WIRE_COLORS[r.wire];
+  });
+
+  let html = '<div class="legend-title">Wire Colors</div>';
+  Object.entries(usedMap).forEach(([wire, info]) => {
+    if (!info) return;
+    html += `
+      <div class="legend-row">
+        <div class="legend-swatch" style="background:${info.color}"></div>
+        <span style="color:var(--text-dim)">${info.label}</span>
+      </div>`;
+  });
+  legend.innerHTML  = html;
+  legend.classList.add("visible");
+}
+
+// ─────────────────────────────────────────────
+// ZOOM / PAN
+// ─────────────────────────────────────────────
+function applyZoom(factor, originX, originY) {
+  const vp     = document.getElementById("canvas-viewport");
+  const rect   = vp.getBoundingClientRect();
+  const cx     = (originX ?? rect.left + rect.width  / 2) - rect.left;
+  const cy     = (originY ?? rect.top  + rect.height / 2) - rect.top;
+
+  const newScale = Math.min(3, Math.max(0.3, scale * factor));
+  panX = cx - (cx - panX) * (newScale / scale);
+  panY = cy - (cy - panY) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+}
+
+function applyTransform() {
+  document.getElementById("canvas-world").style.transform =
+    `translate(${panX}px, ${panY}px) scale(${scale})`;
+}
+
+function fitToScreen() {
+  const vp   = document.getElementById("canvas-viewport");
+  const rect = vp.getBoundingClientRect();
+  const sx   = rect.width  / WORLD_W;
+  const sy   = rect.height / WORLD_H;
+  scale = Math.min(sx, sy) * 0.88;
+  panX  = (rect.width  - WORLD_W * scale) / 2;
+  panY  = (rect.height - WORLD_H * scale) / 2;
+  applyTransform();
+}
+</script>
+</body>
+</html>

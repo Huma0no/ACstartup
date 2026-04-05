@@ -1567,6 +1567,9 @@
         <div class="nav-item" data-panel="property">
           <span class="nav-icon">🏠</span> Properties
         </div>
+        <div class="nav-item" data-panel="danger">
+          <span class="nav-icon">⚠</span> Danger Zone
+        </div>
       </nav>
 
       <!-- MAIN -->
@@ -1636,17 +1639,6 @@
             </div>
           </div>
 
-          <!-- Danger Zone -->
-          <div style="margin:24px 20px 20px;border:1px solid var(--red-dim,#5a1a1a);border-radius:6px;padding:16px 20px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:10px">⚠ Danger Zone</div>
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Factory Reset</div>
-                <div style="font-size:12px;color:var(--text-dim);margin-top:2px">Wipe all board jobs, history, inventory and tech list. Cannot be undone.</div>
-              </div>
-              <button class="btn btn-red btn-sm" onclick="openFactoryReset()">🗑 Factory Reset</button>
-            </div>
-          </div>
         </div>
 
         <!-- ══════════ PANEL: JOB BOARD ══════════ -->
@@ -1748,250 +1740,249 @@
 
           <!-- Manual New Job Form -->
           <div class="new-job-form" id="new-job-form">
-            <div class="form-section-title">📋 Dispatch Info</div>
-            <div class="edit-grid">
-              <div class="edit-field">
-                <label>Order #</label>
-                <input type="text" id="nj-order" placeholder="1663445" />
-              </div>
-              <div class="edit-field">
-                <label>Scheduled Time</label>
-                <input type="text" id="nj-time" placeholder="8:00 AM" />
-              </div>
-              <div class="edit-field full">
-                <label>Address</label>
-                <input
-                  type="text"
-                  id="nj-address"
-                  placeholder="32122 WATERLILY VIEW COURT"
-                />
-              </div>
-              <div class="edit-field">
-                <label>Subdivision</label>
-                <input type="text" id="nj-subdivision" placeholder="DELLROSE" />
-              </div>
-              <div class="edit-field">
-                <label>City / State / Zip</label>
-                <input
-                  type="text"
-                  id="nj-city"
-                  placeholder="HOCKLEY TX 77447"
-                />
-              </div>
-              <div class="edit-field">
-                <label>Builder</label>
-                <input
-                  type="text"
-                  id="nj-builder"
-                  placeholder="LENNAR / MHI / HIGHLAND"
-                />
-              </div>
-              <div class="edit-field">
-                <label>Service Type</label>
-                <select id="nj-service">
-                  <option value="">Select service...</option>
-                  <option value="AC STARTUP">AC Startup</option>
-                  <option value="HEAT STARTUP">Heat Startup</option>
-                  <option value="AC & HEAT">AC &amp; Heat Startup</option>
-                  <option value="PRESTART">Prestart</option>
-                  <option value="FINISH">Finish</option>
-                  <option value="DRIVE RUN">Drive Run</option>
-                  <option value="SERVICE CALL">Service Call</option>
-                </select>
-              </div>
-              <div class="edit-field">
-                <label>Priority</label>
-                <select id="nj-priority">
-                  <option value="normal">Normal</option>
-                  <option value="urgent">Urgent</option>
-                </select>
+
+            <!-- ── NIVEL 1: Captura rápida ── -->
+
+            <!-- Address -->
+            <div class="edit-field" style="margin-bottom:10px">
+              <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Address</label>
+              <input type="text" id="nj-address" placeholder="32122 WATERLILY VIEW COURT"
+                style="font-size:14px;font-family:var(--mono);text-transform:uppercase"
+                oninput="this.value=this.value.toUpperCase()" />
+            </div>
+
+            <!-- Service chips -->
+            <div style="margin-bottom:10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Service</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap" id="nj-svc-chips">
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC STARTUP"    onclick="njToggleSvc(this)">AC</button>
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="HEAT STARTUP"  onclick="njToggleSvc(this)">Heat</button>
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC & HEAT"     onclick="njToggleSvc(this)">AC &amp; Heat</button>
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="PRESTART"      onclick="njToggleSvc(this)">Prestart</button>
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="FINISH"        onclick="njToggleSvc(this)">Finish</button>
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="DRIVE RUN"     onclick="njToggleSvc(this)">Drive Run</button>
+                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="SERVICE CALL"  onclick="njToggleSvc(this)">Service Call</button>
               </div>
             </div>
 
-            <div class="form-section-title">👤 Contact</div>
-            <div class="edit-grid">
-              <div class="edit-field">
-                <label>Contact Name</label>
-                <input
-                  type="text"
-                  id="nj-contact-name"
-                  placeholder="BRENT ANDERSON"
-                />
+            <!-- Subdivision + Builder -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div>
+                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Subdivision</label>
+                <input type="text" id="nj-subdivision"
+                  placeholder="DELLROSE"
+                  style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                  oninput="this.value=this.value.toUpperCase()" />
               </div>
-              <div class="edit-field">
-                <label>Contact Phone</label>
-                <input
-                  type="text"
-                  id="nj-contact-phone"
-                  placeholder="281 831 3102"
-                />
-              </div>
-              <div class="edit-field full">
-                <label>Called In By</label>
-                <input
-                  type="text"
-                  id="nj-called-by"
-                  placeholder="BRENT ANDERSON / SUPPLY PRO"
-                />
+              <div>
+                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Builder</label>
+                <input type="text" id="nj-builder"
+                  placeholder="LENNAR"
+                  list="nj-builder-list-q"
+                  style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                  oninput="this.value=this.value.toUpperCase()" />
+                <datalist id="nj-builder-list-q">
+                  <option value="LENNAR"><option value="HIGHLAND"><option value="CHESMAR">
+                  <option value="CASTLE ROCK"><option value="FIRST AMERICA">
+                </datalist>
               </div>
             </div>
 
-            <div class="form-section-title">🔧 Equipment</div>
-            <div class="edit-grid">
-              <div class="edit-field">
-                <label>Furnace / AHU Model</label>
-                <div class="combo-wrap" id="combo-nj-furnace">
-                  <div class="combo-input-row">
-                    <input
-                      class="combo-input"
-                      type="text"
-                      id="nj-furnace"
-                      placeholder="Type to search or enter model..."
-                      autocomplete="off"
-                      oninput="comboFilter('nj-furnace','indoor',this.value)"
-                      onfocus="comboOpen('nj-furnace')"
-                      onkeydown="comboKey(event,'nj-furnace')"
-                    />
-                    <button
-                      class="combo-clear"
-                      type="button"
-                      onclick="comboClear('nj-furnace')"
-                      title="Clear"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div class="combo-dropdown" id="combo-dd-nj-furnace"></div>
+            <!-- Notes -->
+            <div style="margin-bottom:10px">
+              <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Notes</label>
+              <textarea id="nj-notes-quick" rows="2" placeholder="Quick notes…"
+                style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+            </div>
+
+            <!-- Equipment: series → model (PWA style) -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <!-- Furnace -->
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Furnace / AHU</label>
+                <select id="nj-furnace-series" onchange="njLoadModels('furnace')"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select series…</option>
+                </select>
+                <select id="nj-furnace" disabled onchange="njModelSelected('furnace',this)"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select model…</option>
+                </select>
+                <button type="button" id="nj-furnace-reset" onclick="njResetSeries('furnace')"
+                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
+              </div>
+              <!-- Outdoor -->
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Outdoor Unit</label>
+                <select id="nj-outdoor-series" onchange="njLoadModels('outdoor')"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select series…</option>
+                </select>
+                <select id="nj-outdoor" disabled onchange="njModelSelected('outdoor',this)"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select model…</option>
+                </select>
+                <button type="button" id="nj-outdoor-reset" onclick="njResetSeries('outdoor')"
+                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
+              </div>
+            </div>
+
+            <!-- 2 Systems checkbox -->
+            <div style="margin-bottom:10px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--mono);color:var(--text);cursor:pointer">
+                <input type="checkbox" id="nj-two-systems" style="width:15px;height:15px;cursor:pointer" />
+                2 Systems
+              </label>
+            </div>
+
+            <!-- Tstat + qty + Acc row -->
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+              <select id="nj-tstat" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                <option value="">Tstat</option>
+                <option value="T-4">T-4</option>
+                <option value="T-6">T-6</option>
+                <option value="T-10">T-10</option>
+                <option value="T-8321">T-8321</option>
+                <option value="Ecobee">Ecobee</option>
+                <option value="Daikin One">Daikin One</option>
+                <option value="TH2110">TH2110</option>
+                <option value="Otro">Other</option>
+              </select>
+              <select id="nj-tstat-qty" style="width:56px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 4px;font-size:12px;font-family:var(--mono);text-align:center">
+                <option value="1">1</option><option value="2">2</option>
+                <option value="3">3</option><option value="4">4</option>
+              </select>
+              <select id="nj-acc-select" onchange="njAddAcc(this)"
+                style="flex:2;min-width:120px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                <option value="">+ Acc</option>
+                <option value="Float Switch">Float Switch</option>
+                <option value="Zoning">Zone</option>
+                <option value="HZ322">HZ322</option>
+                <option value="UT3000">UT-3000</option>
+                <option value="DAPC">DAPC</option>
+                <option value="Harmony">Harmony</option>
+                <option value="RDS">RDS</option>
+                <option value="Trane Harness">Trane Harness</option>
+                <option value="LP Kit">LP Kit</option>
+                <option value="eBypass">eBypass</option>
+                <option value="__new__" style="font-weight:700">+ New…</option>
+              </select>
+            </div>
+            <!-- Acc chips -->
+            <div id="nj-acc-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:6px;margin-bottom:12px"></div>
+
+            <!-- Action row -->
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+              <button class="btn btn-primary" onclick="saveNewJob()" style="flex:1">＋ Add to Board</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearNewJobForm()">↺ Clear</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="njToggleExtra()"
+                id="nj-extra-btn" style="color:var(--text-dim);font-size:11px">▸ All fields</button>
+            </div>
+
+            <!-- ── NIVEL 2: Todos los campos (colapsado) ── -->
+            <div id="nj-extra-fields" style="display:none;border-top:1px solid var(--border);margin-top:14px;padding-top:14px">
+
+              <div class="form-section-title">📋 Dispatch Info</div>
+              <div class="edit-grid">
+                <div class="edit-field">
+                  <label>Order #</label>
+                  <input type="text" id="nj-order" placeholder="1663445" />
+                </div>
+                <div class="edit-field">
+                  <label>Scheduled Time</label>
+                  <input type="text" id="nj-time" placeholder="8:00 AM" />
+                </div>
+                <div class="edit-field">
+                  <label>City / State / Zip</label>
+                  <input type="text" id="nj-city" placeholder="HOCKLEY TX 77447" />
+                </div>
+                <div class="edit-field">
+                  <label>Priority</label>
+                  <select id="nj-priority">
+                    <option value="normal">Normal</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+                <!-- nj-service hidden input keeps compat with saveNewJob() -->
+                <input type="hidden" id="nj-service" />
+              </div>
+
+              <div class="form-section-title">👤 Contact</div>
+              <div class="edit-grid">
+                <div class="edit-field">
+                  <label>Contact Name</label>
+                  <input type="text" id="nj-contact-name" placeholder="BRENT ANDERSON" />
+                </div>
+                <div class="edit-field">
+                  <label>Contact Phone</label>
+                  <input type="text" id="nj-contact-phone" placeholder="281 831 3102" />
+                </div>
+                <div class="edit-field full">
+                  <label>Called In By</label>
+                  <input type="text" id="nj-called-by" placeholder="BRENT ANDERSON / SUPPLY PRO" />
                 </div>
               </div>
-              <div class="edit-field">
-                <label>Outdoor Unit Model</label>
-                <div class="combo-wrap" id="combo-nj-outdoor">
-                  <div class="combo-input-row">
-                    <input
-                      class="combo-input"
-                      type="text"
-                      id="nj-outdoor"
-                      placeholder="Type to search or enter model..."
-                      autocomplete="off"
-                      oninput="comboFilter('nj-outdoor','outdoor',this.value)"
-                      onfocus="comboOpen('nj-outdoor')"
-                      onkeydown="comboKey(event,'nj-outdoor')"
-                    />
-                    <button
-                      class="combo-clear"
-                      type="button"
-                      onclick="comboClear('nj-outdoor')"
-                      title="Clear"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div class="combo-dropdown" id="combo-dd-nj-outdoor"></div>
+
+              <div class="form-section-title">🔧 Equipment (extra)</div>
+              <div class="edit-grid">
+                <div class="edit-field">
+                  <label>Coil Model</label>
+                  <input type="text" id="nj-coil" placeholder="CHPTA4830C*3" />
+                </div>
+                <div class="edit-field">
+                  <label>Evap / Other</label>
+                  <input type="text" id="nj-evap" placeholder="CHPEA4830C3" />
+                </div>
+                <div class="edit-field">
+                  <label>Lineset Length</label>
+                  <input type="text" id="nj-lineset" placeholder="50ft" />
+                </div>
+                <div class="edit-field">
+                  <label>Warranty</label>
+                  <select id="nj-warranty">
+                    <option value="true">Yes — WARRANTY</option>
+                    <option value="false">No</option>
+                  </select>
                 </div>
               </div>
-              <div class="edit-field">
-                <label>Coil Model</label>
-                <input type="text" id="nj-coil" placeholder="CHPTA4830C*3" />
-              </div>
-              <div class="edit-field">
-                <label>Evap / Other</label>
-                <input type="text" id="nj-evap" placeholder="CHPEA4830C3" />
-              </div>
-              <div class="edit-field">
-                <label>Lineset Length</label>
-                <input type="text" id="nj-lineset" placeholder="50ft" />
-              </div>
-              <div class="edit-field">
-                <label>Warranty</label>
-                <select id="nj-warranty">
-                  <option value="true">Yes — WARRANTY</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-            </div>
 
-            <div class="form-section-title">📋 Accessory Hints</div>
-            <div
-              style="
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5px;
-                margin-bottom: 10px;
-              "
-              id="nj-hint-chips"
-            >
-              <!-- rendered by JS -->
-            </div>
-            <div class="edit-field">
-              <label>Add Custom Hint</label>
-              <div style="display: flex; gap: 6px">
-                <input
-                  type="text"
-                  id="nj-hint-custom"
-                  placeholder="Custom accessory..."
-                  style="flex: 1"
-                />
-                <button class="btn btn-ghost btn-sm" onclick="addCustomHint()">
-                  + Add
-                </button>
-              </div>
-            </div>
-
-            <div class="form-section-title">🏗 Service History</div>
-            <div class="edit-grid">
+              <div class="form-section-title">📋 Accessory Hints</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px" id="nj-hint-chips"></div>
               <div class="edit-field">
-                <label>Rough</label>
-                <input
-                  type="text"
-                  id="nj-rough"
-                  placeholder="JOSE LOPEZ 11/2/25"
-                />
+                <label>Add Custom Hint</label>
+                <div style="display:flex;gap:6px">
+                  <input type="text" id="nj-hint-custom" placeholder="Custom accessory..." style="flex:1" />
+                  <button class="btn btn-ghost btn-sm" onclick="addCustomHint()">+ Add</button>
+                </div>
+              </div>
+
+              <div class="form-section-title">🏗 Service History</div>
+              <div class="edit-grid">
+                <div class="edit-field">
+                  <label>Rough</label>
+                  <input type="text" id="nj-rough" placeholder="JOSE LOPEZ 11/2/25" />
+                </div>
+                <div class="edit-field">
+                  <label>Trim</label>
+                  <input type="text" id="nj-trim" placeholder="ROBERTO MARTINEZ 12/31/25" />
+                </div>
+                <div class="edit-field full">
+                  <label>Set</label>
+                  <input type="text" id="nj-set" placeholder="EVER GUTIERREZ 12/31/25" />
+                </div>
+              </div>
+
+              <div class="form-section-title">📝 Notes</div>
+              <div class="edit-field">
+                <label>Important Notes (from PDF)</label>
+                <textarea id="nj-notes" rows="3" placeholder="Paste important notes from PDF here..."></textarea>
               </div>
               <div class="edit-field">
-                <label>Trim</label>
-                <input
-                  type="text"
-                  id="nj-trim"
-                  placeholder="ROBERTO MARTINEZ 12/31/25"
-                />
+                <label>Dispatch Notes (internal)</label>
+                <textarea id="nj-dispatch-notes" rows="2" placeholder="Your internal notes..."></textarea>
               </div>
-              <div class="edit-field full">
-                <label>Set</label>
-                <input
-                  type="text"
-                  id="nj-set"
-                  placeholder="EVER GUTIERREZ 12/31/25"
-                />
-              </div>
-            </div>
 
-            <div class="form-section-title">📝 Notes</div>
-            <div class="edit-field">
-              <label>Important Notes (from PDF)</label>
-              <textarea
-                id="nj-notes"
-                rows="3"
-                placeholder="Paste important notes from PDF here..."
-              ></textarea>
-            </div>
-            <div class="edit-field">
-              <label>Dispatch Notes (internal)</label>
-              <textarea
-                id="nj-dispatch-notes"
-                rows="2"
-                placeholder="Your internal notes..."
-              ></textarea>
-            </div>
-
-            <div style="display: flex; gap: 8px; margin-top: 14px">
-              <button class="btn btn-primary" onclick="saveNewJob()">
-                + Add to Board
-              </button>
-              <button class="btn btn-ghost" onclick="clearNewJobForm()">
-                ↺ Clear
-              </button>
-            </div>
+            </div><!-- /nj-extra-fields -->
           </div>
 
           <!-- PDF Import section -->
@@ -2173,6 +2164,26 @@
           </div>
         </div>
 
+        <!-- ══════════ PANEL: DANGER ZONE ══════════ -->
+        <div class="panel" id="panel-danger">
+          <div class="sec-header">
+            <div class="sec-title">Danger Zone</div>
+            <div class="sec-sub">Destructive actions — cannot be undone</div>
+          </div>
+          <div style="padding:20px">
+            <div style="border:1px solid var(--red-dim,#5a1a1a);border-radius:6px;padding:16px 20px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:10px">⚠ Danger Zone</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">Factory Reset</div>
+                  <div style="font-size:12px;color:var(--text-dim);margin-top:2px">Wipe all board jobs, history, inventory and tech list. Cannot be undone.</div>
+                </div>
+                <button class="btn btn-red btn-sm" onclick="openFactoryReset()">🗑 Factory Reset</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══════════ PANEL: PAYMENTS ══════════ -->
         <div class="panel" id="panel-payments">
           <div class="sec-header">
@@ -2350,9 +2361,15 @@
           <!-- Summary card (hidden until search) -->
           <div id="prop-summary-card" class="card prop-summary-hidden" style="margin:16px 20px 0">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-              <div>
-                <div id="prop-addr-title" style="font-family:var(--head);font-size:18px;color:var(--text-bright);font-weight:700"></div>
-                <div id="prop-addr-sub" style="font-size:11px;color:var(--text-dim);margin-top:2px"></div>
+              <div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0">
+                <div style="min-width:0">
+                  <div id="prop-addr-title" style="font-family:var(--head);font-size:18px;color:var(--text-bright);font-weight:700"></div>
+                  <div id="prop-addr-sub" style="font-size:11px;color:var(--text-dim);margin-top:2px"></div>
+                </div>
+                <button id="prop-add-btn" type="button" onclick="propOpenFollowUp()"
+                  style="display:none;background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber);border-radius:4px;padding:6px 14px;font-size:12px;font-family:var(--mono);cursor:pointer;white-space:nowrap;margin-top:2px">
+                  ＋ Nueva llamada
+                </button>
               </div>
               <div style="display:flex;gap:16px;flex-wrap:wrap">
                 <div style="text-align:center">
@@ -2381,20 +2398,7 @@
               <div style="font-size:32px;margin-bottom:8px">🏠</div>
               <div>Search for an address to see its service history</div>
             </div>
-            <div class="tbl-wrap" id="prop-tbl-wrap" style="display:none;max-height:520px;overflow-y:auto">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Tech</th>
-                    <th>Service / Notes</th>
-                    <th style="text-align:right">Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="prop-tbody"></tbody>
-              </table>
-            </div>
+            <div id="prop-tbl-wrap" style="display:none;max-height:560px;overflow-y:auto;border-top:1px solid var(--border)"></div>
           </div>
         </div>
 
@@ -2402,117 +2406,27 @@
         <div class="panel" id="panel-reports">
           <div class="sec-header">
             <div class="sec-title">Reports</div>
-            <div class="sec-sub">Revenue · Tech performance</div>
+            <div class="sec-sub">Equipment · Refrigerant · Income</div>
             <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="loadReportsPanel()">↻ Refresh</button>
           </div>
 
-          <!-- Monthly Revenue Section -->
+          <!-- ── Custom Reports — 3 columns ── -->
           <div class="card" style="margin:16px 20px 0">
-            <div class="card-title">Monthly Revenue — last 12 months</div>
-            <!-- Mini bar chart -->
-            <div id="rev-chart" style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:8px 0 4px;overflow-x:auto"></div>
-            <!-- Table -->
-            <div class="tbl-wrap" style="margin-top:12px;max-height:260px;overflow-y:auto">
-              <table id="rev-table">
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>Jobs</th>
-                    <th style="text-align:right">Revenue</th>
-                    <th style="text-align:right">Sub Pay 80%</th>
-                  </tr>
-                </thead>
-                <tbody id="rev-tbody">
-                  <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Tech Performance Section -->
-          <div class="card" style="margin:12px 20px">
-            <div class="card-title">Tech Performance</div>
-            <div class="tbl-wrap" style="max-height:320px;overflow-y:auto">
-              <table id="tech-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Technician</th>
-                    <th>Jobs</th>
-                    <th style="text-align:right">Total Revenue</th>
-                    <th style="text-align:right">Avg / Job</th>
-                    <th style="text-align:right">Refrigerant</th>
-                    <th>Last Job</th>
-                  </tr>
-                </thead>
-                <tbody id="tech-tbody">
-                  <tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- ── Custom Reports ── -->
-          <div class="card" style="margin:12px 20px 20px">
-            <div class="card-title" style="margin-bottom:12px">Custom Reports</div>
-
-            <!-- Report type tabs -->
-            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-              <button type="button" id="cr-tab-income"      class="btn btn-sm cr-tab cr-tab-active" onclick="setCrTab('income')">$ Income</button>
-              <button type="button" id="cr-tab-equipment"   class="btn btn-sm cr-tab"              onclick="setCrTab('equipment')">⚙ Equipment Used</button>
-              <button type="button" id="cr-tab-refrigerant" class="btn btn-sm cr-tab"              onclick="setCrTab('refrigerant')">❄ Refrigerant</button>
-            </div>
-
-            <!-- Filters row -->
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-              <div>
-                <div class="label">From</div>
-                <input type="date" id="cr-from" style="width:140px" />
-              </div>
-              <div>
-                <div class="label">To</div>
-                <input type="date" id="cr-to" style="width:140px" />
-              </div>
-              <!-- Income: tech filter -->
-              <div id="cr-filter-income">
-                <div class="label">Technician (optional)</div>
-                <input type="text" id="cr-tech" placeholder="All" style="width:150px" />
-              </div>
-              <!-- Equipment: checklist filter -->
-              <div id="cr-filter-equipment" style="display:none;width:100%">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <span class="label" style="margin:0">Equipment</span>
-                  <span style="display:flex;gap:8px">
-                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crCheckAll(true)">All</button>
-                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crCheckAll(false)">None</button>
-                  </span>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+              <div class="card-title" style="margin:0">Custom Reports</div>
+              <!-- Shared date range -->
+              <div style="display:flex;align-items:flex-end;gap:10px">
+                <div>
+                  <div class="label">From</div>
+                  <input type="date" id="cr-from" style="width:134px" />
                 </div>
-                <div id="cr-eq-checklist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:4px 16px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 12px;max-height:180px;overflow-y:auto"></div>
-              </div>
-              <!-- Refrigerant: checklist filter -->
-              <div id="cr-filter-refrigerant" style="display:none">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <span class="label" style="margin:0">Refrigerant Type</span>
-                  <span style="display:flex;gap:8px">
-                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crRefCheckAll(true)">All</button>
-                    <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px" onclick="crRefCheckAll(false)">None</button>
-                  </span>
+                <div>
+                  <div class="label">To</div>
+                  <input type="date" id="cr-to" style="width:134px" />
                 </div>
-                <div style="display:flex;gap:16px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 12px">
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px">
-                    <input type="checkbox" class="cr-ref-cb" value="R410A" checked style="accent-color:var(--amber);cursor:pointer" /> R410A
-                  </label>
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px">
-                    <input type="checkbox" class="cr-ref-cb" value="454B" checked style="accent-color:var(--amber);cursor:pointer" /> 454B
-                  </label>
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px">
-                    <input type="checkbox" class="cr-ref-cb" value="R32" checked style="accent-color:var(--amber);cursor:pointer" /> R32
-                  </label>
-                </div>
+                <button type="button" class="btn btn-amber btn-sm" onclick="runAllCustomReports()">▶ Generate</button>
               </div>
-              <div>
-                <button type="button" class="btn btn-amber btn-sm" onclick="runCustomReport()">▶ Generate</button>
-              </div>
+              <!-- Export buttons (shown after any result) -->
               <div style="display:flex;gap:6px">
                 <button type="button" class="btn btn-outline btn-sm" id="cr-export-btn" style="display:none" onclick="exportCustomReportCSV()">↓ CSV</button>
                 <button type="button" class="btn btn-ghost btn-sm"   id="cr-print-btn"  style="display:none" onclick="crOpenPrintWindow(false)">🖨 Print</button>
@@ -2520,41 +2434,279 @@
               </div>
             </div>
 
-            <!-- Results table -->
-            <div class="tbl-wrap" id="cr-tbl-wrap" style="display:none;max-height:340px;overflow-y:auto">
-              <table id="cr-table">
-                <thead id="cr-thead"></thead>
-                <tbody id="cr-tbody"></tbody>
-              </table>
-            </div>
-            <div id="cr-empty" style="color:var(--text-dim);font-size:12px;padding:14px 0 4px">Select report type and date range.</div>
+            <!-- 3-column grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:start">
+
+              <!-- COL 1: Equipment -->
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);border-bottom:1px solid var(--border);padding-bottom:6px">⚙ Equipment Used</div>
+                <div>
+                  <div class="label" style="margin-bottom:5px">Equipment &amp; Accessories</div>
+                <details>
+                  <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;color:var(--text-dim);user-select:none">
+                    <span style="font-size:11px">Filter models</span>
+                    <span style="display:flex;gap:6px;align-items:center">
+                      <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px" onclick="event.preventDefault();crCheckAll(true)">All</button>
+                      <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px" onclick="event.preventDefault();crCheckAll(false)">None</button>
+                      <span style="font-size:10px;opacity:.5">▾</span>
+                    </span>
+                  </summary>
+                  <div id="cr-eq-checklist" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:8px 10px;max-height:160px;overflow-y:auto"></div>
+                </details>
+                </div>
+                <div class="tbl-wrap" id="cr-tbl-equipment" style="display:none;max-height:320px;overflow-y:auto">
+                  <table><thead id="cr-thead-equipment"></thead><tbody id="cr-tbody-equipment"></tbody></table>
+                </div>
+                <div id="cr-empty-equipment" style="color:var(--text-dim);font-size:11px">Set date range and click Generate.</div>
+              </div>
+
+              <!-- COL 2: Refrigerant -->
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);border-bottom:1px solid var(--border);padding-bottom:6px">❄ Refrigerant</div>
+                <div>
+                  <div class="label" style="margin-bottom:5px">Refrigerant type</div>
+                  <div style="display:flex;gap:14px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px 10px">
+                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text);font-size:12px"><input type="checkbox" class="cr-ref-cb" value="R410A" checked style="accent-color:var(--amber)" /> R410A</label>
+                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text);font-size:12px"><input type="checkbox" class="cr-ref-cb" value="454B"  checked style="accent-color:var(--amber)" /> 454B</label>
+                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text);font-size:12px"><input type="checkbox" class="cr-ref-cb" value="R32"   checked style="accent-color:var(--amber)" /> R32</label>
+                  </div>
+                </div>
+                <div class="tbl-wrap" id="cr-tbl-refrigerant" style="display:none;max-height:320px;overflow-y:auto">
+                  <table><thead id="cr-thead-refrigerant"></thead><tbody id="cr-tbody-refrigerant"></tbody></table>
+                </div>
+                <div id="cr-empty-refrigerant" style="color:var(--text-dim);font-size:11px">Set date range and click Generate.</div>
+              </div>
+
+              <!-- COL 3: Income -->
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);border-bottom:1px solid var(--border);padding-bottom:6px">$ Income</div>
+                <div>
+                  <div class="label" style="margin-bottom:5px">Technician (optional)</div>
+                  <input type="text" id="cr-tech" placeholder="All" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px;color:var(--text);font-size:12px" />
+                </div>
+                <div class="tbl-wrap" id="cr-tbl-income" style="display:none;max-height:320px;overflow-y:auto">
+                  <table><thead id="cr-thead-income"></thead><tbody id="cr-tbody-income"></tbody></table>
+                </div>
+                <div id="cr-empty-income" style="color:var(--text-dim);font-size:11px">Set date range and click Generate.</div>
+              </div>
+
+            </div><!-- /3-col grid -->
           </div>
+
+          <!-- ── Quick Stats (collapsible) ── -->
+          <details style="margin:12px 20px 20px">
+            <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em;user-select:none">
+              <span style="color:var(--amber)">▸</span> Quick Stats — Monthly Revenue &amp; Tech Performance
+            </summary>
+            <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:16px;background:var(--bg2)">
+
+              <!-- Monthly Revenue -->
+              <div style="margin-bottom:20px">
+                <div class="card-title" style="margin-bottom:10px">Monthly Revenue — last 12 months</div>
+                <div id="rev-chart" style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:8px 0 4px;overflow-x:auto"></div>
+                <div class="tbl-wrap" style="margin-top:12px;max-height:260px;overflow-y:auto">
+                  <table id="rev-table">
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th>Jobs</th>
+                        <th style="text-align:right">Revenue</th>
+                        <th style="text-align:right">Sub Pay 80%</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rev-tbody">
+                      <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Open to load data</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tech Performance -->
+              <div>
+                <div class="card-title" style="margin-bottom:10px">Tech Performance</div>
+                <div class="tbl-wrap" style="max-height:320px;overflow-y:auto">
+                  <table id="tech-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Technician</th>
+                        <th>Jobs</th>
+                        <th style="text-align:right">Total Revenue</th>
+                        <th style="text-align:right">Avg / Job</th>
+                        <th style="text-align:right">Refrigerant</th>
+                        <th>Last Job</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tech-tbody">
+                      <tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Open to load data</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </details>
+
         </div>
 
         <!-- ══════════ PANEL: LEGACY TEXT IMPORT ══════════ -->
         <div class="panel" id="panel-legacy-import">
           <div class="sec-header">
             <div class="sec-title">Text Import</div>
-            <div class="sec-sub">Convert legacy completion notes → database records</div>
+            <div class="sec-sub">Legacy completion notes → database records</div>
           </div>
 
-          <div class="card" style="margin:16px 20px 0">
-            <div class="card-title" style="margin-bottom:10px">Paste completion notes</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Format: ADDRESS, SUBDIVISION, BUILDER → notes with $prices. Separate jobs with a blank line. Multiple visits per job: use date lines (11/06/25).</div>
-            <textarea id="li-textarea" placeholder="4814 PEARL CRESCENT CT, MONARCH LANDING, LENNAR&#10;AC started 1 T-6 tstat $30, fin180p $10, float switch $5, total $45&#10;&#10;1535 AMBER SKIES, SYNOVA, LENNAR&#10;..." style="width:100%;height:200px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:4px;padding:10px;font-family:var(--mono);font-size:12px;resize:vertical;outline:none"></textarea>
-            <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn btn-amber btn-sm" onclick="liParse()">⚙ Parse</button>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('li-textarea').value='';liClear()">✕ Clear</button>
-              <span id="li-msg" style="font-size:11px;color:var(--text-dim)"></span>
-            </div>
-          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 20px 20px;align-items:start">
 
-          <div class="card" id="li-preview-card" style="margin:12px 20px 20px;display:none">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div class="card-title">Preview — <span id="li-count">0</span> records</div>
-              <button type="button" class="btn btn-amber btn-sm" id="li-import-all-btn" onclick="liImportAll()">↑ Import All</button>
+            <!-- LEFT: Raw paste area -->
+            <div class="card" style="height:100%">
+              <div class="card-title" style="margin-bottom:8px">Raw Report</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Paste the legacy report here as reference. Read from here, fill the fields on the right.</div>
+              <textarea id="li-raw" placeholder="6806 PINE HAVEN, CANE ISLAND, CHESMAR&#10;No gas meter&#10;FINISH/AC started $30&#10;1 Ecobee tstat&#10;fin180p $10, float switch $5&#10;* pressure test $10&#10;total $45"
+                style="width:100%;height:320px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:4px;padding:10px;font-family:var(--mono);font-size:12px;resize:vertical;outline:none;box-sizing:border-box"></textarea>
+              <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="document.getElementById('li-raw').value=''">✕ Clear</button>
             </div>
-            <div id="li-list"></div>
+
+            <!-- RIGHT: Structured fields -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px">Structured Entry</div>
+
+              <!-- Address row -->
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+                <div>
+                  <div class="label">Address</div>
+                  <input type="text" id="li-address" placeholder="6806 PINE HAVEN"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                    oninput="this.value=this.value.toUpperCase()" />
+                </div>
+                <div>
+                  <div class="label">Subdivision</div>
+                  <input type="text" id="li-subdivision" placeholder="CANE ISLAND"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                    oninput="this.value=this.value.toUpperCase()" />
+                </div>
+                <div>
+                  <div class="label">Builder</div>
+                  <input type="text" id="li-builder" placeholder="CHESMAR"
+                    list="li-builder-list"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                    oninput="this.value=this.value.toUpperCase()" />
+                  <datalist id="li-builder-list">
+                    <option value="LENNAR"><option value="HIGHLAND"><option value="CHESMAR">
+                    <option value="CASTLE ROCK"><option value="FIRST AMERICA"><option value="MHI">
+                  </datalist>
+                </div>
+              </div>
+
+              <!-- Date + Tech row -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                <div>
+                  <div class="label">Date</div>
+                  <input type="date" id="li-date"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" />
+                </div>
+                <div>
+                  <div class="label">Technician</div>
+                  <input type="text" id="li-tech" placeholder="CHRISTIAN"
+                    list="li-tech-list"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                    oninput="this.value=this.value.toUpperCase()" />
+                  <datalist id="li-tech-list"></datalist>
+                </div>
+              </div>
+
+              <!-- Service -->
+              <div style="margin-bottom:10px">
+                <div class="label">Service</div>
+                <textarea id="li-service" rows="2" placeholder="FINISH/AC started $30"
+                  style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+              </div>
+
+              <!-- Tstat -->
+              <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px">
+                <div style="flex:2;display:flex;flex-direction:column;gap:5px">
+                  <div class="label">Tstat</div>
+                  <select id="li-tstat" onchange="document.getElementById('li-tstat-other').style.display=this.value==='Other'?'block':'none'"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                    <option value="">— None —</option>
+                    <option value="T-4">T-4</option>
+                    <option value="T-6">T-6</option>
+                    <option value="T-10">T-10</option>
+                    <option value="T-8321">T-8321</option>
+                    <option value="Ecobee">Ecobee</option>
+                    <option value="Daikin One">Daikin One</option>
+                    <option value="TH2110">TH2110</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <input type="text" id="li-tstat-other" placeholder="Specify tstat…"
+                    style="display:none;width:100%;background:var(--bg2);border:1px solid var(--amber-dim);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" />
+                </div>
+                <div style="width:64px">
+                  <div class="label">Qty</div>
+                  <select id="li-tstat-qty"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 4px;font-size:12px;font-family:var(--mono);text-align:center">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div style="margin-bottom:10px">
+                <div class="label">Notes</div>
+                <textarea id="li-notes" rows="2" placeholder="No gas meter, 220v whip not connected…"
+                  style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+              </div>
+
+              <!-- Accessories + Fixes -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                <div>
+                  <div class="label">Accessories</div>
+                  <textarea id="li-accessories" rows="3" placeholder="fin180p $10, float switch $5"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+                </div>
+                <div>
+                  <div class="label">Fixes <span style="color:var(--text-dim);font-size:10px">(unplanned)</span></div>
+                  <textarea id="li-fixes" rows="3" placeholder="pressure test $10, 220v whip $5"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+                </div>
+              </div>
+
+              <!-- Weigh-in Data -->
+              <details style="margin-bottom:10px">
+                <summary style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);cursor:pointer;user-select:none;margin-bottom:6px">❄ Weigh-in Data</summary>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:8px">
+                  <div><div class="label">Lineset</div><input type="text" id="li-wi-linesetLength" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Factory Charge</div><input type="text" id="li-wi-factoryChargeOz" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Line Config</div><input type="text" id="li-wi-factoryLineConfig" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Approx Adjust</div><input type="text" id="li-wi-approxAdjustOz" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Adjusted</div><input type="text" id="li-wi-adjustedOz" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Fan Speed</div><input type="text" id="li-wi-fanSpeedCfm" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Liquid Temp</div><input type="text" id="li-wi-liquidLineTemp" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Suction Temp</div><input type="text" id="li-wi-suctionLineTemp" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Condenser Sat</div><input type="text" id="li-wi-condenserSatTemp" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">Subcooling</div><input type="text" id="li-wi-subcoolingValue" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">OEM SC Goal</div><input type="text" id="li-wi-oemSubcoolingGoal" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                  <div><div class="label">SC Deviation</div><input type="text" id="li-wi-subcoolingDeviation" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" /></div>
+                </div>
+              </details>
+
+              <!-- Total + Submit -->
+              <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                <div style="flex:1">
+                  <div class="label">Total $</div>
+                  <input type="number" id="li-total" placeholder="45" min="0" step="0.01"
+                    style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box" />
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:1px">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="liClearFields()">↺ Clear</button>
+                  <button type="button" class="btn btn-primary" onclick="liSaveRecord()">💾 Save to History</button>
+                </div>
+              </div>
+              <div id="li-msg" style="font-size:11px;color:var(--text-dim);margin-top:8px;min-height:16px"></div>
+            </div>
           </div>
         </div>
 
@@ -2867,6 +3019,89 @@
         <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)">
           <button type="button" class="btn btn-ghost" onclick="closeSaveRecord()">Cancel</button>
           <button type="button" class="btn btn-primary" id="sr-submit-btn" onclick="submitSaveRecord()">💾 Save to History</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Address History Modal (reutilizable) ══ -->
+    <div class="modal-bg" id="addr-hist-modal" style="display:none"
+         onclick="if(event.target===this)closeAddrHistModal()">
+      <div class="modal" style="max-width:660px;max-height:88vh;display:flex;flex-direction:column">
+        <div class="modal-header" style="flex-shrink:0">
+          <div>
+            <div class="modal-addr" id="ahm-address">—</div>
+            <div id="ahm-sub" style="font-size:11px;color:var(--text-dim);margin-top:2px"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+            <button type="button" id="ahm-call-btn" onclick="ahmOpenFollowUp()"
+              style="display:none;background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber);border-radius:4px;padding:5px 14px;font-size:12px;font-family:var(--mono);cursor:pointer;white-space:nowrap">
+              ＋ Call
+            </button>
+            <button type="button" class="modal-close" onclick="closeAddrHistModal()">✕</button>
+          </div>
+        </div>
+        <div class="modal-body" id="ahm-body" style="flex:1;overflow-y:auto;padding:8px 0"></div>
+      </div>
+    </div>
+
+    <!-- ══ Follow-up Call Modal ══ -->
+    <div class="modal-bg" id="followup-modal" style="display:none"
+         onclick="if(event.target===this)closeFollowUpModal()">
+      <div class="modal" style="max-width:480px">
+        <div class="modal-header">
+          <div class="modal-addr" id="fu-address-display">—</div>
+          <button type="button" class="modal-close" onclick="closeFollowUpModal()">✕</button>
+        </div>
+        <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+
+          <!-- Reference: last equipment -->
+          <div id="fu-ref-block" style="background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:8px 12px;font-size:11px;font-family:var(--mono);color:var(--text-dim);line-height:1.7"></div>
+
+          <!-- Service chips -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Service</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap" id="fu-svc-chips">
+              <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC STARTUP"   onclick="fuToggleSvc(this)">AC</button>
+              <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="HEAT STARTUP" onclick="fuToggleSvc(this)">Heat</button>
+              <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC & HEAT"    onclick="fuToggleSvc(this)">AC &amp; Heat</button>
+              <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="FINISH"       onclick="fuToggleSvc(this)">Finish</button>
+              <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="DRIVE RUN"    onclick="fuToggleSvc(this)">Drive Run</button>
+              <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="SERVICE CALL" onclick="fuToggleSvc(this)">Service Call</button>
+            </div>
+          </div>
+
+          <!-- Accessories -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Accessories</div>
+            <select id="fu-acc-select" onchange="fuAddAcc(this)"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+              <option value="">+ Add accessory</option>
+              <option value="Float Switch">Float Switch</option>
+              <option value="Zoning">Zone</option>
+              <option value="HZ322">HZ322</option>
+              <option value="UT3000">UT-3000</option>
+              <option value="DAPC">DAPC</option>
+              <option value="Harmony">Harmony</option>
+              <option value="RDS">RDS</option>
+              <option value="Trane Harness">Trane Harness</option>
+              <option value="LP Kit">LP Kit</option>
+              <option value="eBypass">eBypass</option>
+              <option value="__new__" style="font-weight:700">+ New…</option>
+            </select>
+            <div id="fu-acc-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:4px;margin-top:6px"></div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Notes</div>
+            <textarea id="fu-notes" rows="2" placeholder="Warranty, LP Kit, weigh-in data…"
+              style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)">
+          <button type="button" class="btn btn-ghost" onclick="closeFollowUpModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveFollowUpJob()">＋ Add to Board</button>
         </div>
       </div>
     </div>
@@ -4345,80 +4580,297 @@
         reader.readAsText(file);
       }
 
+      // Compute completion text + total for one job (pure, no DOM)
+      function _compJobText(j) {
+        const ss = j.savedState || {};
+        const total =
+          (ss.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+          (ss.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+          (ss.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0);
+
+        // Use the PWA-generated reportText if available — exact match
+        if (j.reportText) {
+          return { text: j.reportText, total };
+        }
+
+        // Fallback: reconstruct from savedState
+        const addrA = (j.address || "").toUpperCase().trim();
+        const dispatchJob = jobs.find((dj) => {
+          const addrB = (dj.address || "").toUpperCase().trim();
+          return addrB === addrA || addrB.includes(addrA) || addrA.includes(addrB);
+        });
+        const orderNum = dispatchJob?.orderNumber ? `#${dispatchJob.orderNumber} · ` : "";
+        const parts = [j.address];
+        if (ss.notes) parts.push(ss.notes.trim());
+        if (ss.selectedThermostat?.name) {
+          const qty = ss.thermostatQuantity || 1;
+          parts.push(`${qty} ${ss.selectedThermostat.name} ${qty > 1 ? "tstats" : "tstat"}`);
+        }
+        (ss.selectedServices || []).forEach(s => parts.push(`${s.name} $${s.basePrice}`));
+        (ss.selectedAccessories || []).forEach(a => {
+          parts.push(a.name === "Weight-In-Data" ? `weigh-in data $${a.basePrice}` : `${a.name} $${a.basePrice}`);
+        });
+        (ss.selectedFixes || []).forEach(f => parts.push(`${f.name} $${f.basePrice}`));
+        parts.push(`total $${total}`);
+        return { text: orderNum + parts.join(", "), total };
+      }
+
+      // Build item rows HTML for edit mode
+      function _compItemRowsHtml(ss) {
+        const items = [
+          ...(ss.selectedServices || []).map(i => ({ name: i.name, price: i.basePrice, type: "Service" })),
+          ...(ss.selectedAccessories || []).map(i => ({ name: i.name, price: i.basePrice, type: "Accessory" })),
+          ...(ss.selectedFixes || []).map(i => ({ name: i.name, price: i.basePrice, type: "Fix" })),
+        ];
+        return items.map(item => `
+          <div data-item-row style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <input type="text" value="${esc(item.name)}" data-field="name"
+              style="flex:2;min-width:80px;font-size:12px;padding:3px 6px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+            <select data-field="type"
+              style="font-size:11px;padding:3px 4px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--text-dim)">
+              ${["Service","Accessory","Fix"].map(t =>
+                `<option value="${t}"${item.type === t ? " selected" : ""}>${t}</option>`).join("")}
+            </select>
+            <input type="number" value="${item.price}" data-field="price" min="0" step="any"
+              style="width:60px;font-size:12px;padding:3px 4px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--amber);text-align:right" />
+            <button type="button" onclick="this.closest('[data-item-row]').remove()"
+              style="background:none;border:none;color:var(--red);cursor:pointer;
+                     font-size:13px;padding:0 4px" title="Remove">✕</button>
+          </div>`).join("");
+      }
+
+      // Generate full edit panel HTML for one completion card
+      function _compEditPanelHtml(j, idx, ss) {
+        const wid  = ss.weightInData  || {};
+        const wid2 = ss.weightInData2 || {};
+
+        const inp = (id, val, type = 'text', extra = '') =>
+          `<input type="${type}" id="${id}" value="${esc(String(val ?? ''))}"
+             style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);
+                    border:1px solid var(--border2);border-radius:3px;color:var(--text);
+                    box-sizing:border-box${extra ? ';' + extra : ''}" />`;
+
+        // A field div — hidden if empty, marked with data-cef so toggle can find it
+        const field = (id, label, val, type = 'text', extraInp = '') => {
+          const empty = !val && val !== 0;
+          return `<div data-cef style="display:${empty ? 'none' : 'block'};margin-bottom:8px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:3px">${label}</div>
+            ${inp(id, val, type, extraInp)}
+          </div>`;
+        };
+
+        // Weigh-in section (collapsible)
+        const widLabels = [
+          ['linesetLength',      'Lineset (ft)'],
+          ['factoryChargeOz',    'Factory Charge (oz)'],
+          ['factoryLineConfig',  'Line Config'],
+          ['approxAdjustOz',     'Approx Adjust (oz)'],
+          ['adjustedOz',         'Adjusted (oz)'],
+          ['fanSpeedCfm',        'Fan Speed (CFM)'],
+          ['liquidLineTemp',     'Liquid Temp'],
+          ['suctionLineTemp',    'Suction Temp'],
+          ['condenserSatTemp',   'Condenser Sat Temp'],
+          ['subcoolingValue',    'Subcooling'],
+          ['oemSubcoolingGoal',  'OEM SC Goal'],
+          ['subcoolingDeviation','SC Deviation'],
+        ];
+
+        const widSection = (sys, data, label) => {
+          const hasData = Object.values(data).some(v => v !== '' && v != null);
+          const pre = `ce-wid${sys}`;
+          return `
+          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px">
+            <div onclick="compToggleWid(${idx},${sys})"
+              style="display:flex;justify-content:space-between;align-items:center;
+                     padding:6px 10px;background:var(--bg3);cursor:pointer;border-radius:3px">
+              <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                           color:var(--text-dim)">${label}</span>
+              <span id="${pre}-arrow-${idx}">${hasData ? '▾' : '▸'}</span>
+            </div>
+            <div id="${pre}-body-${idx}" style="display:${hasData ? 'grid' : 'none'};
+                 grid-template-columns:1fr 1fr;gap:6px 12px;padding:10px">
+              ${widLabels.map(([key, lbl]) => {
+                const val = data[key];
+                const empty = !val && val !== 0;
+                return `<div data-cef style="display:${empty ? 'none' : 'block'}">
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${lbl}</div>
+                  ${inp(`${pre}-${key}-${idx}`, val)}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        };
+
+        const hasWid2 = Object.values(wid2).some(v => v !== '' && v != null);
+
+        return `
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+            <button type="button" id="ce-showall-btn-${idx}" onclick="compToggleAllFields(${idx})"
+              style="font-size:10px;color:var(--ice);background:none;border:none;
+                     cursor:pointer;text-decoration:underline;padding:0">Show all fields</button>
+          </div>
+
+          <!-- Report Text -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:3px">Report Text</div>
+            <textarea id="ce-reporttext-${idx}" rows="3"
+              style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);
+                     border:1px solid var(--border2);border-left:3px solid var(--amber);
+                     border-radius:3px;color:var(--text);resize:vertical;
+                     box-sizing:border-box;font-family:var(--mono)">${esc(j.reportText || '')}</textarea>
+          </div>
+
+          <!-- Basic Info grid -->
+          <div style="margin-bottom:8px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:3px">Address</div>
+            ${inp(`ce-addr-${idx}`, j.address || '')}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-bottom:4px">
+            ${field(`ce-subdiv-${idx}`,      'Subdivision',   j.subdivision)}
+            ${field(`ce-builder-${idx}`,     'Builder',       j.builder)}
+            ${field(`ce-indoor-${idx}`,      'Indoor Model',  j.heaterModel)}
+            ${field(`ce-outdoor-${idx}`,     'Outdoor Model', j.outdoorModel)}
+            ${field(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant)}
+          </div>
+
+          <!-- Notes -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:3px">Notes</div>
+            <textarea id="ce-notes-${idx}" rows="2"
+              style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--text);
+                     resize:vertical;box-sizing:border-box">${esc(ss.notes || '')}</textarea>
+          </div>
+
+          <!-- Thermostat -->
+          <div data-cef style="display:${ss.selectedThermostat?.name ? 'block' : 'none'};margin-bottom:10px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:4px">Thermostat</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="ce-tstat-qty-${idx}" value="${ss.thermostatQuantity || 1}"
+                min="1" step="1"
+                style="width:52px;font-size:12px;padding:4px 6px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text);
+                       text-align:center" />
+              <input type="text" id="ce-tstat-name-${idx}"
+                value="${esc(ss.selectedThermostat?.name || '')}"
+                placeholder="Name (blank = none)"
+                style="flex:1;font-size:12px;padding:4px 6px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+            </div>
+          </div>
+
+          <!-- Weigh-In Data -->
+          ${widSection(1, wid, 'Weigh-In Data')}
+          <div data-cef style="display:${hasWid2 ? 'block' : 'none'}">
+            ${widSection(2, wid2, 'Weigh-In Data — System 2')}
+          </div>
+
+          <!-- Items -->
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                      color:var(--text-dim);margin-bottom:6px">Items</div>
+          <div id="ce-items-${idx}" style="margin-bottom:8px">${_compItemRowsHtml(ss)}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <input type="text" id="ce-new-name-${idx}" placeholder="Item name"
+              style="flex:2;min-width:90px;font-size:12px;padding:4px 6px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+            <select id="ce-new-type-${idx}"
+              style="font-size:11px;padding:4px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--text-dim)">
+              <option>Service</option><option>Accessory</option><option>Fix</option>
+            </select>
+            <input type="number" id="ce-new-price-${idx}" placeholder="$" value="0" min="0" step="any"
+              style="width:58px;font-size:12px;padding:4px;background:var(--bg2);
+                     border:1px solid var(--border2);border-radius:3px;color:var(--amber);text-align:right" />
+            <button type="button" class="btn btn-sm" onclick="compAddItem(${idx})"
+              style="font-size:11px;padding:4px 10px">＋ Add</button>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button type="button" class="btn btn-ghost btn-sm"
+              onclick="compToggleEdit(${idx})">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm"
+              onclick="compApplyEdit(${idx})">✓ Apply</button>
+          </div>`;
+      }
+
+      function compToggleAllFields(idx) {
+        const panel = document.getElementById(`comp-edit-${idx}`);
+        const btn   = document.getElementById(`ce-showall-btn-${idx}`);
+        const expanded = btn.dataset.expanded === '1';
+        panel.querySelectorAll('[data-cef]').forEach(el => {
+          el.style.display = expanded ? 'none' : 'block';
+        });
+        // Also expand wid bodies if showing all
+        if (!expanded) {
+          [1, 2].forEach(sys => {
+            const body = document.getElementById(`ce-wid${sys}-body-${idx}`);
+            const arrow = document.getElementById(`ce-wid${sys}-arrow-${idx}`);
+            if (body) { body.style.display = 'grid'; if (arrow) arrow.textContent = '▾'; }
+          });
+        }
+        btn.dataset.expanded = expanded ? '0' : '1';
+        btn.textContent = expanded ? 'Show all fields' : 'Hide empty fields';
+      }
+
+      function compToggleWid(idx, sys) {
+        const body  = document.getElementById(`ce-wid${sys}-body-${idx}`);
+        const arrow = document.getElementById(`ce-wid${sys}-arrow-${idx}`);
+        if (!body) return;
+        const open = body.style.display !== 'none';
+        body.style.display  = open ? 'none' : 'grid';
+        if (arrow) arrow.textContent = open ? '▸' : '▾';
+      }
+
       function renderCompletion(techJobs, filename) {
         const el = document.getElementById("completion-output");
         let totalDay = 0;
         let allText = [];
-        let html = "";
+        let cardsHtml = "";
 
-        techJobs.forEach((j) => {
+        techJobs.forEach((j, idx) => {
           const ss = j.savedState;
           if (!ss) return;
-
-          // Find matching dispatch job by address (exact first, then substring)
-          const addrA = (j.address || "").toUpperCase().trim();
-          const dispatchJob = jobs.find((dj) => {
-            const addrB = (dj.address || "").toUpperCase().trim();
-            return addrB === addrA || addrB.includes(addrA) || addrA.includes(addrB);
-          });
-          const orderNum = dispatchJob?.orderNumber
-            ? `#${dispatchJob.orderNumber} · `
-            : "";
-
-          // Build completion text in your format
-          const parts = [j.address];
-          if (ss.notes) parts.push(ss.notes.trim());
-          (ss.selectedServices || []).forEach((s) =>
-            parts.push(`${s.name} $${s.basePrice}`)
-          );
-          (ss.selectedAccessories || [])
-            .filter((a) => a.name !== "Weight-In-Data")
-            .forEach((a) => parts.push(`${a.name} $${a.basePrice}`));
-          (ss.selectedFixes || []).forEach((f) =>
-            parts.push(`${f.name} $${f.basePrice}`)
-          );
-          const total =
-            (ss.selectedServices || []).reduce(
-              (s, i) => s + (i.basePrice || 0),
-              0
-            ) +
-            (ss.selectedAccessories || []).reduce(
-              (s, i) => s + (i.basePrice || 0),
-              0
-            ) +
-            (ss.selectedFixes || []).reduce(
-              (s, i) => s + (i.basePrice || 0),
-              0
-            );
-          parts.push(`total $${total}`);
+          const { text, total } = _compJobText(j);
           totalDay += total;
-
-          const text = orderNum + parts.join(", ");
           allText.push(text);
 
-          html += `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:10px;margin-bottom:8px">
-      <div style="font-size:11px;color:var(--text);line-height:1.7;font-family:var(--mono)">${esc(
-        text
-      )}</div>
+          cardsHtml += `
+    <div id="comp-card-${idx}" style="background:var(--bg3);border:1px solid var(--border);
+                                       border-radius:3px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div id="comp-view-${idx}" style="flex:1;font-size:11px;color:var(--text);
+             line-height:1.7;font-family:var(--mono)">${esc(text)}</div>
+        <button type="button" class="btn btn-ghost btn-sm" id="comp-edit-btn-${idx}"
+          onclick="compToggleEdit(${idx})"
+          style="flex-shrink:0;font-size:10px;padding:2px 8px">✏️ Edit</button>
+      </div>
+
+      <div id="comp-edit-${idx}" style="display:none;margin-top:10px;padding-top:10px;
+                                         border-top:1px solid var(--border)">
+        ${_compEditPanelHtml(j, idx, ss)}
+      </div>
     </div>`;
         });
 
         const fullText = allText.join("\n");
-        html = `<div class="card">
-    <div class="card-title">Day Total: $${totalDay}</div>
+        el.innerHTML = `<div class="card">
+    <div class="card-title" id="comp-day-total">Day Total: $${totalDay}</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="copyCompletion()">📋 Copy All</button>
       <button class="btn btn-outline" onclick="whatsappCompletion()">💬 Send via WhatsApp</button>
       <button class="btn btn-ice" id="save-db-btn" onclick="saveCompletedToDB()">💾 Save All to DB</button>
     </div>
     <div id="save-db-status" style="margin-bottom:8px"></div>
-    ${html}
-    <textarea id="completion-text" style="display:none">${esc(
-      fullText
-    )}</textarea>
+    ${cardsHtml}
+    <textarea id="completion-text" style="display:none">${esc(fullText)}</textarea>
   </div>`;
-
-        el.innerHTML = html;
 
         // Mark matched jobs as done
         techJobs.forEach((j) => {
@@ -4434,6 +4886,125 @@
         save();
         renderBoard();
         updateStats();
+      }
+
+      function compToggleEdit(idx) {
+        const editDiv = document.getElementById(`comp-edit-${idx}`);
+        const btn = document.getElementById(`comp-edit-btn-${idx}`);
+        const isOpen = editDiv.style.display !== "none";
+        editDiv.style.display = isOpen ? "none" : "block";
+        btn.textContent = isOpen ? "✏️ Edit" : "✎ Editing";
+        btn.classList.toggle("active", !isOpen);
+      }
+
+      function compAddItem(idx) {
+        const nameEl  = document.getElementById(`ce-new-name-${idx}`);
+        const typeEl  = document.getElementById(`ce-new-type-${idx}`);
+        const priceEl = document.getElementById(`ce-new-price-${idx}`);
+        const name = nameEl.value.trim();
+        if (!name) { nameEl.focus(); return; }
+        const type  = typeEl.value;
+        const price = parseFloat(priceEl.value) || 0;
+        const container = document.getElementById(`ce-items-${idx}`);
+        const row = document.createElement("div");
+        row.setAttribute("data-item-row", "");
+        row.style.cssText = "display:flex;gap:6px;align-items:center;margin-bottom:4px";
+        row.innerHTML = `
+          <input type="text" value="${esc(name)}" data-field="name"
+            style="flex:2;min-width:80px;font-size:12px;padding:3px 6px;background:var(--bg2);
+                   border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+          <select data-field="type"
+            style="font-size:11px;padding:3px 4px;background:var(--bg2);
+                   border:1px solid var(--border2);border-radius:3px;color:var(--text-dim)">
+            ${["Service","Accessory","Fix"].map(t =>
+              `<option value="${t}"${type === t ? " selected" : ""}>${t}</option>`).join("")}
+          </select>
+          <input type="number" value="${price}" data-field="price" min="0" step="any"
+            style="width:60px;font-size:12px;padding:3px 4px;background:var(--bg2);
+                   border:1px solid var(--border2);border-radius:3px;color:var(--amber);text-align:right" />
+          <button type="button" onclick="this.closest('[data-item-row]').remove()"
+            style="background:none;border:none;color:var(--red);cursor:pointer;
+                   font-size:13px;padding:0 4px" title="Remove">✕</button>`;
+        container.appendChild(row);
+        nameEl.value = "";
+        priceEl.value = "0";
+        nameEl.focus();
+      }
+
+      function compApplyEdit(idx) {
+        const j = _lastImportedJobs[idx];
+        if (!j) return;
+        if (!j.savedState) j.savedState = {};
+
+        // Basic fields
+        j.address     = document.getElementById(`ce-addr-${idx}`).value.trim();
+        j.subdivision = document.getElementById(`ce-subdiv-${idx}`)?.value.trim() ?? j.subdivision;
+        j.builder     = document.getElementById(`ce-builder-${idx}`)?.value.trim() ?? j.builder;
+        j.heaterModel = document.getElementById(`ce-indoor-${idx}`)?.value.trim() ?? j.heaterModel;
+        j.outdoorModel= document.getElementById(`ce-outdoor-${idx}`)?.value.trim() ?? j.outdoorModel;
+        j.refrigerant = document.getElementById(`ce-refrigerant-${idx}`)?.value.trim() ?? j.refrigerant;
+        j.savedState.notes = document.getElementById(`ce-notes-${idx}`).value.trim();
+
+        // Thermostat
+        const tstatName = document.getElementById(`ce-tstat-name-${idx}`).value.trim();
+        j.savedState.selectedThermostat = tstatName ? { name: tstatName } : null;
+        j.savedState.thermostatQuantity = parseInt(document.getElementById(`ce-tstat-qty-${idx}`).value) || 1;
+
+        // Weigh-In Data helper
+        const readWid = (sys) => {
+          const pre = `ce-wid${sys}`;
+          const keys = ['linesetLength','factoryChargeOz','factoryLineConfig','approxAdjustOz',
+                        'adjustedOz','fanSpeedCfm','liquidLineTemp','suctionLineTemp',
+                        'condenserSatTemp','subcoolingValue','oemSubcoolingGoal','subcoolingDeviation'];
+          const obj = {};
+          keys.forEach(k => {
+            const el = document.getElementById(`${pre}-${k}-${idx}`);
+            obj[k] = el ? el.value.trim() : '';
+          });
+          return obj;
+        };
+        j.savedState.weightInData  = readWid(1);
+        j.savedState.weightInData2 = readWid(2);
+
+        const services = [], accessories = [], fixes = [];
+        document.getElementById(`ce-items-${idx}`)
+          .querySelectorAll("[data-item-row]")
+          .forEach(row => {
+            const name  = row.querySelector('[data-field="name"]').value.trim();
+            const type  = row.querySelector('[data-field="type"]').value;
+            const price = parseFloat(row.querySelector('[data-field="price"]').value) || 0;
+            if (!name) return;
+            const item = { name, basePrice: price };
+            if (type === "Service")   services.push(item);
+            else if (type === "Accessory") accessories.push(item);
+            else fixes.push(item);
+          });
+        j.savedState.selectedServices    = services;
+        j.savedState.selectedAccessories = accessories;
+        j.savedState.selectedFixes       = fixes;
+
+        // Preserve edited reportText
+        j.reportText = document.getElementById(`ce-reporttext-${idx}`)?.value.trim() || "";
+
+        // Close edit panel
+        compToggleEdit(idx);
+
+        // Update this card's view text
+        const { text } = _compJobText(j);
+        document.getElementById(`comp-view-${idx}`).textContent = text;
+
+        // Recalculate day total + full textarea
+        let newTotal = 0;
+        const newTexts = _lastImportedJobs.map(job => {
+          if (!job.savedState) return null;
+          const { text: t, total: tot } = _compJobText(job);
+          newTotal += tot;
+          return t;
+        }).filter(Boolean);
+        const totalEl = document.getElementById("comp-day-total");
+        if (totalEl) totalEl.textContent = `Day Total: $${newTotal}`;
+        const ta = document.getElementById("completion-text");
+        if (ta) ta.value = newTexts.join("\n");
       }
 
       function copyCompletion() {
@@ -5121,12 +5692,154 @@
         }
       }
 
+      // ── New Job: equipment data (mirrors dropdowns.js / PWA) ──
+      const NJ_HEATER_DATA = {
+        "ML180UH SERIES": ["ML180UH045E36A","ML180UH070E36A","ML180UH070E36B","ML180UH090E48B","ML180UH090E60C","ML180UH110E60C","ML180UH135E60D"],
+        "ML196UH SERIES(HIGH EFFICIENCY)": ["ML196UH030XE36B","ML196UH045XE36B","ML196UH070XE36B","ML196UH070XE48B","ML196UH090XE36C","ML196UH090XE48C","ML196UH090XE60C","ML196UH110XE60C","ML196UH135XE60D"],
+        "ML180UHV SERIES(DIP SWITCH)": ["ML180UH030V36A","ML180UH045V36A","ML180UH070V36A","ML180UH070V48B","ML180UH090V48B","ML180UH110V60C"],
+        "ML296UHV SERIES": ["ML296UH045XV36B","ML296UH070XV36B","ML296UH090XV48C","ML296UH110XV60C"],
+        "EL196UH SERIES": ["EL196UH030XE36BK","EL196UH045XE36BK","EL196UH070XE36BK","EL196UH090XE48CK","EL196UH110XE60CK"],
+        "CBK45UHET SERIES": ["CBK45UHET024","CBK45UHET030","CBK45UHET036","CBK45UHET042","CBK45UHET048","CBK45UHET060"],
+        "CBA25UH SERIES": ["CBA25UH018","CBA25UH024","CBA25UH030","CBA25UH036","CBA25UH042","CBA25UH048","CBA25UH060"],
+        "S8X1/S8X2-S8B1": ["S8X1A040M3PSC","S8X1B040M2PSC","S8X1B060M4PSC","S8X1B080M4PSC","S8X1C080M5PSC","S8X1C100M5PSC","S8X1D120M5PSC"],
+        "GR9S80 SERIES": ["GR9S800403AU","GR9S800603AU","GR9S800604BU","GR9S800804BU","GR9S800805CU"],
+        "AMSTU1300 SERIES": ["AMST24BU1300AA","AMST30BU1300AA","AMST36BU1300AA","AMST36CU1300AA","AMST42CU1300AA","AMST48CU1300AA","AMST48DU1300AA","AMST60DU1300AA"],
+        "DR96TC SERIES": ["DR96TC0403BN","DR96TC0603BN","DR96TC0803BN","DR96TC0804CN","DR96TC1005CN","DR96TC1005DN","DR96TC1205DN"],
+      };
+      const NJ_OUTDOOR_DATA = {
+        "ML17XC1 SERIES": ["ML17XC1-018","ML17XC1-024","ML17XC1-030","ML17XC1-036","ML17XC1-042","ML17XC1-047","ML17XC1-059","ML18XC2-036","ML18XC2-048"],
+        "EL17XP1 SERIES": ["EL17XP1-018","EL17XP1-024","EL17XP1-030","EL17XP1-036","EL17XP1-042","EL17XP1-048","EL17XP1-060"],
+        "ML14KC1 SERIES": ["ML14KC1-018","ML14KC1-024","ML14KC1-030","ML14KC1-036","ML14KC1-041","ML14KC1-042","ML14KC1-047","ML14KC1-048","ML14KC1-059","ML14KC1-060"],
+        "ML17KC2 SERIES": ["ML17KC2-024","ML17KC2-036","ML17KC2-048","ML17KC2-060"],
+        "4TTR SERIES": ["4TTR6024N1000AA","4TTR5042A1000AA","4TTR5048A1000AA","4TTR5060A1000AA"],
+        "5TTR SERIES": ["5TTR5018A1000A","5TTR5024A1000A","5TTR5030A1000A","5TTR5036A1000A","5TTR5042A1000A","5TTR5048A1000A","5TTR5060A1000A"],
+        "GLXS4BA SERIES": ["GLXS4BA1810AA","GLXS4BA2410AA","GLXS4BA3010AA","GLXS4BA3610AA","GLXS4BA4210AA","GLXS4BA4810AA","GLXS4BA6010AA"],
+        "GLXS5BA SERIES": ["GLXS5BA1810AA","GLXS5BA2410AA","GLXS5BA3010AA","GLXS5BA3610AA","GLXS5BA4210AA","GLXS5BA4810AA","GLXS5BA6010AA"],
+        "GLZS4BA SERIES": ["GLZS4BA1810AA","GLZS4BA2410AA","GLZS4BA3010AA","GLZS4BA3610AA","GLZS4BA4210AA","GLZS4BA4810AA","GLZS4BA6010AA"],
+        "DC6VSS SERIES": ["DC6VSS2410","DC6VSS3010","DC6VSS3610","DC6VSS4210","DC6VSS4810","DC6VSS6010"],
+      };
+
+      // ── New Job: series → model selectors ──
+      function njInitSeriesSelects() {
+        const map = { furnace: NJ_HEATER_DATA, outdoor: NJ_OUTDOOR_DATA };
+        ["furnace", "outdoor"].forEach(field => {
+          const sel = document.getElementById(`nj-${field}-series`);
+          if (!sel || sel.options.length > 1) return;
+          Object.keys(map[field]).forEach(series => {
+            const opt = document.createElement("option");
+            opt.value = series; opt.textContent = series;
+            sel.appendChild(opt);
+          });
+        });
+      }
+
+      function njLoadModels(field) {
+        const data    = field === "furnace" ? NJ_HEATER_DATA : NJ_OUTDOOR_DATA;
+        const series  = document.getElementById(`nj-${field}-series`).value;
+        const modelSel = document.getElementById(`nj-${field}`);
+        const resetBtn = document.getElementById(`nj-${field}-reset`);
+        modelSel.innerHTML = '<option value="">Select model…</option>';
+        if (!series) {
+          modelSel.disabled = true;
+          modelSel.style.color = "var(--text-dim)";
+          if (resetBtn) resetBtn.style.display = "none";
+          return;
+        }
+        (data[series] || []).forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = m; opt.textContent = m;
+          modelSel.appendChild(opt);
+        });
+        modelSel.disabled = false;
+        modelSel.style.color = "var(--text)";
+        if (resetBtn) resetBtn.style.display = "none";
+      }
+
+      function njModelSelected(field, sel) {
+        const resetBtn = document.getElementById(`nj-${field}-reset`);
+        if (resetBtn) resetBtn.style.display = sel.value ? "" : "none";
+        if (sel.value) sel.style.color = "var(--amber)";
+        else sel.style.color = "var(--text)";
+      }
+
+      function njResetSeries(field) {
+        const seriesSel = document.getElementById(`nj-${field}-series`);
+        const modelSel  = document.getElementById(`nj-${field}`);
+        const resetBtn  = document.getElementById(`nj-${field}-reset`);
+        if (seriesSel) seriesSel.value = "";
+        if (modelSel)  { modelSel.innerHTML = '<option value="">Select model…</option>'; modelSel.disabled = true; modelSel.style.color = "var(--text-dim)"; }
+        if (resetBtn)  resetBtn.style.display = "none";
+      }
+
+      // Init after EQUIPMENT is defined (merged with reports DOMContentLoaded below)
+
+      // ── New Job: service chips ──
+      function njToggleSvc(btn) {
+        const wasActive = btn.classList.contains("active");
+        document.querySelectorAll(".nj-svc-btn").forEach(b => {
+          b.classList.remove("active");
+          b.style.color = "";
+          b.style.borderColor = "";
+          b.style.background = "";
+        });
+        if (!wasActive) {
+          btn.classList.add("active");
+          btn.style.color = "var(--amber)";
+          btn.style.borderColor = "var(--amber-dim)";
+          btn.style.background = "var(--amber-glow)";
+        }
+        // sync hidden input for saveNewJob compat
+        const hidden = document.getElementById("nj-service");
+        if (hidden) hidden.value = wasActive ? "" : btn.dataset.svc;
+      }
+
+      // ── New Job: accessory chips ──
+      let _njAccs = [];
+      function njAddAcc(sel) {
+        const val = sel.value;
+        sel.value = "";
+        if (!val) return;
+        if (val === "__new__") {
+          const custom = prompt("Accessory name:");
+          if (!custom?.trim()) return;
+          _njAddAccChip(custom.trim());
+        } else {
+          _njAddAccChip(val);
+        }
+      }
+      function _njAddAccChip(name) {
+        if (_njAccs.includes(name)) return;
+        _njAccs.push(name);
+        const chip = document.createElement("span");
+        chip.style.cssText = "display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:2px 8px;font-size:11px;color:var(--text);cursor:pointer";
+        chip.innerHTML = `${esc(name)} <span style="color:var(--red);font-size:13px;line-height:1" onclick="njRemoveAcc('${esc(name)}',this.parentNode)">✕</span>`;
+        document.getElementById("nj-acc-chips").appendChild(chip);
+      }
+      function njRemoveAcc(name, chip) {
+        _njAccs = _njAccs.filter(a => a !== name);
+        chip?.remove();
+      }
+
+      // ── Toggle all fields ──
+      function njToggleExtra() {
+        const panel = document.getElementById("nj-extra-fields");
+        const btn   = document.getElementById("nj-extra-btn");
+        const open  = panel.style.display === "none";
+        panel.style.display = open ? "" : "none";
+        btn.textContent = open ? "▾ All fields" : "▸ All fields";
+        btn.style.color = open ? "var(--amber)" : "var(--text-dim)";
+      }
+
       function saveNewJob() {
         const addr = document.getElementById("nj-address")?.value.trim();
         if (!addr) {
           alert("Address is required");
           return;
         }
+        const svcEl    = document.getElementById("nj-service");
+        const svcValue = svcEl?.value || document.querySelector(".nj-svc-btn.active")?.dataset.svc || "";
+        const tstat    = document.getElementById("nj-tstat")?.value || "";
+        const tstatQty = document.getElementById("nj-tstat-qty")?.value || "1";
         const job = {
           id: genId(),
           status: "pending",
@@ -5138,8 +5851,10 @@
             document.getElementById("nj-subdivision")?.value.trim() || "",
           cityState: document.getElementById("nj-city")?.value.trim() || "",
           builder: document.getElementById("nj-builder")?.value.trim() || "",
-          serviceType: document.getElementById("nj-service")?.value || "",
-          problem: document.getElementById("nj-service")?.value || "",
+          serviceType: svcValue,
+          problem: svcValue,
+          thermostat: tstat ? { type: tstat, qty: tstatQty } : null,
+          accessoryHints: [..._njAccs, ..._njHints],
           contactName:
             document.getElementById("nj-contact-name")?.value.trim() || "",
           contactPhone:
@@ -5155,11 +5870,12 @@
           linesetHint:
             document.getElementById("nj-lineset")?.value.trim() || "",
           isWarranty: document.getElementById("nj-warranty")?.value === "true",
-          accessoryHints: [..._njHints],
           historyRough: document.getElementById("nj-rough")?.value.trim() || "",
           historyTrim: document.getElementById("nj-trim")?.value.trim() || "",
           historySet: document.getElementById("nj-set")?.value.trim() || "",
+          twoSystems: document.getElementById("nj-two-systems")?.checked || false,
           importantNotes:
+            document.getElementById("nj-notes-quick")?.value.trim() ||
             document.getElementById("nj-notes")?.value.trim() || "",
           dispatchNotes:
             document.getElementById("nj-dispatch-notes")?.value.trim() || "",
@@ -5200,6 +5916,7 @@
           "nj-rough",
           "nj-trim",
           "nj-set",
+          "nj-notes-quick",
           "nj-notes",
           "nj-dispatch-notes",
           "nj-hint-custom",
@@ -5208,12 +5925,28 @@
           if (el) el.value = "";
         });
         const svc = document.getElementById("nj-service");
-        if (svc) svc.selectedIndex = 0;
+        if (svc) svc.value = "";
         const pri = document.getElementById("nj-priority");
         if (pri) pri.value = "normal";
         const war = document.getElementById("nj-warranty");
         if (war) war.value = "true";
+        const twoSys = document.getElementById("nj-two-systems");
+        if (twoSys) twoSys.checked = false;
+
+        // Reset service chips
+        document.querySelectorAll(".nj-svc-btn").forEach(b => {
+          b.classList.remove("active");
+          b.style.color = b.style.borderColor = b.style.background = "";
+        });
+        // Reset equipment selects
+        ["furnace","outdoor"].forEach(f => njResetSeries(f));
+        // Reset tstat + acc
+        const ts = document.getElementById("nj-tstat"); if (ts) ts.value = "";
+        const tq = document.getElementById("nj-tstat-qty"); if (tq) tq.value = "1";
+        _njAccs = [];
+        const chips = document.getElementById("nj-acc-chips"); if (chips) chips.innerHTML = "";
         _njHints = [];
+        const hints = document.getElementById("nj-hint-chips"); if (hints) hints.innerHTML = "";
 
         // ═══════════════════════════════════════
         // EXPORT → PWA
@@ -6449,9 +7182,338 @@
       // ═══════════════════════════════════════
       // GLOBAL SEARCH
       // ═══════════════════════════════════════
+      // ── Shared: render weigh-in block ──
+      const WI_LABELS = [
+        ['linesetLength',      'Lineset'],
+        ['factoryChargeOz',    'Factory Charge'],
+        ['factoryLineConfig',  'Line Config'],
+        ['approxAdjustOz',     'Approx Adjust'],
+        ['adjustedOz',         'Adjusted'],
+        ['fanSpeedCfm',        'Fan Speed'],
+        ['liquidLineTemp',     'Liquid Temp'],
+        ['suctionLineTemp',    'Suction Temp'],
+        ['condenserSatTemp',   'Condenser Sat'],
+        ['subcoolingValue',    'Subcooling'],
+        ['oemSubcoolingGoal',  'OEM SC Goal'],
+        ['subcoolingDeviation','SC Deviation'],
+      ];
+
+      function renderWeighIn(weightInJson) {
+        if (!weightInJson) return "";
+        let wi;
+        try { wi = typeof weightInJson === "string" ? JSON.parse(weightInJson) : weightInJson; } catch(e) { return ""; }
+        if (!wi) return "";
+        const rows = WI_LABELS
+          .filter(([key]) => wi[key] !== undefined && wi[key] !== null && wi[key] !== "")
+          .map(([key, lbl]) => `<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:3px">
+            <span style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:.05em;min-width:100px;flex-shrink:0">${lbl}</span>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--text)">${esc(String(wi[key]))}</span>
+          </div>`);
+        if (!rows.length) return "";
+        return `<details style="margin-bottom:10px">
+          <summary style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);cursor:pointer;user-select:none;margin-bottom:4px">❄ Weigh-in Data</summary>
+          <div style="margin-top:8px;padding-left:4px">${rows.join("")}</div>
+        </details>`;
+      }
+
+      // ── Single source: renders one record card (used everywhere) ──
+      function renderRecordCard(record) {
+        const total    = record.total_price || record.items.reduce((s,i) => s+(i.price||0), 0);
+        const billable = record.items.filter(i => i.category !== "Refrigerant");
+        const ref      = record.items.filter(i => i.category === "Refrigerant");
+        const wi       = (() => { try { return record.weight_in_json ? (typeof record.weight_in_json === "string" ? JSON.parse(record.weight_in_json) : record.weight_in_json) : {}; } catch(e) { return {}; } })();
+        const dateStr  = record.date
+          ? new Date(record.date).toLocaleDateString("en-US",{weekday:"short",year:"numeric",month:"short",day:"numeric"})
+          : "—";
+        return `
+        <div id="hd-rec-${record.id}" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+            <span style="font-family:var(--head);font-size:14px;font-weight:700;color:var(--amber)">${esc(dateStr)}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:var(--text-dim)">◎ ${esc(record.technician || "—")}</span>
+              <button type="button" class="btn btn-ghost btn-sm"
+                onclick="hdToggleEdit(${record.id})" id="hd-edit-btn-${record.id}"
+                style="font-size:10px;padding:2px 8px">✏️ Edit</button>
+            </div>
+          </div>
+
+          <!-- VIEW mode -->
+          <div id="hd-view-${record.id}">
+            ${record.report_text ? `<div style="font-size:12px;color:var(--text);margin-bottom:12px;line-height:1.6;padding:10px 12px;background:var(--bg2);border-radius:3px;border-left:3px solid var(--amber);word-break:break-word">${esc(record.report_text)}</div>` : ""}
+            ${record.notes ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6;white-space:pre-wrap">${esc(record.notes)}</div>` : ""}
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+              ${billable.map(i => `<span style="background:var(--bg2);border:1px solid var(--border2);border-radius:2px;padding:2px 8px;font-size:11px">${i.quantity>1?`${i.quantity}× `:``}${esc(i.item_name)}${i.price?`<span style="color:var(--amber)"> $${i.price}</span>`:``}</span>`).join("")}
+              ${ref.map(r => `<span style="background:var(--ice-dim);border:1px solid var(--ice-dim);border-radius:2px;padding:2px 8px;font-size:11px;color:var(--ice)">❄ ${esc(r.item_name)} ${r.quantity} oz</span>`).join("")}
+            </div>
+            ${renderWeighIn(record.weight_in_json)}
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-family:var(--head);font-size:16px;font-weight:700;color:var(--green)">Total: $${total}</div>
+              <button type="button" class="btn btn-sm"
+                onclick="hdDeleteRecord(${record.id})"
+                style="font-size:10px;padding:2px 8px;background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim)">🗑 Delete</button>
+            </div>
+          </div>
+
+          <!-- EDIT mode -->
+          <div id="hd-edit-${record.id}" style="display:none">
+            <div style="margin-bottom:10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Report Text</div>
+              <textarea id="hd-rt-${record.id}" rows="3" style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:8px;resize:vertical;box-sizing:border-box">${esc(record.report_text||"")}</textarea>
+            </div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Notes</div>
+              <textarea id="hd-notes-${record.id}" rows="2" style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:8px;resize:vertical;box-sizing:border-box">${esc(record.notes||"")}</textarea>
+            </div>
+            <details style="margin-bottom:12px">
+              <summary style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);cursor:pointer;user-select:none">❄ Weigh-in Data</summary>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:8px">
+                ${WI_LABELS.map(([key, lbl]) => `<div>
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${lbl}</div>
+                  <input type="text" id="hd-wi-${key}-${record.id}" value="${esc(String(wi[key]||""))}" style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box" />
+                </div>`).join("")}
+              </div>
+            </details>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Items</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px" id="hd-items-tbl-${record.id}">
+              <thead><tr style="border-bottom:1px solid var(--border)">
+                <th style="text-align:left;padding:3px 4px;color:var(--text-dim);font-weight:500">Name</th>
+                <th style="text-align:left;padding:3px 4px;color:var(--text-dim);font-weight:500;width:90px">Category</th>
+                <th style="text-align:right;padding:3px 4px;color:var(--text-dim);font-weight:500;width:52px">Qty</th>
+                <th style="text-align:right;padding:3px 4px;color:var(--text-dim);font-weight:500;width:60px">Price</th>
+                <th style="width:28px"></th>
+              </tr></thead>
+              <tbody>
+                ${record.items.map(i => `<tr data-item-id="${i.id}" style="border-bottom:1px solid var(--border)">
+                  <td style="padding:3px 4px"><input type="text" value="${esc(i.item_name)}" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="item_name" /></td>
+                  <td style="padding:3px 4px"><select data-field="category" style="background:transparent;border:none;color:var(--text-dim);font-size:11px;width:100%">${["Service","Accessory","Fix","Thermostat","Refrigerant"].map(c=>`<option value="${c}" ${i.category===c?"selected":""}>${c}</option>`).join("")}</select></td>
+                  <td style="padding:3px 4px;text-align:right"><input type="number" value="${i.quantity}" min="0" step="any" style="width:48px;text-align:right;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="quantity" /></td>
+                  <td style="padding:3px 4px;text-align:right"><input type="number" value="${i.price}" min="0" step="any" style="width:52px;text-align:right;background:transparent;border:none;color:var(--amber);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="price" /></td>
+                  <td style="padding:3px 4px;text-align:center"><button type="button" onclick="hdDeleteItem(${record.id},${i.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px">✕</button></td>
+                </tr>`).join("")}
+              </tbody>
+            </table>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+              <input type="text" id="hd-new-name-${record.id}" placeholder="Item name" style="flex:2;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+              <select id="hd-new-cat-${record.id}" style="flex:1;min-width:80px;font-size:11px;padding:4px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim)">
+                <option>Service</option><option>Accessory</option><option>Fix</option><option>Thermostat</option><option>Refrigerant</option>
+              </select>
+              <input type="number" id="hd-new-qty-${record.id}" placeholder="Qty" value="1" min="0" step="any" style="width:48px;font-size:12px;padding:4px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);text-align:right" />
+              <input type="number" id="hd-new-price-${record.id}" placeholder="$" value="0" min="0" step="any" style="width:52px;font-size:12px;padding:4px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--amber);text-align:right" />
+              <button type="button" class="btn btn-sm" onclick="hdAddItem(${record.id})" style="font-size:11px;padding:4px 10px">＋ Add</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span style="font-size:11px;color:var(--text-dim)">Edited by:</span>
+              <input type="text" id="hd-editor-${record.id}" placeholder="Your name" style="flex:1;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="hdToggleEdit(${record.id})">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="hdSave(${record.id})">💾 Save Changes</button>
+            </div>
+          </div>
+
+          <!-- Audit log -->
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+            <button type="button" onclick="hdToggleAudit(${record.id})"
+              style="background:none;border:none;color:var(--text-dim);font-size:10px;cursor:pointer;padding:0;letter-spacing:.05em;text-transform:uppercase">
+              ◌ Edit History ▾</button>
+            <div id="hd-audit-${record.id}" style="display:none;margin-top:8px"></div>
+          </div>
+        </div>`;
+      }
+
+      // ── Single fetch+render function for any address or jobId ──
+      async function loadHistory(input, container) {
+        container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">Loading…</div>`;
+        try {
+          // Resolve address: if number → jobId, look up address first
+          let addr = input;
+          if (typeof input === "number") {
+            let job = _histAllJobs.find(j => j.id === input);
+            if (!job) {
+              const r = await fetch(`${API_BASE}/jobs`);
+              const all = await r.json();
+              if (all.length) _histAllJobs = all;
+              job = all.find(j => j.id === input);
+            }
+            if (!job) { container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-dim)">Record not found</div>`; return null; }
+            addr = job.address;
+          }
+          const res = await fetch(`${API_BASE}/jobs/by-address?q=` + encodeURIComponent(addr));
+          if (!res.ok) throw new Error();
+          const { jobs: propJobs } = await res.json();
+          if (!propJobs.length) {
+            container.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-dim)">No records found</div>`;
+            return null;
+          }
+          const withItems = await Promise.all(propJobs.map(async (j) => {
+            try {
+              const r = await fetch(`${API_BASE}/jobs/${j.id}/items`);
+              return { ...j, items: r.ok ? await r.json() : [] };
+            } catch(e) { return { ...j, items: [] }; }
+          }));
+          container.innerHTML = `<div style="padding:8px 12px">` + withItems.map(renderRecordCard).join("") + `</div>`;
+          return withItems[0];
+        } catch(e) {
+          container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Error loading data.</div>`;
+          return null;
+        }
+      }
+
+      // ── Address History Modal ──
+      let _ahmRecords = [];
+
+      async function openAddrHistModal(records, addr) {
+        _ahmRecords = records;
+        document.getElementById("ahm-address").textContent = addr;
+        const subParts = [(records[0]||{}).subdivision, (records[0]||{}).builder].filter(Boolean);
+        document.getElementById("ahm-sub").textContent = subParts.join(" · ");
+        const callBtn = document.getElementById("ahm-call-btn");
+        if (callBtn) callBtn.style.display = "none";
+        document.getElementById("addr-hist-modal").style.display = "flex";
+
+        const body = document.getElementById("ahm-body");
+        const latest = await loadHistory(addr, body);
+        _fuSourceJob = latest;
+        if (callBtn && latest) callBtn.style.display = "inline-block";
+      }
+
+      function closeAddrHistModal() {
+        document.getElementById("addr-hist-modal").style.display = "none";
+        _ahmRecords = [];
+      }
+
+      function ahmOpenFollowUp() {
+        closeAddrHistModal();
+        if (_fuSourceJob) openFollowUpModal(_fuSourceJob);
+      }
+
+      // ── Follow-up Call Modal ──
+      let _fuAccs = [];
+      let _fuSourceJob = null;
+
+      function openFollowUpModal(lastRecord) {
+        _fuSourceJob = lastRecord;
+        _fuAccs = [];
+        document.getElementById("fu-acc-chips").innerHTML = "";
+        document.getElementById("fu-acc-select").value = "";
+        document.getElementById("fu-notes").value = "";
+
+        // Address display
+        document.getElementById("fu-address-display").textContent = lastRecord.address || "—";
+
+        // Reference block — last known equipment
+        const parts = [];
+        if (lastRecord.subdivision) parts.push("📍 " + lastRecord.subdivision);
+        if (lastRecord.builder)     parts.push("🏗 " + lastRecord.builder);
+        if (lastRecord.furnaceModel || lastRecord.furnace_model)
+          parts.push("🔥 " + (lastRecord.furnaceModel || lastRecord.furnace_model));
+        if (lastRecord.outdoorModel || lastRecord.outdoor_model)
+          parts.push("❄ " + (lastRecord.outdoorModel || lastRecord.outdoor_model));
+        if (lastRecord.thermostat?.type) parts.push("🌡 " + lastRecord.thermostat.type);
+        const ref = document.getElementById("fu-ref-block");
+        ref.innerHTML = parts.length
+          ? parts.map(p => `<div>${p}</div>`).join("")
+          : '<span style="color:var(--text-dim);font-style:italic">No equipment on file</span>';
+
+        // Default service = FINISH
+        document.querySelectorAll("#fu-svc-chips .nj-svc-btn").forEach(b => {
+          const isFinish = b.dataset.svc === "FINISH";
+          b.classList.toggle("active", isFinish);
+          b.style.color       = isFinish ? "var(--amber)"     : "";
+          b.style.borderColor = isFinish ? "var(--amber)"     : "";
+          b.style.background  = isFinish ? "var(--amber-dim)" : "";
+        });
+
+        document.getElementById("followup-modal").style.display = "flex";
+      }
+
+      function closeFollowUpModal() {
+        document.getElementById("followup-modal").style.display = "none";
+        _fuSourceJob = null;
+        _fuAccs = [];
+      }
+
+      function fuToggleSvc(btn) {
+        document.querySelectorAll("#fu-svc-chips .nj-svc-btn").forEach(b => {
+          b.classList.remove("active");
+          b.style.color = b.style.borderColor = b.style.background = "";
+        });
+        btn.classList.add("active");
+        btn.style.color = btn.style.borderColor = "var(--amber)";
+        btn.style.background = "var(--amber-dim)";
+      }
+
+      function fuAddAcc(sel) {
+        const val = sel.value;
+        sel.value = "";
+        if (!val) return;
+        if (val === "__new__") {
+          const name = prompt("Accessory name:")?.trim().toUpperCase();
+          if (name) _fuAddAccChip(name);
+          return;
+        }
+        _fuAddAccChip(val);
+      }
+
+      function _fuAddAccChip(name) {
+        if (_fuAccs.includes(name)) return;
+        _fuAccs.push(name);
+        const chip = document.createElement("span");
+        chip.style.cssText = "display:inline-flex;align-items:center;gap:5px;background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-dim);border-radius:3px;padding:2px 8px;font-size:11px;font-family:var(--mono)";
+        chip.innerHTML = `${name} <button type="button" onclick="fuRemoveAcc('${name}',this.parentNode)"
+          style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:12px;padding:0;line-height:1">✕</button>`;
+        document.getElementById("fu-acc-chips").appendChild(chip);
+      }
+
+      function fuRemoveAcc(name, chip) {
+        _fuAccs = _fuAccs.filter(a => a !== name);
+        chip.remove();
+      }
+
+      function saveFollowUpJob() {
+        if (!_fuSourceJob) return;
+        const svcBtn = document.querySelector("#fu-svc-chips .nj-svc-btn.active");
+        const svc = svcBtn?.dataset.svc || "FINISH";
+        const notes = document.getElementById("fu-notes").value.trim();
+        const job = {
+          id: genId(),
+          status: "pending",
+          priority: "normal",
+          address: _fuSourceJob.address || "",
+          subdivision: _fuSourceJob.subdivision || "",
+          builder: _fuSourceJob.builder || "",
+          cityState: _fuSourceJob.cityState || _fuSourceJob.city_state || "",
+          serviceType: svc,
+          problem: svc,
+          furnaceModel: _fuSourceJob.furnaceModel || _fuSourceJob.furnace_model || "",
+          outdoorModel: _fuSourceJob.outdoorModel || _fuSourceJob.outdoor_model || "",
+          thermostat: _fuSourceJob.thermostat || null,
+          accessoryHints: [..._fuAccs],
+          importantNotes: notes,
+          createdAt: new Date().toISOString(),
+          routeDate: new Date().toISOString().split("T")[0],
+        };
+        jobs.push(job);
+        save();
+        renderBoard();
+        updateStats();
+        closeFollowUpModal();
+        showToast(`✓ ${job.address.substring(0,35)} — ${svc} added`);
+      }
+
+      // ── Global Search ──
       let _gsTimer    = null;
       let _gsResults  = []; // flat list of result objects for keyboard nav
       let _gsActive   = -1; // active index for keyboard nav
+
+      function gsAddCallFromSearch(addr) {
+        gsClear();
+        switchPanel("intake");
+        setTimeout(() => {
+          const f = document.getElementById("nj-address");
+          if (f) { f.value = addr; f.dispatchEvent(new Event("input")); }
+        }, 80);
+      }
 
       function gsOpen() {
         const inp = document.getElementById("gs-input");
@@ -6536,7 +7598,14 @@
         ];
 
         if (!_gsResults.length) {
-          dropdown.innerHTML = `<div class="gs-empty">No results for "<strong>${esc(q)}</strong>"</div>`;
+          dropdown.innerHTML = `<div class="gs-empty" style="padding:12px 16px">
+            <div style="color:var(--text-dim);margin-bottom:10px">No results for "<strong style="color:var(--text)">${esc(q)}</strong>"</div>
+            <button type="button" data-addr="${esc(q)}"
+              onclick="gsAddCallFromSearch(this.dataset.addr)"
+              style="background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber);border-radius:4px;padding:6px 16px;font-size:12px;font-family:var(--mono);cursor:pointer">
+              ＋ Add Call — ${esc(q)}
+            </button>
+          </div>`;
           return;
         }
 
@@ -6559,21 +7628,44 @@
         }
 
         if (histMatches.length) {
-          const offset = boardMatches.length;
-          html += `<div class="gs-group-label">History (${histMatches.length})</div>`;
-          html += histMatches.map((j, i) => {
-            const dateStr = j.date
-              ? new Date(j.date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
-              : "—";
-            return `<div class="gs-item" data-idx="${offset+i}" onclick="gsSelect(_gsResults[${offset+i}])">
-              <span class="gs-item-icon">📋</span>
+          // Group by address
+          const byAddr = {};
+          histMatches.forEach(j => {
+            const key = (j.address || "").toUpperCase().trim();
+            if (!byAddr[key]) byAddr[key] = [];
+            byAddr[key].push(j);
+          });
+          // Sort each group newest first
+          Object.values(byAddr).forEach(arr =>
+            arr.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0))
+          );
+          const addrGroups = Object.entries(byAddr);
+          const totalAddr  = addrGroups.length;
+
+          addrGroups.forEach(([addrKey, records]) => {
+            const last = records[0];
+            const eq   = [last.furnaceModel||last.furnace_model, last.outdoorModel||last.outdoor_model].filter(Boolean).join(" · ");
+            const addr = last.address || addrKey;
+            const lastDate = last.date
+              ? new Date(last.date + "T00:00:00").toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})
+              : last.createdAt
+                ? new Date(last.createdAt).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})
+                : "—";
+            // store data as JSON in data attrs to avoid closure issues
+            const safeRecs = JSON.stringify(records).replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+            const safeAddr = addr.replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+
+            html += `<div class="gs-item" style="padding:8px 12px;cursor:pointer"
+              data-recs="${safeRecs}" data-addr="${safeAddr}"
+              onclick="gsCloseDropdown();openAddrHistModal(JSON.parse(this.dataset.recs),this.dataset.addr)">
+              <span class="gs-item-icon" style="color:var(--text-dim)">🏠</span>
               <div class="gs-item-main">
-                <div class="gs-item-title">${esc(j.address || "—")}</div>
-                <div class="gs-item-sub">${dateStr}${j.technician ? " · "+esc(j.technician) : ""}${j.notes ? " · "+esc(j.notes).substring(0,40) : ""}</div>
+                <div class="gs-item-title">${esc(addr)}</div>
+                ${eq ? `<div class="gs-item-sub">${esc(eq)}</div>` : ""}
+                <div class="gs-item-sub">${lastDate}</div>
               </div>
-              <span class="gs-item-tag" style="color:var(--green)">$${parseFloat(j.total_price||0).toFixed(0)}</span>
             </div>`;
-          }).join("");
+          });
         }
 
         dropdown.innerHTML = html;
@@ -6605,12 +7697,100 @@
       });
 
       // ═══════════════════════════════════════
+      // ── Text Import ──
+      function liClearFields() {
+        ["li-address","li-subdivision","li-builder","li-date","li-tech",
+         "li-service","li-notes","li-accessories","li-fixes","li-total",
+         "li-tstat","li-tstat-qty","li-tstat-other",
+         ...WI_LABELS.map(([key]) => `li-wi-${key}`)]
+          .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        document.getElementById("li-msg").textContent = "";
+        document.getElementById("li-tstat-other").style.display = "none";
+      }
+
+      async function liSaveRecord() {
+        const addr = document.getElementById("li-address").value.trim();
+        if (!addr) { document.getElementById("li-msg").textContent = "⚠ Address is required."; return; }
+        const date = document.getElementById("li-date").value;
+        if (!date) { document.getElementById("li-msg").textContent = "⚠ Date is required."; return; }
+
+        const raw         = document.getElementById("li-raw").value.trim();
+        const subdivision = document.getElementById("li-subdivision").value.trim();
+        const builder     = document.getElementById("li-builder").value.trim();
+        const tech        = document.getElementById("li-tech").value.trim();
+        const service     = document.getElementById("li-service").value.trim();
+        const notes       = document.getElementById("li-notes").value.trim();
+        const accessories = document.getElementById("li-accessories").value.trim();
+        const fixes       = document.getElementById("li-fixes").value.trim();
+        const tstatRaw    = document.getElementById("li-tstat").value;
+        const tstat       = tstatRaw === "Other" ? (document.getElementById("li-tstat-other").value.trim() || "Other") : tstatRaw;
+        const tstatQty    = document.getElementById("li-tstat-qty").value || "1";
+        const wiObj = {};
+        let hasWi = false;
+        WI_LABELS.forEach(([key]) => {
+          const val = document.getElementById(`li-wi-${key}`)?.value.trim() || "";
+          if (val) { wiObj[key] = val; hasWi = true; }
+        });
+        const total       = parseFloat(document.getElementById("li-total").value) || 0;
+
+        // Build report_text combining all fields
+        const parts = [service, accessories, fixes].filter(Boolean);
+        const reportText = raw || parts.join("\n");
+
+        // Parse items from accessories + fixes
+        const parseItems = (text, category) =>
+          text.split(",").map(s => s.trim()).filter(Boolean).map(s => {
+            const m = s.match(/^(.*?)\s*\$(\d+(?:\.\d+)?)$/);
+            return m ? { item_name: m[1].trim(), price: parseFloat(m[2]), category } : { item_name: s, price: 0, category };
+          });
+
+        const items = [
+          ...parseItems(accessories, "Accessory"),
+          ...parseItems(fixes, "Fix"),
+          ...(service ? [{ item_name: service.replace(/\$[\d.]+/, "").trim(), price: parseFloat((service.match(/\$(\d+(?:\.\d+)?)/) || [])[1]) || 0, category: "Service" }] : []),
+        ];
+
+        const weighIn = hasWi ? wiObj : null;
+
+        // Tstat as a job_item with category Thermostat
+        if (tstat) {
+          items.push({ item_name: tstat, category: "Thermostat", quantity: parseInt(tstatQty) || 1, price: 0 });
+        }
+
+        const payload = {
+          address: addr, subdivision, builder, date,
+          technician: tech,
+          notes,
+          report_text: reportText,
+          weight_in_json: weighIn ? JSON.stringify(weighIn) : null,
+          items,
+        };
+
+        const msg = document.getElementById("li-msg");
+        msg.textContent = "Saving…";
+        try {
+          const res = await fetch(`${API_BASE}/jobs/save-record`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error();
+          msg.style.color = "var(--green)";
+          msg.textContent = `✓ Saved — ${addr}`;
+          liClearFields();
+          document.getElementById("li-raw").value = "";
+          setTimeout(() => { msg.textContent = ""; msg.style.color = "var(--text-dim)"; }, 3000);
+        } catch(e) {
+          msg.style.color = "var(--red)";
+          msg.textContent = "Error saving. Is server.js running?";
+        }
+      }
+
       // REPORTS PANEL
       // ═══════════════════════════════════════
       // CUSTOM REPORTS
       // ═══════════════════════════════════════
-      let _crTab = "income";
-      let _crData = [];
+      let _crData = { income: [], equipment: [], refrigerant: [] };
 
       const CR_EQUIPMENT_GROUPS = [
         { label: "Tstats", items: ["T-4","T-6","T-10","T-8321","Ecobee","Daikin One","TH2110","Otro"] },
@@ -6656,174 +7836,176 @@
         document.getElementById("cr-to").value   = `${y}-${m}-${String(lastDay).padStart(2,"0")}`;
       })();
 
-      function setCrTab(tab) {
-        _crTab = tab;
-        document.querySelectorAll(".cr-tab").forEach(b => b.classList.remove("cr-tab-active"));
-        document.getElementById("cr-tab-" + tab).classList.add("cr-tab-active");
-        document.getElementById("cr-filter-income").style.display      = tab === "income"      ? "" : "none";
-        document.getElementById("cr-filter-equipment").style.display   = tab === "equipment"   ? "" : "none";
-        document.getElementById("cr-filter-refrigerant").style.display = tab === "refrigerant" ? "" : "none";
-        if (tab === "equipment" && !document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
-        // clear previous results
-        document.getElementById("cr-tbl-wrap").style.display = "none";
-        document.getElementById("cr-export-btn").style.display = "none";
-        document.getElementById("cr-print-btn").style.display = "none";
-        document.getElementById("cr-pdf-btn").style.display = "none";
-        document.getElementById("cr-empty").textContent = "Select report type and date range.";
-        _crData = [];
-      }
-
-      async function runCustomReport() {
-        const from = document.getElementById("cr-from").value;
-        const to   = document.getElementById("cr-to").value;
-        if (!from || !to) { alert("Select a date range"); return; }
-
-        const empty   = document.getElementById("cr-empty");
-        const tblWrap = document.getElementById("cr-tbl-wrap");
-        const tbody   = document.getElementById("cr-tbody");
-        const thead   = document.getElementById("cr-thead");
-
+      async function _runCrEquipment(from, to) {
+        const empty   = document.getElementById("cr-empty-equipment");
+        const tblWrap = document.getElementById("cr-tbl-equipment");
+        const tbody   = document.getElementById("cr-tbody-equipment");
+        const thead   = document.getElementById("cr-thead-equipment");
         empty.textContent = "Loading...";
         tblWrap.style.display = "none";
-        document.getElementById("cr-export-btn").style.display = "none";
-        document.getElementById("cr-print-btn").style.display = "none";
-        document.getElementById("cr-pdf-btn").style.display = "none";
-
+        const selected = getCrSelectedItems();
+        if (!selected.length) { empty.textContent = "Select at least one item."; return; }
         try {
-          let url, headers, colFn;
-
-          if (_crTab === "income") {
-            const tech = (document.getElementById("cr-tech").value || "").trim();
-            url = `${API_BASE}/reports/custom/income?from=${from}&to=${to}&tech=${encodeURIComponent(tech)}`;
-            headers = `<tr><th>Date</th><th>Address</th><th style="text-align:right">Income</th></tr>`;
-            colFn = r => `<tr>
-              <td class="amber">${r.date}</td>
-              <td>${esc(r.address)}</td>
-              <td style="text-align:right;color:var(--green)">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-            </tr>`;
-          } else if (_crTab === "equipment") {
-            const selected = getCrSelectedItems();
-            if (!selected.length) { empty.textContent = "Select at least one item."; return; }
-            url = `${API_BASE}/reports/custom/equipment?from=${from}&to=${to}&items=${encodeURIComponent(selected.join(","))}`;
-            headers = `<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>`;
-            colFn = r => `<tr>
-              <td class="amber" style="white-space:nowrap">${r.date}</td>
-              <td>${esc(r.address)}</td>
-              <td style="color:var(--ice)">${esc(r.items_list)}</td>
-            </tr>`;
-          } else {
-            const selectedRef = getCrSelectedRefTypes();
-            if (!selectedRef.length) { empty.textContent = "Select at least one refrigerant type."; return; }
-            url = `${API_BASE}/reports/custom/refrigerant?from=${from}&to=${to}&types=${encodeURIComponent(selectedRef.join(","))}`;
-            headers = `<tr><th>Date</th><th>Address</th><th>Type</th><th style="text-align:right">oz</th><th style="text-align:right">lbs</th></tr>`;
-            colFn = r => `<tr>
-              <td class="amber">${r.date}</td>
-              <td>${esc(r.address)}</td>
-              <td style="color:var(--ice)">${esc(r.ref_type)}</td>
-              <td style="text-align:right">${r.oz_used}</td>
-              <td style="text-align:right;color:var(--amber)">${r.lbs_display}</td>
-            </tr>`;
-          }
-
-          const res = await fetch(url);
+          const res = await fetch(`${API_BASE}/reports/custom/equipment?from=${from}&to=${to}&items=${encodeURIComponent(selected.join(","))}`);
           if (!res.ok) throw new Error(await res.text());
-          _crData = await res.json();
-
-          if (!_crData.length) {
-            empty.textContent = "No results for the selected range.";
-            return;
-          }
-
-          thead.innerHTML = headers;
-          tbody.innerHTML = _crData.map(colFn).join("");
-
-          // totals footer
-          if (_crTab === "income") {
-            const total = _crData.reduce((s, r) => s + parseFloat(r.total), 0);
-            tbody.innerHTML += `<tr style="border-top:1px solid var(--border2);font-weight:600">
-              <td colspan="2" style="color:var(--text-dim)">TOTAL — ${_crData.length} jobs</td>
-              <td style="text-align:right;color:var(--green)">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-            </tr>`;
-          } else if (_crTab === "refrigerant") {
-            const totalOz = _crData.reduce((s, r) => s + r.oz_used, 0);
-            tbody.innerHTML += `<tr style="border-top:1px solid var(--border2);font-weight:600">
-              <td colspan="3" style="color:var(--text-dim)">TOTAL — ${_crData.length} records</td>
-              <td style="text-align:right">${totalOz.toFixed(1)}</td>
-              <td style="text-align:right;color:var(--amber)">${(totalOz/16).toFixed(2)} lb</td>
-            </tr>`;
-          }
-
+          _crData.equipment = await res.json();
+          if (!_crData.equipment.length) { empty.textContent = "No results for the selected range."; return; }
+          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>`;
+          tbody.innerHTML = _crData.equipment.map(r => `<tr>
+            <td class="amber" style="white-space:nowrap">${r.date}</td>
+            <td>${esc(r.address)}</td>
+            <td style="color:var(--ice)">${esc(r.items_list)}</td>
+          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
+            <td colspan="3" style="color:var(--text-dim)">${_crData.equipment.length} records</td>
+          </tr>`;
           empty.textContent = "";
           tblWrap.style.display = "";
+        } catch(e) { empty.textContent = "Error: " + e.message; }
+      }
+
+      async function _runCrRefrigerant(from, to) {
+        const empty   = document.getElementById("cr-empty-refrigerant");
+        const tblWrap = document.getElementById("cr-tbl-refrigerant");
+        const tbody   = document.getElementById("cr-tbody-refrigerant");
+        const thead   = document.getElementById("cr-thead-refrigerant");
+        empty.textContent = "Loading...";
+        tblWrap.style.display = "none";
+        const selectedRef = getCrSelectedRefTypes();
+        if (!selectedRef.length) { empty.textContent = "Select at least one refrigerant type."; return; }
+        try {
+          const res = await fetch(`${API_BASE}/reports/custom/refrigerant?from=${from}&to=${to}&types=${encodeURIComponent(selectedRef.join(","))}`);
+          if (!res.ok) throw new Error(await res.text());
+          _crData.refrigerant = await res.json();
+          if (!_crData.refrigerant.length) { empty.textContent = "No results for the selected range."; return; }
+          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Type</th><th style="text-align:right">oz</th><th style="text-align:right">lbs</th></tr>`;
+          const totalOz = _crData.refrigerant.reduce((s, r) => s + r.oz_used, 0);
+          tbody.innerHTML = _crData.refrigerant.map(r => `<tr>
+            <td class="amber">${r.date}</td>
+            <td>${esc(r.address)}</td>
+            <td style="color:var(--ice)">${esc(r.ref_type)}</td>
+            <td style="text-align:right">${r.oz_used}</td>
+            <td style="text-align:right;color:var(--amber)">${r.lbs_display}</td>
+          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
+            <td colspan="3" style="color:var(--text-dim)">TOTAL — ${_crData.refrigerant.length} records</td>
+            <td style="text-align:right">${totalOz.toFixed(1)}</td>
+            <td style="text-align:right;color:var(--amber)">${(totalOz/16).toFixed(2)} lb</td>
+          </tr>`;
+          empty.textContent = "";
+          tblWrap.style.display = "";
+        } catch(e) { empty.textContent = "Error: " + e.message; }
+      }
+
+      async function _runCrIncome(from, to) {
+        const empty   = document.getElementById("cr-empty-income");
+        const tblWrap = document.getElementById("cr-tbl-income");
+        const tbody   = document.getElementById("cr-tbody-income");
+        const thead   = document.getElementById("cr-thead-income");
+        empty.textContent = "Loading...";
+        tblWrap.style.display = "none";
+        const tech = (document.getElementById("cr-tech").value || "").trim();
+        try {
+          const res = await fetch(`${API_BASE}/reports/custom/income?from=${from}&to=${to}&tech=${encodeURIComponent(tech)}`);
+          if (!res.ok) throw new Error(await res.text());
+          _crData.income = await res.json();
+          if (!_crData.income.length) { empty.textContent = "No results for the selected range."; return; }
+          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th style="text-align:right">Income</th></tr>`;
+          const total = _crData.income.reduce((s, r) => s + parseFloat(r.total), 0);
+          tbody.innerHTML = _crData.income.map(r => `<tr>
+            <td class="amber">${r.date}</td>
+            <td>${esc(r.address)}</td>
+            <td style="text-align:right;color:var(--green)">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
+            <td colspan="2" style="color:var(--text-dim)">TOTAL — ${_crData.income.length} jobs</td>
+            <td style="text-align:right;color:var(--green)">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+          </tr>`;
+          empty.textContent = "";
+          tblWrap.style.display = "";
+          // Show export/print buttons when income data is available (used by legacy export/print fns)
           document.getElementById("cr-export-btn").style.display = "";
           document.getElementById("cr-print-btn").style.display = "";
           document.getElementById("cr-pdf-btn").style.display = "";
-
-        } catch(e) {
-          empty.textContent = "Error: " + e.message;
-        }
+        } catch(e) { empty.textContent = "Error: " + e.message; }
       }
 
-      function exportCustomReportCSV() {
-        if (!_crData.length) return;
-        let header, rowFn;
-
-        if (_crTab === "income") {
-          header = "Date,Address,Income";
-          rowFn  = r => `${r.date},"${r.address}",${r.total}`;
-        } else if (_crTab === "equipment") {
-          header = "Date,Address,Equipment used";
-          rowFn  = r => `${r.date},"${r.address}","${r.items_list}"`;
-        } else {
-          header = "Date,Address,Type,oz,lbs";
-          rowFn  = r => `${r.date},"${r.address}","${r.ref_type}",${r.oz_used},${r.lbs_display}`;
-        }
-
+      async function runAllCustomReports() {
         const from = document.getElementById("cr-from").value;
         const to   = document.getElementById("cr-to").value;
-        const csv  = [header, ..._crData.map(rowFn)].join("\n");
-        const blob = new Blob([csv], { type: "text/csv" });
+        if (!from || !to) { alert("Select a date range"); return; }
+        await Promise.all([
+          _runCrEquipment(from, to),
+          _runCrRefrigerant(from, to),
+          _runCrIncome(from, to),
+        ]);
+      }
+
+      // Keep runCustomReport as alias for legacy callers (export/print still reference _crTab)
+      function runCustomReport() { runAllCustomReports(); }
+
+      function exportCustomReportCSV() {
+        const from = document.getElementById("cr-from").value;
+        const to   = document.getElementById("cr-to").value;
+        // Export all 3 sections into one CSV, separated by blank lines
+        const sections = [];
+        if (_crData.income.length) {
+          sections.push("# Income\nDate,Address,Income");
+          sections.push(..._crData.income.map(r => `${r.date},"${r.address}",${r.total}`));
+        }
+        if (_crData.equipment.length) {
+          sections.push("\n# Equipment Used\nDate,Address,Equipment");
+          sections.push(..._crData.equipment.map(r => `${r.date},"${r.address}","${r.items_list}"`));
+        }
+        if (_crData.refrigerant.length) {
+          sections.push("\n# Refrigerant\nDate,Address,Type,oz,lbs");
+          sections.push(..._crData.refrigerant.map(r => `${r.date},"${r.address}","${r.ref_type}",${r.oz_used},${r.lbs_display}`));
+        }
+        if (!sections.length) return;
+        const blob = new Blob([sections.join("\n")], { type: "text/csv" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `reporte_${_crTab}_${from}_${to}.csv`;
+        a.download = `reports_${from}_${to}.csv`;
         a.click();
         URL.revokeObjectURL(a.href);
       }
 
       function crOpenPrintWindow(autoPrint) {
-        if (!_crData.length) return;
         const from = document.getElementById("cr-from").value;
         const to   = document.getElementById("cr-to").value;
+        const dateLabel = `${from} → ${to}`;
+        const genDate = new Date().toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"});
 
-        const TITLES = { income: "Generated Income", equipment: "Equipment Used", refrigerant: "Refrigerant Used" };
-        const title  = TITLES[_crTab] || "Report";
+        const buildSection = (title, theadHtml, rowsHtml) =>
+          `<h2>${title}</h2><table><thead>${theadHtml}</thead><tbody>${rowsHtml}</tbody></table>`;
 
-        // Build table HTML
-        let thead, rowsFn, footerHtml = "";
-        if (_crTab === "income") {
-          thead  = "<tr><th>Date</th><th>Address</th><th>Income</th></tr>";
-          rowsFn = r => `<tr><td>${r.date}</td><td>${r.address}</td><td class="num">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`;
-          const total = _crData.reduce((s,r) => s + parseFloat(r.total), 0);
-          footerHtml = `<tr class="total"><td colspan="2">TOTAL — ${_crData.length} jobs</td><td class="num">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`;
-        } else if (_crTab === "equipment") {
-          thead  = "<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>";
-          rowsFn = r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`;
-          footerHtml = `<tr class="total"><td colspan="3">${_crData.length} records</td></tr>`;
-        } else {
-          thead  = "<tr><th>Date</th><th>Address</th><th>Type</th><th>oz</th><th>lbs</th></tr>";
-          rowsFn = r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.ref_type}</td><td class="num">${r.oz_used}</td><td class="num">${r.lbs_display}</td></tr>`;
-          const totalOz = _crData.reduce((s,r) => s + r.oz_used, 0);
-          footerHtml = `<tr class="total"><td colspan="3">TOTAL — ${_crData.length} records</td><td class="num">${totalOz.toFixed(1)}</td><td class="num">${(totalOz/16).toFixed(2)} lb</td></tr>`;
+        let sections = "";
+
+        if (_crData.income.length) {
+          const total = _crData.income.reduce((s,r) => s + parseFloat(r.total), 0);
+          const rows = _crData.income.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td class="num">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`).join("")
+            + `<tr class="total"><td colspan="2">TOTAL — ${_crData.income.length} jobs</td><td class="num">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`;
+          sections += buildSection("Income", "<tr><th>Date</th><th>Address</th><th>Income</th></tr>", rows);
         }
+        if (_crData.equipment.length) {
+          const rows = _crData.equipment.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`).join("")
+            + `<tr class="total"><td colspan="3">${_crData.equipment.length} records</td></tr>`;
+          sections += buildSection("Equipment Used", "<tr><th>Date</th><th>Address</th><th>Equipment</th></tr>", rows);
+        }
+        if (_crData.refrigerant.length) {
+          const totalOz = _crData.refrigerant.reduce((s,r) => s + r.oz_used, 0);
+          const rows = _crData.refrigerant.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.ref_type}</td><td class="num">${r.oz_used}</td><td class="num">${r.lbs_display}</td></tr>`).join("")
+            + `<tr class="total"><td colspan="3">TOTAL</td><td class="num">${totalOz.toFixed(1)}</td><td class="num">${(totalOz/16).toFixed(2)} lb</td></tr>`;
+          sections += buildSection("Refrigerant", "<tr><th>Date</th><th>Address</th><th>Type</th><th>oz</th><th>lbs</th></tr>", rows);
+        }
+        if (!sections) return;
 
         const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
-<title>${title} ${from} – ${to}</title>
+<title>Reports ${from} – ${to}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: "DM Mono", "Courier New", monospace; font-size: 12px; color: #111; padding: 32px; }
   h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 13px; font-weight: 700; margin: 24px 0 8px; color: #1a1a2e; text-transform: uppercase; letter-spacing: .06em; }
   .meta { font-size: 11px; color: #555; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
   th { background: #1a1a2e; color: #f5a623; text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
   td { padding: 6px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
   tr:nth-child(even) td { background: #f7f7fa; }
@@ -6831,9 +8013,9 @@
   tr.total td { border-top: 2px solid #1a1a2e; font-weight: 700; background: #f0f0f8; }
   @media print { body { padding: 16px; } button { display: none; } }
 </style></head><body>
-<h1>${title}</h1>
-<div class="meta">Period: ${from} → ${to} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"})}</div>
-<table><thead>${thead}</thead><tbody>${_crData.map(rowsFn).join("")}${footerHtml}</tbody></table>
+<h1>Custom Reports</h1>
+<div class="meta">Period: ${dateLabel} &nbsp;|&nbsp; Generated: ${genDate}</div>
+${sections}
 ${autoPrint ? "" : '<div style="margin-top:16px;text-align:right"><button onclick="window.print()" style="padding:6px 18px;background:#1a1a2e;color:#f5a623;border:none;cursor:pointer;font-size:12px;border-radius:3px">🖨 Print</button></div>'}
 ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 </body></html>`;
@@ -6846,14 +8028,26 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       // ═══════════════════════════════════════
       const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-      async function loadReportsPanel() {
-        // Reset tables to loading state
+      // Wire Quick Stats lazy load on first open + init new job selects
+      document.addEventListener("DOMContentLoaded", () => {
+        njInitSeriesSelects();
+        if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
+        const det = document.querySelector("#panel-reports details");
+        if (det) {
+          let loaded = false;
+          det.addEventListener("toggle", async () => {
+            if (det.open && !loaded) { loaded = true; await _loadQuickStats(); }
+          });
+        }
+        if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
+      });
+
+      async function _loadQuickStats() {
         document.getElementById("rev-tbody").innerHTML =
           `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
         document.getElementById("tech-tbody").innerHTML =
           `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
         document.getElementById("rev-chart").innerHTML = "";
-
         try {
           const [revRes, techRes] = await Promise.all([
             fetch(API_BASE + "/reports/revenue"),
@@ -6861,74 +8055,68 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
           ]);
           const revRows  = await revRes.json();
           const techRows = await techRes.json();
-
-          // ── Revenue table + bar chart ──
-          if (!revRows.length) {
-            document.getElementById("rev-tbody").innerHTML =
-              `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">No revenue data yet</td></tr>`;
-          } else {
-            // Chart — show months in chronological order (reverse the DESC array)
-            const chartData = [...revRows].reverse();
-            const maxRev = Math.max(...chartData.map(r => parseFloat(r.revenue)));
-            const chart = document.getElementById("rev-chart");
-            chart.innerHTML = chartData.map(r => {
-              const pct = maxRev > 0 ? Math.max(4, (parseFloat(r.revenue) / maxRev) * 100) : 4;
-              const [yr, mo] = r.month.split("-");
-              const label = MONTH_NAMES[parseInt(mo,10)-1] + " " + yr.slice(2);
-              return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:32px;gap:2px">
-                <div style="font-size:9px;color:var(--text-dim);white-space:nowrap">$${(parseFloat(r.revenue)/1000).toFixed(1)}k</div>
-                <div style="width:100%;background:var(--green);opacity:.85;border-radius:2px 2px 0 0;transition:height .3s"
-                     title="${r.month}: $${r.revenue} · ${r.job_count} jobs"
-                     style="height:${pct}%"></div>
-                <div style="font-size:9px;color:var(--text-dim);white-space:nowrap">${label}</div>
-              </div>`;
-            }).join("");
-            // Fix: set bar heights via a separate loop since inline style conflicts
-            Array.from(chart.children).forEach((col, i) => {
-              const pct = maxRev > 0 ? Math.max(4, (parseFloat(chartData[i].revenue) / maxRev) * 100) : 4;
-              const bar = col.children[1];
-              if (bar) bar.style.height = pct + "%";
-            });
-
-            // Table
-            document.getElementById("rev-tbody").innerHTML = revRows.map((r, i) => {
-              const [yr, mo] = r.month.split("-");
-              const monthLabel = MONTH_NAMES[parseInt(mo,10)-1] + " " + yr;
-              return `<tr ${i === 0 ? 'style="color:var(--text-bright)"' : ''}>
-                <td class="amber">${monthLabel}</td>
-                <td style="color:var(--ice)">${r.job_count}</td>
-                <td style="text-align:right;color:var(--green)">$${parseFloat(r.revenue).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-                <td style="text-align:right;color:var(--amber)">$${parseFloat(r.sub_pay).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-              </tr>`;
-            }).join("");
-          }
-
-          // ── Tech performance table ──
-          if (!techRows.length) {
-            document.getElementById("tech-tbody").innerHTML =
-              `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">No tech data yet</td></tr>`;
-          } else {
-            const medals = ["🥇","🥈","🥉"];
-            document.getElementById("tech-tbody").innerHTML = techRows.map((t, i) => {
-              const lastJob = t.last_job
-                ? new Date(t.last_job + "T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
-                : "—";
-              return `<tr>
-                <td style="text-align:center">${medals[i] || (i+1)}</td>
-                <td style="color:var(--purple);font-weight:600">${esc(t.technician)}</td>
-                <td style="color:var(--ice)">${t.job_count}</td>
-                <td style="text-align:right;color:var(--green)">$${parseFloat(t.total_revenue).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-                <td style="text-align:right;color:var(--text)">$${parseFloat(t.avg_per_job).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-                <td style="text-align:right;color:var(--ice-dim)">${t.refrigerant_lbs} lbs</td>
-                <td class="dim">${lastJob}</td>
-              </tr>`;
-            }).join("");
-          }
+          _renderRevTable(revRows);
+          _renderTechTable(techRows);
         } catch(e) {
-          const errMsg = `<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px">Error loading data. Is server.js running?</td></tr>`;
+          const errMsg = `<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px">Error loading data.</td></tr>`;
           document.getElementById("rev-tbody").innerHTML = errMsg;
           document.getElementById("tech-tbody").innerHTML = errMsg;
         }
+      }
+
+      async function loadReportsPanel() {
+        // Quick Stats are lazy — only reload if the details panel is already open
+        const det = document.querySelector("#panel-reports details");
+        if (det && det.open) await _loadQuickStats();
+      }
+
+      function _renderRevTable(revRows) {
+        const chartData = [...revRows].reverse();
+        const maxRev = Math.max(...chartData.map(r => parseFloat(r.revenue)));
+        const chart = document.getElementById("rev-chart");
+        chart.innerHTML = chartData.map(r => {
+          const [yr, mo] = r.month.split("-");
+          const label = MONTH_NAMES[parseInt(mo,10)-1] + " " + yr.slice(2);
+          return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:32px;gap:2px">
+            <div style="font-size:9px;color:var(--text-dim);white-space:nowrap">$${(parseFloat(r.revenue)/1000).toFixed(1)}k</div>
+            <div style="width:100%;background:var(--green);opacity:.85;border-radius:2px 2px 0 0"
+                 title="${r.month}: $${r.revenue} · ${r.job_count} jobs"></div>
+            <div style="font-size:9px;color:var(--text-dim);white-space:nowrap">${label}</div>
+          </div>`;
+        }).join("");
+        Array.from(chart.children).forEach((col, i) => {
+          const pct = maxRev > 0 ? Math.max(4, (parseFloat(chartData[i].revenue) / maxRev) * 100) : 4;
+          const bar = col.children[1];
+          if (bar) bar.style.height = pct + "%";
+        });
+        document.getElementById("rev-tbody").innerHTML = revRows.map((r, i) => {
+          const [yr, mo] = r.month.split("-");
+          const monthLabel = MONTH_NAMES[parseInt(mo,10)-1] + " " + yr;
+          return `<tr ${i === 0 ? 'style="color:var(--text-bright)"' : ''}>
+            <td class="amber">${monthLabel}</td>
+            <td style="color:var(--ice)">${r.job_count}</td>
+            <td style="text-align:right;color:var(--green)">$${parseFloat(r.revenue).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+            <td style="text-align:right;color:var(--amber)">$${parseFloat(r.sub_pay).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      function _renderTechTable(techRows) {
+        const medals = ["🥇","🥈","🥉"];
+        document.getElementById("tech-tbody").innerHTML = techRows.map((t, i) => {
+          const lastJob = t.last_job
+            ? new Date(t.last_job + "T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+            : "—";
+          return `<tr>
+            <td style="text-align:center">${medals[i] || (i+1)}</td>
+            <td style="color:var(--purple);font-weight:600">${esc(t.technician)}</td>
+            <td style="color:var(--ice)">${t.job_count}</td>
+            <td style="text-align:right;color:var(--green)">$${parseFloat(t.total_revenue).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+            <td style="text-align:right;color:var(--text)">$${parseFloat(t.avg_per_job).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+            <td style="text-align:right;color:var(--ice-dim)">${t.refrigerant_lbs} lbs</td>
+            <td class="dim">${lastJob}</td>
+          </tr>`;
+        }).join("");
       }
 
       // ═══════════════════════════════════════
@@ -7312,6 +8500,12 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       // PROPERTY PANEL
       // ═══════════════════════════════════════
+      let _propLastRecord = null;
+
+      function propOpenFollowUp() {
+        if (_propLastRecord) openFollowUpModal(_propLastRecord);
+      }
+
       function openPropertySearch(addr) {
         switchPanel("property");
         const inp = document.getElementById("prop-search-input");
@@ -7325,6 +8519,9 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
         document.getElementById("prop-summary-card").className = "card prop-summary-hidden";
         document.getElementById("prop-empty").style.display = "block";
         document.getElementById("prop-tbl-wrap").style.display = "none";
+        const addBtn = document.getElementById("prop-add-btn");
+        if (addBtn) addBtn.style.display = "none";
+        _propLastRecord = null;
       }
 
       async function searchProperty(overrideQuery) {
@@ -7356,6 +8553,9 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
           // Show summary card
           summaryCard.className = "card prop-summary-visible";
+          _propLastRecord = propJobs[0];
+          const addBtn = document.getElementById("prop-add-btn");
+          if (addBtn) addBtn.style.display = "inline-block";
           // Use first/most-common address as title
           document.getElementById("prop-addr-title").textContent = propJobs[0].address || q;
           document.getElementById("prop-addr-sub").textContent =
@@ -7369,24 +8569,11 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
             "$" + parseFloat(summary.total_revenue || 0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
           document.getElementById("prop-kpi-tech").textContent = summary.last_tech || "—";
 
-          // Build table
-          tbody.innerHTML = propJobs.map((j) => {
-            const dateStr = j.date
-              ? new Date(j.date + "T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
-              : "—";
-            const revenue = j.computed_total || j.total_price || 0;
-            const service = esc(j.notes || j.serviceType || "—").substring(0, 60);
-            return `<tr>
-              <td class="dim">${dateStr}</td>
-              <td style="color:var(--purple)">${esc(j.technician || "—")}</td>
-              <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(j.notes || "")}">${service}</td>
-              <td style="text-align:right;color:var(--green)">$${parseFloat(revenue).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-              <td><button class="btn btn-ghost btn-sm" onclick="showHistDetail(${j.id})">Detail</button></td>
-            </tr>`;
-          }).join("");
-
+          // Render using shared function
           empty.style.display = "none";
           tblWrap.style.display = "block";
+          const latest = await loadHistory(q, tblWrap);
+          _propLastRecord = latest;
         } catch(e) {
           empty.innerHTML = `<div style="color:var(--red);padding:30px;text-align:center">Error loading data. Is server.js running?</div>`;
         }
@@ -7452,251 +8639,47 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       }
 
       async function showHistDetail(jobId) {
-        let job = _histAllJobs.find((j) => j.id === jobId);
-        // If not in local cache (e.g. opened from Property panel), fetch from API
+        // Resolve job metadata for modal header
+        let job = _histAllJobs.find(j => j.id === jobId);
         if (!job) {
           try {
-            const allRes = await fetch(`${API_BASE}/jobs`);
-            const all = await allRes.json();
-            job = all.find((j) => j.id === jobId);
-            if (all.length) _histAllJobs = all; // cache for future use
+            const all = await (await fetch(`${API_BASE}/jobs`)).json();
+            if (all.length) _histAllJobs = all;
+            job = all.find(j => j.id === jobId);
           } catch(e) {}
         }
         if (!job) return;
 
         document.getElementById("hist-addr").textContent = job.address || "—";
-        document.getElementById("hist-meta").textContent = [
-          job.date,
-          job.technician,
-          job.subdivision,
-          job.builder,
-        ]
-          .filter(Boolean)
-          .join(" · ");
-        document.getElementById("hist-body").innerHTML =
-          '<div style="text-align:center;color:var(--text-dim);padding:28px">Loading...</div>';
+        document.getElementById("hist-meta").textContent =
+          [job.date, job.technician, job.subdivision, job.builder].filter(Boolean).join(" · ");
         document.getElementById("hist-detail-modal").classList.add("open");
         document.body.style.overflow = "hidden";
 
+        await loadHistory(jobId, document.getElementById("hist-body"));
+      }
+
+      // Delete a history record from the DB
+      async function hdDeleteRecord(jobId) {
+        if (!confirm("Delete this service record? This cannot be undone.")) return;
         try {
-          // All service records for this address, newest first
-          const related = _histAllJobs
-            .filter((j) => j.address === job.address)
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-          const historyData = await Promise.all(
-            related.map(async (j) => {
-              const res = await fetch(`${API_BASE}/jobs/${j.id}/items`);
-              const items = await res.json();
-              return { ...j, items };
-            })
-          );
-
-          let html = "";
-          historyData.forEach((record) => {
-            const total =
-              record.total_price ||
-              record.items.reduce((s, i) => s + (i.price || 0), 0);
-            const billable = record.items.filter(
-              (i) => i.category !== "Refrigerant"
-            );
-            const ref = record.items.filter(
-              (i) => i.category === "Refrigerant"
-            );
-            const dateStr = new Date(record.date).toLocaleDateString("en-US", {
-              weekday: "short",
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            });
-
-            const recId = `hd-rec-${record.id}`;
-            html += `
-        <div id="${recId}" style="background:var(--bg3);border:1px solid var(--border);
-                    border-radius:4px;padding:14px;margin-bottom:12px">
-          <!-- Header row: date + tech + Edit toggle -->
-          <div style="display:flex;justify-content:space-between;align-items:center;
-                      margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
-            <span style="font-family:var(--head);font-size:14px;font-weight:700;
-                         color:var(--amber)">${esc(dateStr)}</span>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:11px;color:var(--text-dim)">◎ ${esc(record.technician || "—")}</span>
-              <button type="button" class="btn btn-ghost btn-sm"
-                onclick="hdToggleEdit(${record.id})"
-                id="hd-edit-btn-${record.id}"
-                style="font-size:10px;padding:2px 8px">✏️ Edit</button>
-            </div>
-          </div>
-
-          <!-- VIEW mode -->
-          <div id="hd-view-${record.id}">
-            ${record.report_text ? `
-            <div style="font-size:12px;color:var(--text);margin-bottom:12px;
-                        line-height:1.6;padding:10px 12px;background:var(--bg2);
-                        border-radius:3px;border-left:3px solid var(--amber);
-                        word-break:break-word">${esc(record.report_text)}</div>` : ""}
-            ${record.notes ? `
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;
-                        line-height:1.6;white-space:pre-wrap">${esc(record.notes)}</div>` : ""}
-            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-              ${billable.map(i => `
-              <span style="background:var(--bg2);border:1px solid var(--border2);
-                           border-radius:2px;padding:2px 8px;font-size:11px">
-                ${i.quantity > 1 ? `${i.quantity}× ` : ""}${esc(i.item_name)}
-                ${i.price ? `<span style="color:var(--amber)"> $${i.price}</span>` : ""}
-              </span>`).join("")}
-              ${ref.map(r => `
-              <span style="background:var(--ice-dim);border:1px solid var(--ice-dim);
-                           border-radius:2px;padding:2px 8px;font-size:11px;color:var(--ice)">
-                ❄ ${esc(r.item_name)} ${r.quantity} oz
-              </span>`).join("")}
-            </div>
-            <div style="font-family:var(--head);font-size:16px;font-weight:700;
-                        color:var(--green)">Total: $${total}</div>
-          </div>
-
-          <!-- EDIT mode (hidden by default) -->
-          <div id="hd-edit-${record.id}" style="display:none">
-
-            <!-- Report Text -->
-            <div style="margin-bottom:10px">
-              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                          color:var(--text-dim);margin-bottom:4px">Report Text</div>
-              <textarea id="hd-rt-${record.id}" rows="3"
-                style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--text);
-                       padding:8px;resize:vertical;box-sizing:border-box"
-              >${esc(record.report_text || "")}</textarea>
-            </div>
-
-            <!-- Notes -->
-            <div style="margin-bottom:12px">
-              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                          color:var(--text-dim);margin-bottom:4px">Notes</div>
-              <textarea id="hd-notes-${record.id}" rows="2"
-                style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--text);
-                       padding:8px;resize:vertical;box-sizing:border-box"
-              >${esc(record.notes || "")}</textarea>
-            </div>
-
-            <!-- Items table -->
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                        color:var(--text-dim);margin-bottom:6px">Items</div>
-            <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px"
-                   id="hd-items-tbl-${record.id}">
-              <thead>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <th style="text-align:left;padding:3px 4px;color:var(--text-dim);font-weight:500">Name</th>
-                  <th style="text-align:left;padding:3px 4px;color:var(--text-dim);font-weight:500;width:90px">Category</th>
-                  <th style="text-align:right;padding:3px 4px;color:var(--text-dim);font-weight:500;width:52px">Qty</th>
-                  <th style="text-align:right;padding:3px 4px;color:var(--text-dim);font-weight:500;width:60px">Price</th>
-                  <th style="width:28px"></th>
-                </tr>
-              </thead>
-              <tbody>
-                ${record.items.map(i => `
-                <tr data-item-id="${i.id}" style="border-bottom:1px solid var(--border)">
-                  <td style="padding:3px 4px">
-                    <input type="text" value="${esc(i.item_name)}"
-                      style="width:100%;background:transparent;border:none;color:var(--text);
-                             font-size:12px;outline:none;border-bottom:1px solid var(--border2)"
-                      data-field="item_name" />
-                  </td>
-                  <td style="padding:3px 4px">
-                    <select data-field="category"
-                      style="background:transparent;border:none;color:var(--text-dim);
-                             font-size:11px;width:100%">
-                      ${["Service","Accessory","Fix","Thermostat","Refrigerant"].map(c =>
-                        `<option value="${c}" ${i.category===c?"selected":""}>${c}</option>`
-                      ).join("")}
-                    </select>
-                  </td>
-                  <td style="padding:3px 4px;text-align:right">
-                    <input type="number" value="${i.quantity}" min="0" step="any"
-                      style="width:48px;text-align:right;background:transparent;border:none;
-                             color:var(--text);font-size:12px;outline:none;
-                             border-bottom:1px solid var(--border2)"
-                      data-field="quantity" />
-                  </td>
-                  <td style="padding:3px 4px;text-align:right">
-                    <input type="number" value="${i.price}" min="0" step="any"
-                      style="width:52px;text-align:right;background:transparent;border:none;
-                             color:var(--amber);font-size:12px;outline:none;
-                             border-bottom:1px solid var(--border2)"
-                      data-field="price" />
-                  </td>
-                  <td style="padding:3px 4px;text-align:center">
-                    <button type="button"
-                      onclick="hdDeleteItem(${record.id}, ${i.id})"
-                      style="background:none;border:none;color:var(--red);cursor:pointer;
-                             font-size:13px;padding:0 2px" title="Remove item">✕</button>
-                  </td>
-                </tr>`).join("")}
-              </tbody>
-            </table>
-
-            <!-- Add item row -->
-            <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-              <input type="text" id="hd-new-name-${record.id}" placeholder="Item name"
-                style="flex:2;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
-              <select id="hd-new-cat-${record.id}"
-                style="flex:1;min-width:80px;font-size:11px;padding:4px 4px;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--text-dim)">
-                <option>Service</option><option>Accessory</option><option>Fix</option>
-                <option>Thermostat</option><option>Refrigerant</option>
-              </select>
-              <input type="number" id="hd-new-qty-${record.id}" placeholder="Qty" value="1" min="0" step="any"
-                style="width:48px;font-size:12px;padding:4px 4px;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--text);text-align:right" />
-              <input type="number" id="hd-new-price-${record.id}" placeholder="$" value="0" min="0" step="any"
-                style="width:52px;font-size:12px;padding:4px 4px;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--amber);text-align:right" />
-              <button type="button" class="btn btn-sm"
-                onclick="hdAddItem(${record.id})"
-                style="font-size:11px;padding:4px 10px">＋ Add</button>
-            </div>
-
-            <!-- Edited by -->
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-              <span style="font-size:11px;color:var(--text-dim)">Edited by:</span>
-              <input type="text" id="hd-editor-${record.id}" placeholder="Your name"
-                style="flex:1;font-size:12px;padding:4px 6px;background:var(--bg2);
-                       border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
-            </div>
-
-            <!-- Save / Cancel -->
-            <div style="display:flex;gap:8px;justify-content:flex-end">
-              <button type="button" class="btn btn-ghost btn-sm"
-                onclick="hdToggleEdit(${record.id})">Cancel</button>
-              <button type="button" class="btn btn-primary btn-sm"
-                onclick="hdSave(${record.id})">💾 Save Changes</button>
-            </div>
-          </div>
-
-          <!-- Audit log (collapsible) -->
-          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
-            <button type="button"
-              onclick="hdToggleAudit(${record.id})"
-              style="background:none;border:none;color:var(--text-dim);font-size:10px;
-                     cursor:pointer;padding:0;letter-spacing:.05em;text-transform:uppercase">
-              🕓 Edit History ▾
-            </button>
-            <div id="hd-audit-${record.id}" style="display:none;margin-top:8px"></div>
-          </div>
-        </div>`;
-          });
-
-          document.getElementById("hist-body").innerHTML =
-            html ||
-            '<div style="color:var(--text-dim);padding:24px;text-align:center">No service records found</div>';
+          const res = await fetch(`${API_BASE}/jobs/${jobId}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("Server error");
+          // Remove the card from the detail view
+          const card = document.getElementById(`hd-rec-${jobId}`);
+          if (card) card.remove();
+          // Update local cache and refresh table
+          _histAllJobs = _histAllJobs.filter(j => j.id !== jobId);
+          renderHistoryTable(_histAllJobs);
+          // If no more records visible, close modal
+          const body = document.getElementById("hist-body");
+          if (body && !body.querySelector("[id^='hd-rec-']")) {
+            document.getElementById("hist-detail-modal").classList.remove("open");
+            document.body.style.overflow = "";
+          }
+          showToast("✓ Record deleted");
         } catch (e) {
-          document.getElementById(
-            "hist-body"
-          ).innerHTML = `<div style="color:var(--red);padding:20px">Error: ${esc(
-            e.message
-          )}</div>`;
+          showToast("✗ Error deleting record");
         }
       }
 
@@ -7731,7 +8714,20 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
           body: JSON.stringify({ notes, edited_by: editedBy }),
         });
 
-        // 3. Save each item row
+        // 3. Save weight_in_json
+        const wiObj = {};
+        let hasWi = false;
+        WI_LABELS.forEach(([key]) => {
+          const val = document.getElementById(`hd-wi-${key}-${jobId}`)?.value.trim() || "";
+          if (val) { wiObj[key] = val; hasWi = true; }
+        });
+        await fetch(`${API_BASE}/jobs/${jobId}/weight_in`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ weight_in_json: hasWi ? JSON.stringify(wiObj) : null, edited_by: editedBy }),
+        });
+
+        // 4. Save each item row
         const tbl = document.getElementById(`hd-items-tbl-${jobId}`);
         const rows = tbl.querySelectorAll("tbody tr[data-item-id]");
         const itemPatches = [];

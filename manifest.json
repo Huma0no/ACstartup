@@ -3,6 +3,7 @@
   "short_name": "Report Generator",
   "description": "Genera reportes de visitas de servicio para instalaciones de AC, calefacción y más.",
   "start_url": "/index.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1e3a8a",

@@ -413,6 +413,10 @@ export function createReportCard({
   heaterModel2 = "",
   builder = "",
   subdivision = "",
+  selectedThermostat = null,
+  thermostatQuantity = 1,
+  isTwoSystems = false,
+  isTemporary = false,
   callbacks = {}, // { onSelect, onEdit, onDelete }
 }) {
   const ts = timestamp ? new Date(timestamp) : new Date();
@@ -441,6 +445,10 @@ export function createReportCard({
     heaterModel2,
     builder,
     subdivision,
+    selectedThermostat,
+    thermostatQuantity,
+    isTwoSystems,
+    isTemporary,
     timestamp: timestampISO,
   };
   wrapper.dataset.reportPayload = JSON.stringify(payloadToStore);

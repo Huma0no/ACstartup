@@ -1,4 +1,4 @@
-const CACHE_NAME = "service-call-v14";
+const CACHE_NAME = "service-call-v15";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,7 +24,12 @@ const ASSETS = [
   "./troubleshootingEngine.js",
   "./claudeAssist.js",
   "./troubleshootingPanel.js",
+  "./formmanager.js",
+  "./reportmanager.js",
+  "./lv.js",
   "./manifest.json",
+  "./icons/icon-192x192.png",
+  "./icons/icon-512x512.png",
 ];
 
 self.addEventListener("install", (event) => {

@@ -555,7 +555,22 @@ app.patch("/api/jobs/:id/notes", (req, res) => {
   });
 });
 
-// 9c. PATCH a single job_item (price, quantity, item_name, category)
+// 9c. PATCH weight_in_json for a job
+app.patch("/api/jobs/:id/weight_in", (req, res) => {
+  const id = req.params.id;
+  const { weight_in_json, edited_by } = req.body;
+  db.get("SELECT weight_in_json FROM jobs WHERE id = ?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Job not found" });
+    db.run("UPDATE jobs SET weight_in_json = ? WHERE id = ?", [weight_in_json || null, id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logEdit(id, "weight_in_json", row.weight_in_json, weight_in_json, edited_by);
+      res.json({ ok: true });
+    });
+  });
+});
+
+// 9d. PATCH a single job_item (price, quantity, item_name, category)
 app.patch("/api/jobs/:id/items/:itemId", (req, res) => {
   const { id, itemId } = req.params;
   const { item_name, category, quantity, price, edited_by } = req.body;
@@ -867,6 +882,7 @@ app.post("/api/jobs/save-record", (req, res) => {
   const {
     address, date, technician, notes, report_text,
     subdivision, builder, indoor_model, outdoor_model,
+    weight_in_json,
     items = [],
   } = req.body;
 
@@ -876,10 +892,11 @@ app.post("/api/jobs/save-record", (req, res) => {
   const totalPrice = items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 1), 0);
 
   db.run(
-    `INSERT INTO jobs (address, date, technician, total_price, notes, created_at, subdivision, builder, indoor_model, outdoor_model, report_text)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO jobs (address, date, technician, total_price, notes, created_at, subdivision, builder, indoor_model, outdoor_model, report_text, weight_in_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [address, jobDate, technician || "", totalPrice, notes || "", Date.now(),
-     subdivision || "", builder || "", indoor_model || "", outdoor_model || "", report_text || ""],
+     subdivision || "", builder || "", indoor_model || "", outdoor_model || "", report_text || "",
+     weight_in_json || null],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const jobId = this.lastID;
