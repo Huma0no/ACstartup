@@ -1719,18 +1719,25 @@
             </p>
           </div>
 
-          <!-- Ask AI button -->
-          <button
-            type="button"
-            id="ts-ask-claude-btn"
-            class="ts-ask-claude-btn"
-          >
-            <span id="ts-claude-btn-text">✨ Ask AI</span>
-            <span id="ts-claude-spinner" class="ts-spinner hidden"></span>
-          </button>
+          <!-- Conversation history -->
+          <div id="ts-chat-history" class="ts-chat-history hidden"></div>
 
-          <!-- Streaming response area -->
-          <div id="ts-claude-response" class="ts-claude-response hidden"></div>
+          <!-- Context input -->
+          <div class="ts-chat-input-wrap">
+            <textarea
+              id="ts-chat-input"
+              class="ts-chat-input"
+              placeholder="Agrega contexto: lecturas, pasos ya realizados, observaciones..."
+              rows="3"
+            ></textarea>
+            <div class="ts-chat-actions">
+              <button type="button" id="ts-clear-chat-btn" class="ts-clear-chat-btn" title="Clear conversation">↺ Clear</button>
+              <button type="button" id="ts-ask-claude-btn" class="ts-ask-claude-btn">
+                <span id="ts-claude-btn-text">✨ Ask AI</span>
+                <span id="ts-claude-spinner" class="ts-spinner hidden"></span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <!-- /ts-drawer-body -->

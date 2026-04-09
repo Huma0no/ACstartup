@@ -3881,6 +3881,99 @@ html[data-theme="darkMode"] .ts-provider-chip {
   display: none;
 }
 
+/* ── Chat history ── */
+.ts-chat-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--container-border-dark);
+  border-radius: var(--border-radius);
+  margin-bottom: 8px;
+  scroll-behavior: smooth;
+}
+.ts-chat-history.hidden { display: none; }
+
+.ts-chat-msg { display: flex; flex-direction: column; gap: 3px; }
+
+.ts-chat-msg-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.5;
+}
+.ts-chat-msg-user .ts-chat-msg-label { color: var(--color-primary, #2563eb); }
+.ts-chat-msg-ai   .ts-chat-msg-label { color: var(--neon-primary, #02bcfa); }
+
+.ts-chat-msg-text {
+  font-size: 0.83em;
+  line-height: 1.55;
+  color: var(--text-color);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.ts-chat-msg-user .ts-chat-msg-text {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  align-self: flex-end;
+  max-width: 92%;
+}
+.ts-chat-msg-ai .ts-chat-msg-text {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--container-border-dark);
+}
+
+/* ── Chat input area ── */
+.ts-chat-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ts-chat-input {
+  width: 100%;
+  padding: 9px 11px;
+  font-size: 0.85em;
+  line-height: 1.5;
+  background: var(--input-bg);
+  border: 1px solid var(--container-border-dark);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.ts-chat-input:focus {
+  outline: none;
+  border-color: var(--neon-primary, #02bcfa);
+  box-shadow: 0 0 0 2px rgba(2, 188, 250, 0.12);
+}
+.ts-chat-input::placeholder { opacity: 0.45; font-size: 0.92em; }
+
+.ts-chat-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ts-clear-chat-btn {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--container-border-dark);
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  opacity: 0.55;
+  white-space: nowrap;
+}
+.ts-clear-chat-btn:hover { opacity: 1; }
+
 /* Dark mode overrides */
 html[data-theme="darkMode"] .ts-drawer {
   background: var(--container-bg);

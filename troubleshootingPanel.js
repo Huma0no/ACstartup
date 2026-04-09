@@ -61,7 +61,10 @@ const el = {
   askClaudeBtn:    () => document.getElementById("ts-ask-claude-btn"),
   claudeBtnText:   () => document.getElementById("ts-claude-btn-text"),
   claudeSpinner:   () => document.getElementById("ts-claude-spinner"),
-  claudeResponse:  () => document.getElementById("ts-claude-response"),
+  chatHistory:     () => document.getElementById("ts-chat-history"),
+  chatInput:       () => document.getElementById("ts-chat-input"),
+  clearChatBtn:    () => document.getElementById("ts-clear-chat-btn"),
+  // claudeResponse removed — replaced by ts-chat-history
 };
 
 // ─────────────────────────────────────────────
@@ -73,6 +76,7 @@ let activeFaultCode = "";
 let currentContext  = {};
 let currentL1Result = null;
 let isStreaming      = false;
+let _chatHistory    = [];    // { role: "user"|"ai", text } multi-turn
 
 // ─────────────────────────────────────────────
 // BUILD CONTEXT FROM JOB OBJECT
@@ -430,8 +434,6 @@ function renderResults(result) {
   }
 
   el.claudeSection().classList.remove("hidden");
-  el.claudeResponse().textContent = "";
-  el.claudeResponse().classList.add("hidden");
   refreshDrawerProviderStatus();
 }
 
@@ -552,8 +554,32 @@ function showToastLocal(msg) {
 }
 
 // ─────────────────────────────────────────────
-// LEVEL 2 — AI ASSIST
+// LEVEL 2 — AI ASSIST (multi-turn)
 // ─────────────────────────────────────────────
+function renderChatHistory() {
+  const container = el.chatHistory();
+  if (!container) return;
+  if (_chatHistory.length === 0) {
+    container.classList.add("hidden");
+    return;
+  }
+  container.classList.remove("hidden");
+  container.innerHTML = _chatHistory.map(m => `
+    <div class="ts-chat-msg ts-chat-msg-${m.role}">
+      <div class="ts-chat-msg-label">${m.role === "user" ? "You" : "AI"}</div>
+      <div class="ts-chat-msg-text">${m.text.replace(/\n/g, "<br>")}</div>
+    </div>
+  `).join("");
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearChat() {
+  _chatHistory = [];
+  renderChatHistory();
+  const input = el.chatInput();
+  if (input) input.value = "";
+}
+
 function handleAskClaude() {
   if (isStreaming) return;
 
@@ -570,29 +596,42 @@ function handleAskClaude() {
     return;
   }
 
-  isStreaming = true;
-  el.askClaudeBtn().disabled = true;
-  el.claudeBtnText().textContent = "Asking…";
-  el.claudeSpinner().classList.remove("hidden");
+  const userExtra = (el.chatInput()?.value || "").trim();
 
-  const responseEl = el.claudeResponse();
-  responseEl.textContent = "";
-  responseEl.classList.remove("hidden");
-
+  // Build full user message (context + optional extra)
   const symptomLabel = SYMPTOM_LABELS[activeSymptom] || activeSymptom;
   const detail = activeSymptom === SYMPTOM.FAULT_CODE ? activeFaultCode : "";
   const jobLabel = selectedJob
     ? `${symptomLabel} — ${selectedJob.address}`
     : symptomLabel;
 
-  const userMessage = buildUserMessage(jobLabel, detail, currentContext, currentL1Result);
+  let userMessage = buildUserMessage(jobLabel, detail, currentContext, currentL1Result);
+  if (userExtra) userMessage += `\n\n## Contexto adicional del técnico\n${userExtra}`;
+
+  // Add user turn to history
+  const displayText = userExtra || `Diagnóstico: ${symptomLabel}`;
+  _chatHistory.push({ role: "user", text: displayText });
+  renderChatHistory();
+
+  // Clear input for next message
+  if (el.chatInput()) el.chatInput().value = "";
+
+  // Add AI placeholder
+  _chatHistory.push({ role: "ai", text: "" });
+  const aiIdx = _chatHistory.length - 1;
+  renderChatHistory();
+
+  isStreaming = true;
+  el.askClaudeBtn().disabled = true;
+  el.claudeBtnText().textContent = "Asking…";
+  el.claudeSpinner().classList.remove("hidden");
 
   askAI({
     providerId: provider.id,
     userMessage,
     onChunk: (chunk) => {
-      responseEl.textContent += chunk;
-      responseEl.scrollTop = responseEl.scrollHeight;
+      _chatHistory[aiIdx].text += chunk;
+      renderChatHistory();
     },
     onDone: () => {
       isStreaming = false;
@@ -602,10 +641,11 @@ function handleAskClaude() {
     },
     onError: (err) => {
       isStreaming = false;
+      _chatHistory[aiIdx].text = `Error: ${err.message}`;
+      renderChatHistory();
       el.askClaudeBtn().disabled = false;
       el.claudeBtnText().textContent = `✨ Ask ${provider.label}`;
       el.claudeSpinner().classList.add("hidden");
-      responseEl.textContent = `Error: ${err.message}`;
     },
   });
 }
@@ -623,8 +663,6 @@ function resetToSymptomSelection() {
   if (el.faultCodeField()) el.faultCodeField().value = "";
   el.resultsSection().classList.add("hidden");
   el.claudeSection().classList.add("hidden");
-  el.claudeResponse().classList.add("hidden");
-  el.claudeResponse().textContent = "";
   el.apiKeyPanel().classList.add("hidden");
 }
 
@@ -739,6 +777,15 @@ function init() {
   });
 
   el.askClaudeBtn()?.addEventListener("click", handleAskClaude);
+  el.clearChatBtn()?.addEventListener("click", clearChat);
+
+  // Ctrl+Enter / Cmd+Enter to send from textarea
+  el.chatInput()?.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleAskClaude();
+    }
+  });
 }
 
 if (document.readyState === "loading") {
