@@ -108,6 +108,55 @@ export function diagnose({ symptom, detail = "", context = {} }) {
 }
 
 // ─────────────────────────────────────────────
+// PRESSURE-TEMPERATURE REFERENCE TABLE
+// Expected operating pressures by refrigerant and outdoor ambient (°F)
+// High side = condensing pressure | Low side = suction pressure
+// ─────────────────────────────────────────────
+const PT_TARGETS = {
+  "R-32": {
+    75:  { high: [310, 350], low: [110, 130] },
+    85:  { high: [350, 390], low: [120, 140] },
+    95:  { high: [390, 430], low: [130, 150] },
+    105: { high: [430, 475], low: [140, 160] },
+  },
+  "R-454B": {
+    75:  { high: [250, 280], low: [90,  110] },
+    85:  { high: [280, 315], low: [100, 120] },
+    95:  { high: [315, 350], low: [110, 130] },
+    105: { high: [350, 385], low: [120, 140] },
+  },
+  "R-410A": {
+    75:  { high: [220, 255], low: [105, 125] },
+    85:  { high: [255, 285], low: [115, 135] },
+    95:  { high: [285, 320], low: [125, 145] },
+    105: { high: [320, 355], low: [135, 155] },
+  },
+};
+
+// Returns the closest ambient bracket and expected pressure ranges
+function getExpectedPressures(freon = "", ambientF = 95) {
+  // Normalize freon key
+  const key = Object.keys(PT_TARGETS).find(k => freon.includes(k.replace("R-", "").replace("R", "")))
+    || (freon.includes("32") ? "R-32" : freon.includes("454") ? "R-454B" : "R-410A");
+  const table = PT_TARGETS[key] || PT_TARGETS["R-410A"];
+  const brackets = Object.keys(table).map(Number).sort((a, b) => a - b);
+  // Find closest bracket
+  const bracket = brackets.reduce((prev, curr) =>
+    Math.abs(curr - ambientF) < Math.abs(prev - ambientF) ? curr : prev
+  );
+  return { key, bracket, ...table[bracket] };
+}
+
+// Build a readable pressure reference for all ambients of a refrigerant
+function buildPTRefText(freon = "") {
+  const key = freon.includes("32") ? "R-32" : freon.includes("454") ? "R-454B" : "R-410A";
+  const table = PT_TARGETS[key] || PT_TARGETS["R-410A"];
+  return Object.entries(table)
+    .map(([amb, r]) => `${amb}°F → Alta: ${r.high[0]}-${r.high[1]} psi | Baja: ${r.low[0]}-${r.low[1]} psi`)
+    .join("\n");
+}
+
+// ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
 function step(n, action, detail = null, tool = null, branches = null) {
@@ -229,8 +278,39 @@ function diagnoseNoCooling(detail, ctx) {
     )
   ));
 
-  // 8. Refrigerant hint
-  steps.push(step(i++, "Si condensadora arranca pero no enfría — conectar manómetros", `Verificar presiones y subcooling. ${ctx.outdoor ? `OEM subcooling goal: ${ctx.outdoor.subcooling}°F. Refrigerante: ${ctx.outdoor.freon}.` : "Confirmar tipo de refrigerante antes de conectar manómetros."}`, "gauges"));
+  // 8. Condenser runs but doesn't cool — pressure analysis
+  const freon    = ctx.outdoor?.freon || "R-410A";
+  const scTarget = ctx.outdoor?.subcooling ?? 10;
+  const ptRef    = buildPTRefText(freon);
+  const unitInfo = ctx.outdoor
+    ? `${ctx.outdoorModel} | ${ctx.outdoor.tons} ton | ${freon} | SC target: ${scTarget}°F`
+    : `Refrigerante no identificado — confirmar antes de conectar manómetros`;
+
+  steps.push(step(i++,
+    "Condensadora arranca pero NO enfría — conectar manómetros",
+    `Registrar: presión alta, presión baja, SC y SH. Comparar contra tabla según temperatura ambiente.\n\n${unitInfo}\n\nReferencia de presiones (${freon}):\n${ptRef}`,
+    "gauges",
+    {
+      yes: {
+        label: "Ambas presiones BAJAS",
+        steps: [
+          { step: "A", action: "Interpretar patrón SC/SH", detail: `SC < 3°F + SH > 25°F → Restricción de airflow\nSC < 3°F + SH < 15°F → Baja carga de refrigerante\n\nTu caso: SC 0.8 + SH 45 con ${freon} = restricción de airflow`, tool: null },
+          { step: "B", action: "Verificar filtro de retorno", detail: "Revisar media filter, filtro electrónico o cualquier filtro antes del evap coil. Un filtro sucio es la causa #1 de ambas presiones bajas con SH alto.", tool: "visual" },
+          { step: "C", action: "Revisar evaporador — ¿hay hielo?", detail: "Si hay hielo en el evap coil → confirma restricción de airflow. Apagar sistema y dejar descongelar antes de seguir. Encender solo en FAN para acelerar el deshielo.", tool: "visual" },
+          { step: "D", action: "Si airflow OK pero SC sigue bajo → medir carga", detail: `Con SC < ${scTarget - 2}°F y sin restricción de airflow → sistema bajo en refrigerante. Verificar fuga antes de agregar carga. SC objetivo: ${scTarget}°F`, tool: "gauges" },
+        ]
+      },
+      no: {
+        label: "Alta presión ELEVADA",
+        steps: [
+          { step: "A", action: "Verificar condensador exterior — ¿está sucio?", detail: "Coil del condensador tapado con pelusa, pasto o tierra bloquea el rechazo de calor → alta presión sube. Limpiar con agua y cepillo suave.", tool: "visual" },
+          { step: "B", action: "Verificar fan del condensador — ¿gira con el sistema encendido?", detail: "Si el compresor arranca pero el fan no gira → alta presión sube rápidamente. Revisar capacitor del fan motor.", tool: "visual" },
+          { step: "C", action: "SC alto (> 15°F) → posible sobrecarga de refrigerante", detail: `SC objetivo del equipo: ${scTarget}°F. SC mayor a ${scTarget + 5}°F con alta presión elevada indica sobrecarga. NO agregar carga — evaluar recuperación.`, tool: "gauges" },
+          { step: "D", action: "Si alta presión normal y baja presión normal pero no enfría", detail: "Delta T entre supply y return: debe ser 16-22°F. Si ΔT < 10°F con presiones normales → metering device falla o compresor débil.", tool: "thermometer" },
+        ]
+      }
+    }
+  ));
 
   // Equipment-specific notes
   if (ctx.heater) {
@@ -240,9 +320,10 @@ function diagnoseNoCooling(detail, ctx) {
     ));
   }
   if (ctx.outdoor) {
+    const ep95 = getExpectedPressures(ctx.outdoor.freon, 95);
     notes.push(equipmentNote(
       ctx.outdoorModel,
-      `${ctx.outdoor.tons} ton | ${ctx.outdoor.freon} | Factory charge: ${ctx.outdoor.FactoryCharge} oz | Subcooling goal: ${ctx.outdoor.subcooling}°F`
+      `${ctx.outdoor.tons} ton | ${ctx.outdoor.freon} | Factory charge: ${ctx.outdoor.FactoryCharge} oz | SC target: ${ctx.outdoor.subcooling}°F | @95°F: Alta ${ep95.high[0]}-${ep95.high[1]} / Baja ${ep95.low[0]}-${ep95.low[1]} psi`
     ));
   }
 
