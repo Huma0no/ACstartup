@@ -102,6 +102,17 @@ function initDB() {
       status TEXT DEFAULT 'pending',
       created_at INTEGER
     )`);
+
+    // 5. Tiempos de trayecto y llamadas por técnico/día
+    db.run(`CREATE TABLE IF NOT EXISTS route_times (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      date            TEXT NOT NULL,
+      technician      TEXT NOT NULL,
+      tiempo_trayecto INTEGER DEFAULT 0,
+      tiempo_llamadas INTEGER DEFAULT 0,
+      imported_at     INTEGER,
+      UNIQUE(date, technician)
+    )`);
   });
 }
 
@@ -166,9 +177,19 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 // 1. IMPORTAR DATOS (Desde el JSON exportado por la App)
 app.post("/api/import", async (req, res) => {
-  const jobs = req.body;
-  if (!Array.isArray(jobs))
+  // Support both legacy (plain array) and new ({ jobs, tiempoTrayecto, tiempoLlamadas }) formats
+  let jobs, tiempoTrayecto, tiempoLlamadas;
+  if (Array.isArray(req.body)) {
+    jobs = req.body;
+    tiempoTrayecto = 0;
+    tiempoLlamadas = 0;
+  } else if (req.body && Array.isArray(req.body.jobs)) {
+    jobs = req.body.jobs;
+    tiempoTrayecto = parseInt(req.body.tiempoTrayecto) || 0;
+    tiempoLlamadas = parseInt(req.body.tiempoLlamadas) || 0;
+  } else {
     return res.status(400).json({ error: "Formato inválido" });
+  }
 
   let imported = 0;
   let skipped = 0;
@@ -333,6 +354,29 @@ app.post("/api/import", async (req, res) => {
     }
 
     await runDb("COMMIT");
+
+    // Store route times when present
+    if (tiempoTrayecto > 0 || tiempoLlamadas > 0) {
+      const technician =
+        (jobs.find((j) => j.technician) || {}).technician || "Default Tech";
+      const date = (() => {
+        const j = jobs.find((j) => (j.savedState || {}).date);
+        return j ? (j.savedState || {}).date : new Date().toISOString().split("T")[0];
+      })();
+      await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT INTO route_times (date, technician, tiempo_trayecto, tiempo_llamadas, imported_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(date, technician) DO UPDATE SET
+             tiempo_trayecto = tiempo_trayecto + excluded.tiempo_trayecto,
+             tiempo_llamadas = tiempo_llamadas + excluded.tiempo_llamadas,
+             imported_at = excluded.imported_at`,
+          [date, technician, tiempoTrayecto, tiempoLlamadas, Date.now()],
+          (err) => (err ? reject(err) : resolve())
+        );
+      });
+    }
+
     res.json({ message: "Importación finalizada", imported, skipped });
   } catch (e) {
     await runDb("ROLLBACK");
@@ -1010,11 +1054,11 @@ app.get("/api/reports/custom/equipment", (req, res) => {
   if (!from || !to) return res.status(400).json({ error: "from and to dates required" });
 
   const selected = items ? items.split(",").map(s => s.trim()).filter(Boolean) : [];
-  if (!selected.length) return res.json([]);
+  if (!selected.length) return res.json({ rows: [], summary: [] });
 
   const placeholders = selected.map(() => "?").join(",");
-  // Group all matching items per job into one row using GROUP_CONCAT
-  const sql = `
+
+  const sqlRows = `
     SELECT j.date, j.address,
            GROUP_CONCAT(
              CASE WHEN CAST(ji.quantity AS INTEGER) > 1
@@ -1032,9 +1076,24 @@ app.get("/api/reports/custom/equipment", (req, res) => {
     GROUP BY j.id
     ORDER BY j.date DESC
   `;
-  db.all(sql, [from, to, ...selected], (err, rows) => {
+
+  const sqlSummary = `
+    SELECT ji.item_name AS item, SUM(ji.quantity) AS qty
+    FROM job_items ji
+    JOIN jobs j ON ji.job_id = j.id
+    WHERE ji.category IN ('Thermostat', 'Accessory')
+      AND j.date BETWEEN ? AND ?
+      AND ji.item_name IN (${placeholders})
+    GROUP BY ji.item_name
+    ORDER BY qty DESC
+  `;
+
+  db.all(sqlRows, [from, to, ...selected], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    db.all(sqlSummary, [from, to, ...selected], (err2, summary) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ rows, summary });
+    });
   });
 });
 
@@ -1064,6 +1123,80 @@ app.get("/api/reports/custom/refrigerant", (req, res) => {
       oz_used: parseFloat(r.oz_used || 0),
       lbs_display: (parseFloat(r.oz_used || 0) / 16).toFixed(2) + " lb",
     })));
+  });
+});
+
+// ─── ANALYTICS: Daily performance breakdown ─────────────────────────────────
+app.get("/api/analytics/daily", (req, res) => {
+  const days = Math.min(parseInt(req.query.days) || 14, 60);
+
+  // Job-level revenue query
+  const jobSql = `
+    SELECT
+      j.date,
+      j.id   AS job_id,
+      j.address,
+      COALESCE(SUM(CASE WHEN ji.category = 'Service'                THEN ji.price * ji.quantity ELSE 0 END), 0) AS service_rev,
+      COALESCE(SUM(CASE WHEN ji.category = 'Accessory'              THEN ji.price * ji.quantity ELSE 0 END), 0) AS accessory_rev,
+      COALESCE(SUM(CASE WHEN ji.category IN ('Fix','Other')         THEN ji.price * ji.quantity ELSE 0 END), 0) AS fix_rev,
+      COALESCE(SUM(CASE WHEN ji.category NOT IN ('Refrigerant','Thermostat') THEN ji.price * ji.quantity ELSE 0 END), 0) AS total_rev
+    FROM jobs j
+    LEFT JOIN job_items ji ON ji.job_id = j.id
+    WHERE j.date >= date('now', '-' || ? || ' days')
+    GROUP BY j.id
+    ORDER BY j.date ASC, j.id ASC
+  `;
+
+  // Route times aggregated per day
+  const timeSql = `
+    SELECT
+      date,
+      SUM(tiempo_trayecto) AS tiempo_trayecto,
+      SUM(tiempo_llamadas) AS tiempo_llamadas,
+      COUNT(*)             AS num_tecnicos
+    FROM route_times
+    WHERE date >= date('now', '-' || ? || ' days')
+    GROUP BY date
+  `;
+
+  db.all(jobSql, [days], (err, jobRows) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.all(timeSql, [days], (err2, timeRows) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+
+      const timeByDate = {};
+      timeRows.forEach(r => {
+        timeByDate[r.date] = {
+          tiempoTrayecto: r.tiempo_trayecto || 0,
+          tiempoLlamadas: r.tiempo_llamadas || 0,
+          numTecnicos:    r.num_tecnicos || 1,
+        };
+      });
+
+      const byDate = {};
+      jobRows.forEach(r => {
+        if (!byDate[r.date]) byDate[r.date] = [];
+        byDate[r.date].push({
+          jobId:        r.job_id,
+          address:      r.address,
+          serviceRev:   parseFloat(r.service_rev),
+          accessoryRev: parseFloat(r.accessory_rev),
+          fixRev:       parseFloat(r.fix_rev),
+          totalRev:     parseFloat(r.total_rev),
+        });
+      });
+
+      const result = Object.entries(byDate)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, jobs]) => ({
+          date,
+          jobs,
+          ...(timeByDate[date] || { tiempoTrayecto: 0, tiempoLlamadas: 0, numTecnicos: 1 }),
+        }));
+
+      res.json(result);
+    });
   });
 });
 

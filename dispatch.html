@@ -1639,6 +1639,40 @@
             </div>
           </div>
 
+          <!-- Performance Graph -->
+          <div style="padding:0 20px 20px">
+            <div class="card" id="perf-graph-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+                <div class="card-title" style="margin:0">Rendimiento · 14 días</div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                  <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim)">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ice)"></span>Service
+                  </span>
+                  <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim)">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--amber)"></span>Accessories
+                  </span>
+                  <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim)">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red-dim)"></span>Unscheduled
+                  </span>
+                  <button class="btn btn-ghost btn-sm" id="perf-drill-back" style="display:none;font-size:11px" onclick="perfDrillBack()">← Semana</button>
+                </div>
+              </div>
+              <div id="perf-graph-wrap" style="overflow-x:auto">
+                <div id="perf-graph-inner" style="display:flex;align-items:flex-start;gap:10px;min-height:380px;padding-bottom:8px;position:relative">
+                  <div style="color:var(--text-dim);font-size:12px;padding:40px">Cargando...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /Perf Tooltip (fixed, shared) -->
+          <div id="perf-tooltip" style="
+            display:none;position:fixed;z-index:9999;
+            background:var(--bg3);border:1px solid var(--border2);border-radius:6px;
+            padding:8px 12px;font-size:11px;line-height:1.8;
+            pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);
+            min-width:160px
+          "></div>
+
         </div>
 
         <!-- ══════════ PANEL: JOB BOARD ══════════ -->
@@ -1830,9 +1864,42 @@
             <!-- 2 Systems checkbox -->
             <div style="margin-bottom:10px">
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--mono);color:var(--text);cursor:pointer">
-                <input type="checkbox" id="nj-two-systems" style="width:15px;height:15px;cursor:pointer" />
+                <input type="checkbox" id="nj-two-systems" style="width:15px;height:15px;cursor:pointer"
+                  onchange="document.getElementById('nj-sys2-row').style.display=this.checked?'grid':'none'" />
                 2 Systems
               </label>
+            </div>
+
+            <!-- System 2 equipment (hidden until 2 Systems checked) -->
+            <div id="nj-sys2-row" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px">
+              <!-- Furnace 2 -->
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Furnace / AHU — Sys 2</label>
+                <select id="nj-furnace2-series" onchange="njLoadModels('furnace2')"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select series…</option>
+                </select>
+                <select id="nj-furnace2" disabled onchange="njModelSelected('furnace2',this)"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select model…</option>
+                </select>
+                <button type="button" id="nj-furnace2-reset" onclick="njResetSeries('furnace2')"
+                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
+              </div>
+              <!-- Outdoor 2 -->
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Outdoor Unit — Sys 2</label>
+                <select id="nj-outdoor2-series" onchange="njLoadModels('outdoor2')"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select series…</option>
+                </select>
+                <select id="nj-outdoor2" disabled onchange="njModelSelected('outdoor2',this)"
+                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                  <option value="">Select model…</option>
+                </select>
+                <button type="button" id="nj-outdoor2-reset" onclick="njResetSeries('outdoor2')"
+                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
+              </div>
             </div>
 
             <!-- Tstat + qty + Acc row -->
@@ -2427,10 +2494,21 @@
                 <button type="button" class="btn btn-amber btn-sm" onclick="runAllCustomReports()">▶ Generate</button>
               </div>
               <!-- Export buttons (shown after any result) -->
-              <div style="display:flex;gap:6px">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                 <button type="button" class="btn btn-outline btn-sm" id="cr-export-btn" style="display:none" onclick="exportCustomReportCSV()">↓ CSV</button>
                 <button type="button" class="btn btn-ghost btn-sm"   id="cr-print-btn"  style="display:none" onclick="crOpenPrintWindow(false)">🖨 Print</button>
                 <button type="button" class="btn btn-ghost btn-sm"   id="cr-pdf-btn"    style="display:none" onclick="crOpenPrintWindow(true)">↓ PDF</button>
+                <div id="cr-print-options" style="display:none;gap:10px;align-items:center;margin-left:6px;border-left:1px solid var(--border);padding-left:10px">
+                  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer">
+                    <input type="checkbox" id="cr-chk-equipment" checked /> Equipment
+                  </label>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer">
+                    <input type="checkbox" id="cr-chk-refrigerant" checked /> Refrigerant
+                  </label>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer">
+                    <input type="checkbox" id="cr-chk-income" checked /> Income
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -2453,6 +2531,10 @@
                   </summary>
                   <div id="cr-eq-checklist" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:8px 10px;max-height:160px;overflow-y:auto"></div>
                 </details>
+                </div>
+                <div id="cr-equipment-summary" style="display:none;margin-bottom:6px">
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Summary</div>
+                  <div id="cr-equipment-summary-body" style="display:flex;flex-direction:column;gap:2px"></div>
                 </div>
                 <div class="tbl-wrap" id="cr-tbl-equipment" style="display:none;max-height:320px;overflow-y:auto">
                   <table><thead id="cr-thead-equipment"></thead><tbody id="cr-tbody-equipment"></tbody></table>
@@ -4983,8 +5065,18 @@
         j.savedState.selectedAccessories = accessories;
         j.savedState.selectedFixes       = fixes;
 
-        // Preserve edited reportText
-        j.reportText = document.getElementById(`ce-reporttext-${idx}`)?.value.trim() || "";
+        // If user manually edited the Report Text textarea, use their version.
+        // Otherwise regenerate from updated savedState so prices/total stay current.
+        const rtEl = document.getElementById(`ce-reporttext-${idx}`);
+        const editedReportText = rtEl?.value.trim() || "";
+        if (editedReportText !== (j.reportText || "")) {
+          j.reportText = editedReportText;
+        } else {
+          j.reportText = "";                                   // force fallback path
+          const { text: regenText } = _compJobText(j);
+          j.reportText = regenText;
+          if (rtEl) rtEl.value = regenText;                   // keep textarea in sync
+        }
 
         // Close edit panel
         compToggleEdit(idx);
@@ -5721,8 +5813,8 @@
 
       // ── New Job: series → model selectors ──
       function njInitSeriesSelects() {
-        const map = { furnace: NJ_HEATER_DATA, outdoor: NJ_OUTDOOR_DATA };
-        ["furnace", "outdoor"].forEach(field => {
+        const map = { furnace: NJ_HEATER_DATA, outdoor: NJ_OUTDOOR_DATA, furnace2: NJ_HEATER_DATA, outdoor2: NJ_OUTDOOR_DATA };
+        ["furnace", "outdoor", "furnace2", "outdoor2"].forEach(field => {
           const sel = document.getElementById(`nj-${field}-series`);
           if (!sel || sel.options.length > 1) return;
           Object.keys(map[field]).forEach(series => {
@@ -5734,7 +5826,7 @@
       }
 
       function njLoadModels(field) {
-        const data    = field === "furnace" ? NJ_HEATER_DATA : NJ_OUTDOOR_DATA;
+        const data    = (field === "furnace" || field === "furnace2") ? NJ_HEATER_DATA : NJ_OUTDOOR_DATA;
         const series  = document.getElementById(`nj-${field}-series`).value;
         const modelSel = document.getElementById(`nj-${field}`);
         const resetBtn = document.getElementById(`nj-${field}-reset`);
@@ -5865,6 +5957,10 @@
             document.getElementById("nj-furnace")?.value.trim() || "",
           outdoorModel:
             document.getElementById("nj-outdoor")?.value.trim() || "",
+          furnaceModel2:
+            document.getElementById("nj-furnace2")?.value.trim() || "",
+          outdoorModel2:
+            document.getElementById("nj-outdoor2")?.value.trim() || "",
           coilModel: document.getElementById("nj-coil")?.value.trim() || "",
           evapModel: document.getElementById("nj-evap")?.value.trim() || "",
           linesetHint:
@@ -5932,14 +6028,16 @@
         if (war) war.value = "true";
         const twoSys = document.getElementById("nj-two-systems");
         if (twoSys) twoSys.checked = false;
+        const sys2row = document.getElementById("nj-sys2-row");
+        if (sys2row) sys2row.style.display = "none";
 
         // Reset service chips
         document.querySelectorAll(".nj-svc-btn").forEach(b => {
           b.classList.remove("active");
           b.style.color = b.style.borderColor = b.style.background = "";
         });
-        // Reset equipment selects
-        ["furnace","outdoor"].forEach(f => njResetSeries(f));
+        // Reset equipment selects (sys 1 + sys 2)
+        ["furnace","outdoor","furnace2","outdoor2"].forEach(f => njResetSeries(f));
         // Reset tstat + acc
         const ts = document.getElementById("nj-tstat"); if (ts) ts.value = "";
         const tq = document.getElementById("nj-tstat-qty"); if (tq) tq.value = "1";
@@ -6146,11 +6244,11 @@
               details: j.importantNotes || "",
               subdivision: j.subdivision || "",
               builder: j.builder || "",
-              heaterModel: j.furnaceModel || "",
+              heaterModel: j.furnaceModel || j.heaterModel || "",
               outdoorModel: j.outdoorModel || "",
-              heaterModel2: "",
-              outdoorModel2: "",
-              isTwoSystems: false,
+              heaterModel2: j.furnaceModel2 || j.heaterModel2 || "",
+              outdoorModel2: j.outdoorModel2 || "",
+              isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
               thermostat: thermostat,
               extractedAccessories: extractedAccessories,
               allHeaters: [],
@@ -6430,11 +6528,11 @@
             details: j.importantNotes || "",
             subdivision: j.subdivision || "",
             builder: j.builder || "",
-            heaterModel: j.furnaceModel || "",
+            heaterModel: j.furnaceModel || j.heaterModel || "",
             outdoorModel: j.outdoorModel || "",
-            heaterModel2: "",
-            outdoorModel2: "",
-            isTwoSystems: false,
+            heaterModel2: j.furnaceModel2 || j.heaterModel2 || "",
+            outdoorModel2: j.outdoorModel2 || "",
+            isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
             thermostat: thermostat,
             extractedAccessories: extractedAccessories,
             allHeaters: [],
@@ -7051,6 +7149,240 @@
           document.getElementById("home-recent-tbody").innerHTML =
             `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Server offline — showing board data only</td></tr>`;
         }
+        // Performance graph — independent fetch, always runs
+        loadPerfGraph();
+      }
+
+      // ═══════════════════════════════════════
+      // PERFORMANCE GRAPH
+      // ═══════════════════════════════════════
+      let _perfData      = [];   // cached daily analytics
+      let _perfDrillDay  = null; // date string of drilled day
+
+      async function loadPerfGraph() {
+        try {
+          const res = await fetch(API_BASE + "/analytics/daily?days=14");
+          if (!res.ok) throw new Error();
+          _perfData = await res.json();
+          renderPerfWeekly();
+        } catch(e) {
+          const inner = document.getElementById("perf-graph-inner");
+          if (inner) inner.innerHTML = `<div style="color:var(--text-dim);font-size:12px;padding:20px">Sin datos — servidor offline</div>`;
+        }
+      }
+
+      function renderPerfWeekly() {
+        _perfDrillDay = null;
+        document.getElementById("perf-drill-back").style.display = "none";
+        const inner = document.getElementById("perf-graph-inner");
+        if (!inner) return;
+        if (!_perfData.length) {
+          inner.innerHTML = `<div style="color:var(--text-dim);font-size:12px;padding:20px">Sin datos de completados aún.</div>`;
+          return;
+        }
+        inner.innerHTML = "";
+        _perfData.forEach(dayData => inner.appendChild(_buildDayGroup(dayData)));
+      }
+
+      function _buildDayGroup(dayData) {
+        const BAR_H = 160; // 8 unidades × 20px
+        const BAR_W = 48;
+
+        // ── Totales del día (suma de todas las llamadas) ──
+        const totSvc = dayData.jobs.reduce((s, j) => s + (j.serviceRev   || 0), 0);
+        const totAcc = dayData.jobs.reduce((s, j) => s + (j.accessoryRev || 0), 0);
+        const totFix = dayData.jobs.reduce((s, j) => s + (j.fixRev       || 0), 0);
+        const totAll = totSvc + totAcc + totFix;
+
+        // ── Datos de tiempo — disponibles con Route Tracker ──
+        const tiempoLlamadas = dayData.tiempoLlamadas || 0;
+        const tiempoTrayecto = dayData.tiempoTrayecto || 0;
+        const tiempoTotal    = tiempoLlamadas + tiempoTrayecto;
+        const hasTime        = tiempoTotal > 0;
+
+        // Alturas proporcionales al tiempo (sin datos: servicios ocupa todo)
+        const llamadasH = hasTime ? Math.round((tiempoLlamadas / tiempoTotal) * BAR_H) : BAR_H;
+        const trayectoH = BAR_H - llamadasH;
+
+        const dateStr = dayData.date
+          ? new Date(dayData.date + "T00:00:00").toLocaleDateString("en-US", { month:"short", day:"numeric" })
+          : "—";
+
+        const group = document.createElement("div");
+        group.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0";
+
+        // ── UNA sola barra: servicios (arriba) + trayecto (abajo) ──
+        const bar = document.createElement("div");
+        bar.style.cssText = `width:${BAR_W}px;height:${BAR_H}px;display:flex;flex-direction:column;border-radius:3px;overflow:hidden;cursor:pointer;transition:filter 0.12s`;
+
+        // Bloque superior: servicios del día (colores por proporción de $)
+        const svcBlock = document.createElement("div");
+        svcBlock.style.cssText = `height:${llamadasH}px;display:flex;flex-direction:column;overflow:hidden`;
+        if (totAll === 0) {
+          svcBlock.style.cssText += ";background:var(--bg3);opacity:0.3";
+        } else {
+          [
+            [totFix, "var(--red-dim)"],
+            [totAcc, "var(--amber)"],
+            [totSvc, "var(--ice)"],
+          ].forEach(([rev, color]) => {
+            if (rev <= 0) return;
+            const seg = document.createElement("div");
+            seg.style.cssText = `flex-basis:${(rev / totAll * 100).toFixed(2)}%;background:${color};min-height:2px`;
+            svcBlock.appendChild(seg);
+          });
+        }
+        bar.appendChild(svcBlock);
+
+        // Bloque inferior: trayecto
+        if (trayectoH > 0) {
+          const trvBlock = document.createElement("div");
+          trvBlock.style.cssText = `height:${trayectoH}px;background:#505060;min-height:2px`;
+          bar.appendChild(trvBlock);
+        }
+
+        // Tooltip
+        const fmtT = (ms) => { const m = Math.floor(ms/60000); return m < 60 ? `${m}m` : `${Math.floor(m/60)}h ${m%60}m`; };
+        bar.addEventListener("mouseenter", () => {
+          bar.style.filter = "brightness(1.25)";
+          const tt = document.getElementById("perf-tooltip");
+          tt.innerHTML = `
+            <div style="font-family:var(--head);font-size:12px;font-weight:700;color:var(--text-bright);margin-bottom:5px">${dateStr} · ${dayData.jobs.length} llamada${dayData.jobs.length!==1?"s":""}</div>
+            <div style="color:var(--ice)">Service &nbsp;&nbsp;&nbsp;&nbsp;$${totSvc.toFixed(2)}${totAll>0?` <span style="color:var(--text-dim);font-size:10px">(${(totSvc/totAll*100).toFixed(0)}%)</span>`:""}</div>
+            <div style="color:var(--amber)">Accessories $${totAcc.toFixed(2)}${totAll>0?` <span style="color:var(--text-dim);font-size:10px">(${(totAcc/totAll*100).toFixed(0)}%)</span>`:""}</div>
+            <div style="color:var(--red-dim)">Unscheduled $${totFix.toFixed(2)}${totAll>0?` <span style="color:var(--text-dim);font-size:10px">(${(totFix/totAll*100).toFixed(0)}%)</span>`:""}</div>
+            <div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;color:var(--text);font-weight:700">Total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$${totAll.toFixed(2)}</div>
+            ${hasTime
+              ? `<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;color:#9090a8">Trayecto &nbsp;${fmtT(tiempoTrayecto)} (${(tiempoTrayecto/tiempoTotal*100).toFixed(0)}%)</div>
+                 <div style="color:var(--ice)">Llamadas &nbsp;${fmtT(tiempoLlamadas)} (${(tiempoLlamadas/tiempoTotal*100).toFixed(0)}%)</div>`
+              : `<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;font-size:10px;color:var(--text-dim)">Trayecto: disponible con Route Tracker</div>`
+            }
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Click para ver servicios del día</div>
+          `;
+          tt.style.display = "block";
+        });
+        bar.addEventListener("mousemove", (e) => {
+          const tt = document.getElementById("perf-tooltip");
+          tt.style.left = (e.clientX + 16) + "px";
+          tt.style.top  = (e.clientY - 10) + "px";
+        });
+        bar.addEventListener("mouseleave", () => {
+          bar.style.filter = "";
+          document.getElementById("perf-tooltip").style.display = "none";
+        });
+        bar.addEventListener("click", () => perfDrillDown(dayData));
+
+        // ── Etiqueta de fecha ──
+        const lbl = document.createElement("div");
+        lbl.style.cssText = "font-size:10px;color:var(--text-dim);text-align:center;letter-spacing:0.3px";
+        lbl.textContent = dateStr;
+
+        group.appendChild(bar);
+        group.appendChild(lbl);
+        return group;
+      }
+
+      function perfDrillDown(dayData) {
+        _perfDrillDay = dayData.date;
+        document.getElementById("perf-drill-back").style.display = "";
+        document.getElementById("perf-tooltip").style.display = "none";
+        const inner = document.getElementById("perf-graph-inner");
+        inner.innerHTML = "";
+        inner.style.cssText = "display:flex;align-items:flex-end;gap:10px;min-height:220px;padding:28px 20px 8px;position:relative;flex-wrap:wrap";
+
+        const BAR_H = 160; // mismo que vista semanal
+        const BAR_W = 48;
+
+        const dateStr = new Date(dayData.date + "T00:00:00")
+          .toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
+
+        // ── Título del día ──
+        const dayLbl = document.createElement("div");
+        dayLbl.style.cssText = "position:absolute;top:4px;left:0;right:0;font-size:11px;color:var(--text-dim);text-align:center;letter-spacing:0.5px;pointer-events:none";
+        dayLbl.textContent = `${dateStr} · ${dayData.jobs.length} servicio${dayData.jobs.length !== 1 ? "s" : ""}`;
+        inner.appendChild(dayLbl);
+
+        if (!dayData.jobs.length) {
+          const empty = document.createElement("div");
+          empty.style.cssText = "color:var(--text-dim);font-size:12px;padding:20px";
+          empty.textContent = "Sin servicios este día.";
+          inner.appendChild(empty);
+          return;
+        }
+
+        // ── Una barra por servicio ──
+        dayData.jobs.forEach((job, idx) => {
+          const svc   = job.serviceRev   || 0;
+          const acc   = job.accessoryRev || 0;
+          const fix   = job.fixRev       || 0;
+          const total = svc + acc + fix;
+
+          const group = document.createElement("div");
+          group.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0";
+
+          const bar = document.createElement("div");
+          bar.style.cssText = `width:${BAR_W}px;height:${BAR_H}px;display:flex;flex-direction:column;border-radius:3px;overflow:hidden;cursor:default;transition:filter 0.12s`;
+
+          if (total === 0) {
+            bar.style.background = "var(--bg3)";
+            bar.style.opacity    = "0.3";
+          } else {
+            [
+              [fix,  "var(--red-dim)"],
+              [acc,  "var(--amber)"],
+              [svc,  "var(--ice)"],
+            ].forEach(([rev, color]) => {
+              if (rev <= 0) return;
+              const seg = document.createElement("div");
+              seg.style.cssText = `flex-basis:${(rev / total * 100).toFixed(2)}%;background:${color};min-height:2px`;
+              bar.appendChild(seg);
+            });
+          }
+
+          // Tooltip
+          const shortAddr = job.address ? job.address.split(",")[0] : `Servicio ${idx + 1}`;
+          bar.addEventListener("mouseenter", () => {
+            bar.style.filter = "brightness(1.25)";
+            const tt = document.getElementById("perf-tooltip");
+            tt.innerHTML = `
+              <div style="font-family:var(--head);font-size:12px;font-weight:700;color:var(--text-bright);margin-bottom:5px">${esc(shortAddr)}</div>
+              <div style="color:var(--ice)">Service &nbsp;&nbsp;&nbsp;&nbsp;$${svc.toFixed(2)}${total>0?` <span style="color:var(--text-dim);font-size:10px">(${(svc/total*100).toFixed(0)}%)</span>`:""}</div>
+              <div style="color:var(--amber)">Accessories $${acc.toFixed(2)}${total>0?` <span style="color:var(--text-dim);font-size:10px">(${(acc/total*100).toFixed(0)}%)</span>`:""}</div>
+              <div style="color:var(--red-dim)">Unscheduled $${fix.toFixed(2)}${total>0?` <span style="color:var(--text-dim);font-size:10px">(${(fix/total*100).toFixed(0)}%)</span>`:""}</div>
+              <div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;color:var(--text);font-weight:700">Total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$${total.toFixed(2)}</div>
+            `;
+            tt.style.display = "block";
+          });
+          bar.addEventListener("mousemove", (e) => {
+            const tt = document.getElementById("perf-tooltip");
+            tt.style.left = (e.clientX + 16) + "px";
+            tt.style.top  = (e.clientY - 10) + "px";
+          });
+          bar.addEventListener("mouseleave", () => {
+            bar.style.filter = "";
+            document.getElementById("perf-tooltip").style.display = "none";
+          });
+
+          // Etiqueta debajo: número de servicio
+          const lbl = document.createElement("div");
+          lbl.style.cssText = "font-size:9px;color:var(--text-dim);text-align:center";
+          lbl.textContent = `#${idx + 1}`;
+
+          group.appendChild(bar);
+          group.appendChild(lbl);
+          inner.appendChild(group);
+        });
+      }
+
+      function perfDrillBack() {
+        inner_perfReset();
+        renderPerfWeekly();
+      }
+
+      function inner_perfReset() {
+        const inner = document.getElementById("perf-graph-inner");
+        inner.style.alignItems = "flex-start";
+        inner.style.position   = "relative";
       }
 
       // ═══════════════════════════════════════
@@ -7848,8 +8180,22 @@
         try {
           const res = await fetch(`${API_BASE}/reports/custom/equipment?from=${from}&to=${to}&items=${encodeURIComponent(selected.join(","))}`);
           if (!res.ok) throw new Error(await res.text());
-          _crData.equipment = await res.json();
+          const eqData = await res.json();
+          _crData.equipment = eqData.rows || eqData;
+          _crData.equipmentSummary = eqData.summary || [];
           if (!_crData.equipment.length) { empty.textContent = "No results for the selected range."; return; }
+
+          // Render summary from server-computed totals (real quantity sums)
+          const summaryEl = document.getElementById("cr-equipment-summary");
+          const summaryBody = document.getElementById("cr-equipment-summary-body");
+          summaryBody.innerHTML = _crData.equipmentSummary.map(s =>
+            `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 6px;background:var(--bg3);border-radius:2px">
+              <span style="color:var(--text)">${esc(s.item)}</span>
+              <span style="color:var(--amber);font-weight:600;min-width:24px;text-align:right">${s.qty}</span>
+            </div>`
+          ).join("");
+          summaryEl.style.display = "";
+
           thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>`;
           tbody.innerHTML = _crData.equipment.map(r => `<tr>
             <td class="amber" style="white-space:nowrap">${r.date}</td>
@@ -7924,6 +8270,7 @@
           document.getElementById("cr-export-btn").style.display = "";
           document.getElementById("cr-print-btn").style.display = "";
           document.getElementById("cr-pdf-btn").style.display = "";
+          document.getElementById("cr-print-options").style.display = "flex";
         } catch(e) { empty.textContent = "Error: " + e.message; }
       }
 
@@ -7976,20 +8323,28 @@
         const buildSection = (title, theadHtml, rowsHtml) =>
           `<h2>${title}</h2><table><thead>${theadHtml}</thead><tbody>${rowsHtml}</tbody></table>`;
 
+        const chkEquipment   = document.getElementById("cr-chk-equipment")?.checked !== false;
+        const chkRefrigerant = document.getElementById("cr-chk-refrigerant")?.checked !== false;
+        const chkIncome      = document.getElementById("cr-chk-income")?.checked !== false;
+
         let sections = "";
 
-        if (_crData.income.length) {
+        if (chkIncome && _crData.income.length) {
           const total = _crData.income.reduce((s,r) => s + parseFloat(r.total), 0);
           const rows = _crData.income.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td class="num">$${parseFloat(r.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`).join("")
             + `<tr class="total"><td colspan="2">TOTAL — ${_crData.income.length} jobs</td><td class="num">$${total.toLocaleString("en-US",{minimumFractionDigits:2})}</td></tr>`;
           sections += buildSection("Income", "<tr><th>Date</th><th>Address</th><th>Income</th></tr>", rows);
         }
-        if (_crData.equipment.length) {
-          const rows = _crData.equipment.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`).join("")
+        if (chkEquipment && _crData.equipment.length) {
+          const eqSum = _crData.equipmentSummary || [];
+          const summaryRows = eqSum.map(s => `<tr><td>${s.item}</td><td class="num">${s.qty}</td></tr>`).join("")
+            + `<tr class="total"><td>${eqSum.length} models</td><td class="num">${_crData.equipment.length} jobs</td></tr>`;
+          sections += buildSection("Equipment Summary", "<tr><th>Model</th><th>Qty</th></tr>", summaryRows);
+          const detailRows = _crData.equipment.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`).join("")
             + `<tr class="total"><td colspan="3">${_crData.equipment.length} records</td></tr>`;
-          sections += buildSection("Equipment Used", "<tr><th>Date</th><th>Address</th><th>Equipment</th></tr>", rows);
+          sections += buildSection("Equipment Detail", "<tr><th>Date</th><th>Address</th><th>Equipment</th></tr>", detailRows);
         }
-        if (_crData.refrigerant.length) {
+        if (chkRefrigerant && _crData.refrigerant.length) {
           const totalOz = _crData.refrigerant.reduce((s,r) => s + r.oz_used, 0);
           const rows = _crData.refrigerant.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.ref_type}</td><td class="num">${r.oz_used}</td><td class="num">${r.lbs_display}</td></tr>`).join("")
             + `<tr class="total"><td colspan="3">TOTAL</td><td class="num">${totalOz.toFixed(1)}</td><td class="num">${(totalOz/16).toFixed(2)} lb</td></tr>`;

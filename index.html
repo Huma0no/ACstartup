@@ -16,6 +16,12 @@
     <main class="container">
       <div class="app-header">
         <div class="app-title">Service Call Report Generator</div>
+        <span
+          id="tracker-badge"
+          class="tracker-badge"
+          style="display:none"
+          title="Tiempo activo"
+        ></span>
         <div class="app-header-controls">
           <button
             type="button"
@@ -1745,6 +1751,7 @@
     <!-- /ts-drawer -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script type="module" src="routeTracker.js"></script>
     <script type="module" src="dropdowns.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="troubleshootingPanel.js"></script>

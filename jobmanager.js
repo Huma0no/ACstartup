@@ -11,6 +11,7 @@ import {
   getJobByAddress,
 } from "./jobs.js";
 import { normalizeAddress, calculateCFM } from "./utils.js";
+import { startTrayecto, getMode, getExportData, resetTracker } from "./routeTracker.js";
 import { heaters, unidadesExteriores } from "./weightInData.js";
 import { toggleWorkspace, switchToTab, createChip } from "./ui.js";
 import { STORAGE_KEYS } from "./constants.js";
@@ -262,6 +263,8 @@ export function initJobManager(context) {
   }
 
   function openInMaps(address) {
+    startTrayecto();
+    renderJobsList();           // update Maps icon to ⏱ pulsing
     const encodedAddress = encodeURIComponent(address);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
@@ -372,9 +375,11 @@ export function initJobManager(context) {
   // --- EXPORT / IMPORT LOGIC ---
   function exportJobs() {
     const jobs = getJobs();
+    const { tiempoTrayecto, tiempoLlamadas } = getExportData();
+    const payload = { tiempoTrayecto, tiempoLlamadas, jobs };
     const dataStr =
       "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(jobs, null, 2));
+      encodeURIComponent(JSON.stringify(payload, null, 2));
     const downloadAnchorNode = document.createElement("a");
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute(
@@ -384,6 +389,7 @@ export function initJobManager(context) {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+    resetTracker();
   }
 
   function importJobs(file) {

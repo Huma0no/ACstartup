@@ -15,6 +15,7 @@ import {
   hideValidationErrors,
   showValidationErrors,
 } from "./ui.js";
+import { stopLlamada } from "./routeTracker.js";
 
 export function initReportManager(context) {
   const {
@@ -726,6 +727,7 @@ export function initReportManager(context) {
   }
 
   function generateReportProcess() {
+    stopLlamada();
     const state = getState();
     const reportText = generateReportText(state);
     const reportData = generateReportData(state);

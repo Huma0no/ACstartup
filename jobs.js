@@ -1,6 +1,7 @@
 import { showLightbox } from "./ui.js";
 import { outdoorUnitLinks } from "./weightInData.js";
 import { normalizeAddress } from "./utils.js";
+import { getMode, startLlamada } from "./routeTracker.js";
 
 let jobsArray = [];
 let activeJobAddress = null;
@@ -337,8 +338,10 @@ export function renderJobsList(
     const mapsButton = document.createElement("button");
     mapsButton.type = "button";
     mapsButton.classList.add("btn", "btn-maps");
-    mapsButton.textContent = "📍";
-    mapsButton.title = "Open in Google Maps";
+    const isTraveling = getMode() === "trayecto";
+    mapsButton.textContent = isTraveling ? "⏱" : "📍";
+    mapsButton.title = isTraveling ? "En trayecto…" : "Open in Google Maps";
+    if (isTraveling) mapsButton.classList.add("btn-maps--active");
     mapsButton.addEventListener("click", (e) => {
       e.stopPropagation();
       callbacks.onMaps(address);
@@ -594,12 +597,16 @@ export function renderJobsList(
     const startBtn = document.createElement("button");
     startBtn.type = "button";
     startBtn.className = "btn btn-start-job";
+    const inTrayecto = !job.savedState && getMode() === "trayecto";
     startBtn.innerHTML = job.savedState
       ? "▶️ Resume Completion"
-      : "📝 Start Completion";
+      : inTrayecto
+        ? "⏱ Iniciar Llamada"
+        : "📝 Start Completion";
     startBtn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (inTrayecto) startLlamada();
       callbacks.onStart(address);
     };
     startContainer.appendChild(startBtn);
