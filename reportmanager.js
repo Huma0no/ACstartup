@@ -750,7 +750,7 @@ export function initReportManager(context) {
       fixes: reportData.fixes,
       thermostat: reportData.thermostat,
       weightInText: reportData.weightInText,
-      notes: state.notes,
+      notes: reportData.notes.join("\n"),
       weightInData: state.weightInData,
       weightInData2: state.weightInData2,
       refrigerant,
