@@ -909,14 +909,14 @@ export function initReportManager(context) {
         return;
       }
 
-      const savedTechName = localStorage.getItem("dashboard_tech_name") || "";
+      const savedTechName = localStorage.getItem(STORAGE_KEYS.TECH_NAME) || "";
       const techName = prompt(
         "Nombre del técnico para este export:",
         savedTechName
       );
       if (techName === null) return;
       if (techName.trim()) {
-        localStorage.setItem("dashboard_tech_name", techName.trim());
+        localStorage.setItem(STORAGE_KEYS.TECH_NAME, techName.trim());
       }
 
       if (

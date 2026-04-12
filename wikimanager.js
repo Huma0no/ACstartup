@@ -1,4 +1,5 @@
 import { howToGuides } from "./howToData.js";
+import { STORAGE_KEYS } from "./constants.js";
 
 export function initWikiManager() {
   const modal = document.getElementById("wiki-modal");
@@ -10,7 +11,7 @@ export function initWikiManager() {
 
   if (!modal || !openBtn || !listContainer) return;
 
-  let favorites = JSON.parse(localStorage.getItem("wiki_favorites") || "[]");
+  let favorites = JSON.parse(localStorage.getItem(STORAGE_KEYS.WIKI_FAVORITES) || "[]");
   let showFavoritesOnly = false;
 
   function renderList(filterText = "") {
@@ -170,7 +171,7 @@ export function initWikiManager() {
     } else {
       favorites.push(id);
     }
-    localStorage.setItem("wiki_favorites", JSON.stringify(favorites));
+    localStorage.setItem(STORAGE_KEYS.WIKI_FAVORITES, JSON.stringify(favorites));
     renderList(searchInput ? searchInput.value : "");
   }
 

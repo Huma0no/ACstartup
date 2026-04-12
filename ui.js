@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from "./constants.js";
+
 // --- LIGHTBOX ---
 let lightboxOverlay = null;
 let lightboxImage = null;
@@ -425,7 +427,7 @@ export function initThemeSwitcher(themeToggleInput) {
   if (!themeToggleInput) return;
 
   // Cargar y aplicar tema
-  let savedTheme = localStorage.getItem("app-theme") || "paper";
+  let savedTheme = localStorage.getItem(STORAGE_KEYS.APP_THEME) || "paper";
   // Asegurar que sea uno de los dos temas soportados por el toggle
   if (savedTheme !== "darkMode" && savedTheme !== "paper") savedTheme = "paper";
 
@@ -436,7 +438,7 @@ export function initThemeSwitcher(themeToggleInput) {
     const newTheme = themeToggleInput.checked ? "darkMode" : "paper";
 
     document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("app-theme", newTheme);
+    localStorage.setItem(STORAGE_KEYS.APP_THEME, newTheme);
   });
 }
 

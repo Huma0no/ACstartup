@@ -2,7 +2,9 @@
 // Tracks travel time (trayecto) and call time (llamada) throughout the workday.
 // State persists in localStorage so a page refresh doesn't lose the current segment.
 
-const LS_KEY = "route_tracker_state";
+import { STORAGE_KEYS } from "./constants.js";
+
+const LS_KEY = STORAGE_KEYS.ROUTE_TRACKER;
 
 let trackerState = {
   mode: null,         // null | 'trayecto' | 'llamada'

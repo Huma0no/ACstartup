@@ -24,6 +24,7 @@ import {
   setActiveProvider,
 } from "./aiProviders.js";
 import { buildUserMessage } from "./claudeAssist.js";
+import { showToast } from "./ui.js";
 
 // ─────────────────────────────────────────────
 // DOM REFERENCES
@@ -538,20 +539,9 @@ function saveKey() {
   saveProviderKey(p.id, val);
   el.apiKeyPanel().classList.add("hidden");
   selectProvider(p.id); // refresh note
-  showToastLocal(`${p.label} key saved ✓`);
+  showToast(`${p.label} key saved ✓`);
 }
 
-function showToastLocal(msg) {
-  const toast = document.createElement("div");
-  toast.textContent = msg;
-  toast.style.cssText = `
-    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-    background:#333; color:#fff; padding:8px 18px; border-radius:4px;
-    font-size:0.85em; z-index:99999; white-space:nowrap;
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2500);
-}
 
 // ─────────────────────────────────────────────
 // LEVEL 2 — AI ASSIST (multi-turn)
@@ -592,7 +582,7 @@ function handleAskClaude() {
   }
 
   if (!activeSymptom) {
-    showToastLocal("Select a symptom first");
+    showToast("Select a symptom first");
     return;
   }
 
@@ -773,7 +763,7 @@ function init() {
     clearProviderKey(p.id);
     el.apiKeyInput().value = "";
     selectProvider(p.id);
-    showToastLocal(`${p.label} key cleared`);
+    showToast(`${p.label} key cleared`);
   });
 
   el.askClaudeBtn()?.addEventListener("click", handleAskClaude);
@@ -861,7 +851,7 @@ function initAISettingsModal() {
     const p = getActiveProvider();
     saveProviderKey(p.id, val);
     refreshSettingsModal(p.id);
-    showToastLocal(`${p.label} key saved ✓`);
+    showToast(`${p.label} key saved ✓`);
   });
 
   clearBtn?.addEventListener("click", () => {
@@ -869,7 +859,7 @@ function initAISettingsModal() {
     clearProviderKey(p.id);
     keyInput.value = "";
     refreshSettingsModal(p.id);
-    showToastLocal(`${p.label} key cleared`);
+    showToast(`${p.label} key cleared`);
   });
 
   keyInput?.addEventListener("keydown", (e) => {

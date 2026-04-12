@@ -5,6 +5,10 @@ export const STORAGE_KEYS = {
   REPORTS: "completionReports",
   JOBS: "jobsArray",
   ACTIVE_JOB: "lastActiveJobAddress",
+  APP_THEME: "app-theme",
+  ROUTE_TRACKER: "route_tracker_state",
+  WIKI_FAVORITES: "wiki_favorites",
+  TECH_NAME: "dashboard_tech_name",
 };
 
 export const SERVICES = {

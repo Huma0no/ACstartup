@@ -5,11 +5,8 @@ import {
   unidadesExteriores,
 } from "./weightInData.js";
 
-// Modal Logic
-const modal = document.getElementById("model-selection-modal");
-const modalList = document.getElementById("modal-list");
-const modalTitleEl = document.getElementById("modal-title");
-const modalCloseBtn = document.getElementById("modal-close-btn");
+// Modal Logic — refs and listeners are initialized inside DOMContentLoaded (see bottom of file)
+let modal, modalList, modalTitleEl, modalCloseBtn;
 
 function openModelModal(title, items, onSelect) {
   modalTitleEl.textContent = title;
@@ -32,11 +29,6 @@ function openModelModal(title, items, onSelect) {
 function closeModelModal() {
   modal.classList.remove("active");
 }
-
-modalCloseBtn.addEventListener("click", closeModelModal);
-modal.addEventListener("click", (e) => {
-  if (e.target === modal) closeModelModal();
-});
 
 function setupDropdowns(
   seriesId,
@@ -398,6 +390,17 @@ const outdoorData = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Wire up modal DOM refs now that the DOM is ready
+  modal = document.getElementById("model-selection-modal");
+  modalList = document.getElementById("modal-list");
+  modalTitleEl = document.getElementById("modal-title");
+  modalCloseBtn = document.getElementById("modal-close-btn");
+
+  modalCloseBtn.addEventListener("click", closeModelModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModelModal();
+  });
+
   // Obtener datos globales de enlaces (definidos en weightInData.js)
   const sLinks = seriesLinks || {};
   const oLinks = outdoorUnitLinks || {};
