@@ -81,6 +81,15 @@ export function stopLlamada() {
   _updateUI();
 }
 
+/** Closes any active segment (trayecto or llamada). Safety net for report generation. */
+export function closeActiveSegment() {
+  if (trackerState.mode === null) return;
+  _closeSegment();
+  trackerState.mode = null;
+  _save();
+  _updateUI();
+}
+
 /** Current mode string: null | 'trayecto' | 'llamada' */
 export function getMode() {
   return trackerState.mode;

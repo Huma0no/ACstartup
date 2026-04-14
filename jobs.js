@@ -597,7 +597,7 @@ export function renderJobsList(
     const startBtn = document.createElement("button");
     startBtn.type = "button";
     startBtn.className = "btn btn-start-job";
-    const inTrayecto = !job.savedState && getMode() === "trayecto";
+    const inTrayecto = getMode() === "trayecto";
     startBtn.innerHTML = job.savedState
       ? "▶️ Resume Completion"
       : inTrayecto
