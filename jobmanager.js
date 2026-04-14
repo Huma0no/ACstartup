@@ -11,7 +11,6 @@ import {
   getJobByAddress,
 } from "./jobs.js";
 import { normalizeAddress, calculateCFM } from "./utils.js";
-import { startTrayecto, getMode, getExportData, resetTracker } from "./routeTracker.js";
 import { heaters, unidadesExteriores } from "./weightInData.js";
 import { toggleWorkspace, switchToTab, createChip } from "./ui.js";
 import { STORAGE_KEYS } from "./constants.js";
@@ -263,8 +262,6 @@ export function initJobManager(context) {
   }
 
   function openInMaps(address) {
-    startTrayecto();
-    renderJobsList();           // update Maps icon to ⏱ pulsing
     const encodedAddress = encodeURIComponent(address);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
@@ -373,23 +370,49 @@ export function initJobManager(context) {
   }
 
   // --- EXPORT / IMPORT LOGIC ---
-  function exportJobs() {
+  async function exportJobs() {
     const jobs = getJobs();
-    const { tiempoTrayecto, tiempoLlamadas } = getExportData();
-    const payload = { tiempoTrayecto, tiempoLlamadas, jobs };
+    // Enrich each job with address history + auto-fill equipment from most recent record
+    try {
+      const addresses = jobs.map((j) => j.address);
+      const resp = await fetch("/api/jobs/batch-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addresses }),
+      });
+      if (resp.ok) {
+        const historyMap = await resp.json();
+        jobs.forEach((job) => {
+          const history = historyMap[job.address] || [];
+          job.addressHistory = history;
+
+          if (history.length > 0) {
+            const latest = history[0]; // sorted date DESC
+            if (!job.heaterModel  && latest.indoor_model)  job.heaterModel  = latest.indoor_model;
+            if (!job.outdoorModel && latest.outdoor_model) job.outdoorModel = latest.outdoor_model;
+            if (!job.thermostat && latest.items) {
+              const tstatItem = latest.items.find((i) => i.category === "Thermostat");
+              if (tstatItem) job.thermostat = { type: tstatItem.item_name, qty: tstatItem.quantity };
+            }
+          }
+        });
+      }
+    } catch (_) {
+      // Server unavailable — export without history
+    }
+
     const dataStr =
       "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(payload, null, 2));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute(
+      encodeURIComponent(JSON.stringify(jobs, null, 2));
+    const a = document.createElement("a");
+    a.setAttribute("href", dataStr);
+    a.setAttribute(
       "download",
       "jobs_backup_" + new Date().toISOString().slice(0, 10) + ".json"
     );
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-    resetTracker();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   function importJobs(file) {

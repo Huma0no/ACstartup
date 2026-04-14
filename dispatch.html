@@ -4652,7 +4652,9 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
-            const techJobs = JSON.parse(e.target.result);
+            const parsed = JSON.parse(e.target.result);
+            // Accept both plain array (legacy) and wrapped { jobs: [...] } format
+            const techJobs = Array.isArray(parsed) ? parsed : (parsed.jobs || []);
             _lastImportedJobs = techJobs;
             renderCompletion(techJobs, file.name);
           } catch (err) {

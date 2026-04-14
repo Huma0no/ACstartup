@@ -103,16 +103,6 @@ function initDB() {
       created_at INTEGER
     )`);
 
-    // 5. Tiempos de trayecto y llamadas por técnico/día
-    db.run(`CREATE TABLE IF NOT EXISTS route_times (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
-      date            TEXT NOT NULL,
-      technician      TEXT NOT NULL,
-      tiempo_trayecto INTEGER DEFAULT 0,
-      tiempo_llamadas INTEGER DEFAULT 0,
-      imported_at     INTEGER,
-      UNIQUE(date, technician)
-    )`);
   });
 }
 
@@ -177,19 +167,9 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 // 1. IMPORTAR DATOS (Desde el JSON exportado por la App)
 app.post("/api/import", async (req, res) => {
-  // Support both legacy (plain array) and new ({ jobs, tiempoTrayecto, tiempoLlamadas }) formats
-  let jobs, tiempoTrayecto, tiempoLlamadas;
-  if (Array.isArray(req.body)) {
-    jobs = req.body;
-    tiempoTrayecto = 0;
-    tiempoLlamadas = 0;
-  } else if (req.body && Array.isArray(req.body.jobs)) {
-    jobs = req.body.jobs;
-    tiempoTrayecto = parseInt(req.body.tiempoTrayecto) || 0;
-    tiempoLlamadas = parseInt(req.body.tiempoLlamadas) || 0;
-  } else {
+  const jobs = Array.isArray(req.body) ? req.body : (req.body && Array.isArray(req.body.jobs) ? req.body.jobs : null);
+  if (!jobs)
     return res.status(400).json({ error: "Formato inválido" });
-  }
 
   let imported = 0;
   let skipped = 0;
@@ -354,29 +334,6 @@ app.post("/api/import", async (req, res) => {
     }
 
     await runDb("COMMIT");
-
-    // Store route times when present
-    if (tiempoTrayecto > 0 || tiempoLlamadas > 0) {
-      const techJob = jobs.find((j) => j.technician || j.techName) || {};
-      const technician = techJob.technician || techJob.techName || "Default Tech";
-      const date = (() => {
-        const j = jobs.find((j) => (j.savedState || {}).date);
-        return j ? (j.savedState || {}).date : new Date().toISOString().split("T")[0];
-      })();
-      await new Promise((resolve, reject) => {
-        db.run(
-          `INSERT INTO route_times (date, technician, tiempo_trayecto, tiempo_llamadas, imported_at)
-           VALUES (?, ?, ?, ?, ?)
-           ON CONFLICT(date, technician) DO UPDATE SET
-             tiempo_trayecto = tiempo_trayecto + excluded.tiempo_trayecto,
-             tiempo_llamadas = tiempo_llamadas + excluded.tiempo_llamadas,
-             imported_at = excluded.imported_at`,
-          [date, technician, tiempoTrayecto, tiempoLlamadas, Date.now()],
-          (err) => (err ? reject(err) : resolve())
-        );
-      });
-    }
-
     res.json({ message: "Importación finalizada", imported, skipped });
   } catch (e) {
     await runDb("ROLLBACK");
@@ -481,6 +438,43 @@ app.get("/api/jobs/by-address", (req, res) => {
         }
       : null;
     res.json({ jobs: rows, summary });
+  });
+});
+
+// 4c. HISTORIAL BATCH — múltiples direcciones en una sola consulta (para export de DISPATCH)
+app.post("/api/jobs/batch-history", (req, res) => {
+  const addresses = Array.isArray(req.body.addresses) ? req.body.addresses : [];
+  if (!addresses.length) return res.json({});
+
+  const result = {};
+  let pending = addresses.length;
+
+  addresses.forEach((addr) => {
+    const sql = `
+      SELECT j.id, j.date, j.technician, j.notes,
+             j.indoor_model, j.outdoor_model,
+             j.weight_in_json, j.weight_in_2_json,
+             j.subdivision, j.builder,
+             (SELECT json_group_array(json_object(
+                'category', ji.category,
+                'item_name', ji.item_name,
+                'quantity',  ji.quantity,
+                'price',     ji.price
+             )) FROM job_items ji WHERE ji.job_id = j.id) AS items_json
+      FROM jobs j
+      WHERE j.address = ?
+      ORDER BY j.date DESC
+    `;
+    db.all(sql, [addr], (err, rows) => {
+      if (!err) {
+        result[addr] = rows.map((r) => ({
+          ...r,
+          items: r.items_json ? JSON.parse(r.items_json) : [],
+          items_json: undefined,
+        }));
+      }
+      if (--pending === 0) res.json(result);
+    });
   });
 });
 
@@ -1129,9 +1123,7 @@ app.get("/api/reports/custom/refrigerant", (req, res) => {
 // ─── ANALYTICS: Daily performance breakdown ─────────────────────────────────
 app.get("/api/analytics/daily", (req, res) => {
   const days = Math.min(parseInt(req.query.days) || 14, 60);
-
-  // Job-level revenue query
-  const jobSql = `
+  const sql = `
     SELECT
       j.date,
       j.id   AS job_id,
@@ -1146,57 +1138,24 @@ app.get("/api/analytics/daily", (req, res) => {
     GROUP BY j.id
     ORDER BY j.date ASC, j.id ASC
   `;
-
-  // Route times aggregated per day
-  const timeSql = `
-    SELECT
-      date,
-      SUM(tiempo_trayecto) AS tiempo_trayecto,
-      SUM(tiempo_llamadas) AS tiempo_llamadas,
-      COUNT(*)             AS num_tecnicos
-    FROM route_times
-    WHERE date >= date('now', '-' || ? || ' days')
-    GROUP BY date
-  `;
-
-  db.all(jobSql, [days], (err, jobRows) => {
+  db.all(sql, [days], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-
-    db.all(timeSql, [days], (err2, timeRows) => {
-      if (err2) return res.status(500).json({ error: err2.message });
-
-      const timeByDate = {};
-      timeRows.forEach(r => {
-        timeByDate[r.date] = {
-          tiempoTrayecto: r.tiempo_trayecto || 0,
-          tiempoLlamadas: r.tiempo_llamadas || 0,
-          numTecnicos:    r.num_tecnicos || 1,
-        };
+    const byDate = {};
+    rows.forEach(r => {
+      if (!byDate[r.date]) byDate[r.date] = [];
+      byDate[r.date].push({
+        jobId:        r.job_id,
+        address:      r.address,
+        serviceRev:   parseFloat(r.service_rev),
+        accessoryRev: parseFloat(r.accessory_rev),
+        fixRev:       parseFloat(r.fix_rev),
+        totalRev:     parseFloat(r.total_rev),
       });
-
-      const byDate = {};
-      jobRows.forEach(r => {
-        if (!byDate[r.date]) byDate[r.date] = [];
-        byDate[r.date].push({
-          jobId:        r.job_id,
-          address:      r.address,
-          serviceRev:   parseFloat(r.service_rev),
-          accessoryRev: parseFloat(r.accessory_rev),
-          fixRev:       parseFloat(r.fix_rev),
-          totalRev:     parseFloat(r.total_rev),
-        });
-      });
-
-      const result = Object.entries(byDate)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, jobs]) => ({
-          date,
-          jobs,
-          ...(timeByDate[date] || { tiempoTrayecto: 0, tiempoLlamadas: 0, numTecnicos: 1 }),
-        }));
-
-      res.json(result);
     });
+    const result = Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, jobs]) => ({ date, jobs }));
+    res.json(result);
   });
 });
 

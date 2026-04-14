@@ -1,7 +1,6 @@
 import { showLightbox } from "./ui.js";
 import { outdoorUnitLinks } from "./weightInData.js";
 import { normalizeAddress } from "./utils.js";
-import { getMode, startLlamada } from "./routeTracker.js";
 
 let jobsArray = [];
 let activeJobAddress = null;
@@ -338,10 +337,8 @@ export function renderJobsList(
     const mapsButton = document.createElement("button");
     mapsButton.type = "button";
     mapsButton.classList.add("btn", "btn-maps");
-    const isTraveling = getMode() === "trayecto";
-    mapsButton.textContent = isTraveling ? "⏱" : "📍";
-    mapsButton.title = isTraveling ? "En trayecto…" : "Open in Google Maps";
-    if (isTraveling) mapsButton.classList.add("btn-maps--active");
+    mapsButton.textContent = "📍";
+    mapsButton.title = "Open in Google Maps";
     mapsButton.addEventListener("click", (e) => {
       e.stopPropagation();
       callbacks.onMaps(address);
@@ -597,20 +594,75 @@ export function renderJobsList(
     const startBtn = document.createElement("button");
     startBtn.type = "button";
     startBtn.className = "btn btn-start-job";
-    const inTrayecto = getMode() === "trayecto";
     startBtn.innerHTML = job.savedState
       ? "▶️ Resume Completion"
-      : inTrayecto
-        ? "⏱ Iniciar Llamada"
-        : "📝 Start Completion";
+      : "📝 Start Completion";
     startBtn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (inTrayecto) startLlamada();
       callbacks.onStart(address);
     };
     startContainer.appendChild(startBtn);
     cardContent.appendChild(startContainer);
+
+    if (job.addressHistory && job.addressHistory.length > 0) {
+      const historyToggle = document.createElement("button");
+      historyToggle.type = "button";
+      historyToggle.className = "btn-history-toggle";
+      historyToggle.textContent = `🕐 Historial (${job.addressHistory.length})`;
+
+      const historyPanel = document.createElement("div");
+      historyPanel.className = "job-history-panel";
+      historyPanel.style.display = "none";
+
+      job.addressHistory.forEach((h) => {
+        const entry = document.createElement("div");
+        entry.className = "job-history-entry";
+
+        const header = document.createElement("div");
+        header.className = "job-history-header";
+        header.textContent = `📅 ${h.date}  👷 ${h.technician || "—"}`;
+        entry.appendChild(header);
+
+        const models = document.createElement("div");
+        models.className = "job-history-models";
+        if (h.indoor_model)  models.textContent += `🔵 ${h.indoor_model}  `;
+        if (h.outdoor_model) models.textContent += `🔴 ${h.outdoor_model}`;
+        if (models.textContent.trim()) entry.appendChild(models);
+
+        if (h.notes) {
+          const notesEl = document.createElement("div");
+          notesEl.className = "job-history-notes";
+          notesEl.textContent = h.notes;
+          entry.appendChild(notesEl);
+        }
+
+        if (h.items && h.items.length > 0) {
+          const itemsList = document.createElement("ul");
+          itemsList.className = "job-history-items";
+          h.items.forEach((it) => {
+            const li = document.createElement("li");
+            li.textContent = `${it.category}: ${it.item_name} ×${it.quantity}`;
+            itemsList.appendChild(li);
+          });
+          entry.appendChild(itemsList);
+        }
+
+        historyPanel.appendChild(entry);
+      });
+
+      historyToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = historyPanel.style.display !== "none";
+        historyPanel.style.display = open ? "none" : "block";
+        historyToggle.textContent = open
+          ? `🕐 Historial (${job.addressHistory.length})`
+          : `🔼 Historial (${job.addressHistory.length})`;
+      });
+
+      cardContent.appendChild(historyToggle);
+      cardContent.appendChild(historyPanel);
+    }
 
     jobItem.addEventListener("click", (e) => {
       if (document.body.classList.contains("focus-mode")) return;

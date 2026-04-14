@@ -50,7 +50,6 @@ import { Components } from "./components.js";
 import { initImageManager } from "./imageManager.js";
 import { initJobManager } from "./jobManager.js";
 import { initReportManager } from "./reportmanager.js";
-import { initTracker } from "./routeTracker.js";
 
 // Objeto central para referencias del DOM (Mejora de Mantenimiento y Escalado)
 const UI = {};
@@ -784,8 +783,6 @@ const init = () => {
       UI.addJobsButton.disabled = !UI.addressInput.value.trim();
     }
   }
-
-  initTracker();
 
   // Inicializar Job Manager (Maneja la lista de trabajos, edición, borrado, etc.)
   jobManager = initJobManager({

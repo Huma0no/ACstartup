@@ -1233,40 +1233,6 @@ select optgroup {
   font-size: 1.2em;
 }
 
-/* === Tracker Badge === */
-.tracker-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  background: var(--bg3, #2a2a3a);
-  border: 1px solid var(--border, #444);
-  font-size: 0.78em;
-  font-family: monospace;
-  color: var(--ice, #88ccff);
-  white-space: nowrap;
-}
-.tracker-badge[data-mode="trayecto"] {
-  color: var(--amber, #ffcc44);
-  border-color: var(--amber, #ffcc44);
-  animation: badge-pulse 1.4s ease-in-out infinite;
-}
-.tracker-badge[data-mode="llamada"] {
-  color: #77dd77;
-  border-color: #77dd77;
-}
-@keyframes badge-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.55; }
-}
-
-/* Maps button active (trayecto) */
-.btn-maps--active {
-  animation: badge-pulse 1.4s ease-in-out infinite;
-  color: var(--amber, #ffcc44) !important;
-}
-
 /* === Jobs Form === */
 .two-systems-wrap {
   margin-bottom: 8px;
@@ -2389,7 +2355,7 @@ input.input-lg {
 }
 
 #add-jobs-btn:not(:disabled) {
-  background-color: var(--color-success);
+  background: var(--color-success);
   color: white;
   border-color: var(--color-success-dark);
   font-weight: bold;
@@ -4729,3 +4695,36 @@ html[data-theme="darkMode"] .lv-item-badge {
   text-align: center;
   max-width: 220px;
 }
+
+/* --- Address History Panel (job cards) --- */
+.btn-history-toggle {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  font-size: 0.78em;
+  border: 1px solid #a5b4fc;
+  border-radius: 4px;
+  background: #eef2ff;
+  color: #3730a3;
+  cursor: pointer;
+}
+.job-history-panel {
+  margin-top: 6px;
+  border-left: 3px solid #a5b4fc;
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.job-history-entry {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.8em;
+}
+.job-history-header { font-weight: 600; margin-bottom: 2px; }
+.job-history-models { color: #475569; margin-bottom: 2px; }
+.job-history-notes  { color: #64748b; font-style: italic; margin-bottom: 2px; }
+.job-history-items  { margin: 2px 0 0 12px; padding: 0; color: #334155; }
+.job-history-items li { list-style: disc; margin-bottom: 1px; }
