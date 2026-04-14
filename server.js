@@ -245,7 +245,7 @@ app.post("/api/import", async (req, res) => {
         const result = await runStmt(insertJob, [
           address,
           date,
-          job.technician || "Default Tech",
+          job.technician || job.techName || "Default Tech",
           totalPrice,
           state.notes || "",
           Date.now(),
@@ -357,8 +357,8 @@ app.post("/api/import", async (req, res) => {
 
     // Store route times when present
     if (tiempoTrayecto > 0 || tiempoLlamadas > 0) {
-      const technician =
-        (jobs.find((j) => j.technician) || {}).technician || "Default Tech";
+      const techJob = jobs.find((j) => j.technician || j.techName) || {};
+      const technician = techJob.technician || techJob.techName || "Default Tech";
       const date = (() => {
         const j = jobs.find((j) => (j.savedState || {}).date);
         return j ? (j.savedState || {}).date : new Date().toISOString().split("T")[0];

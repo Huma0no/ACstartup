@@ -15,7 +15,7 @@ import {
   hideValidationErrors,
   showValidationErrors,
 } from "./ui.js";
-import { closeActiveSegment } from "./routeTracker.js";
+import { closeActiveSegment, getExportData, resetTracker } from "./routeTracker.js";
 
 export function initReportManager(context) {
   const {
@@ -996,9 +996,11 @@ export function initReportManager(context) {
         };
       });
 
+      const { tiempoTrayecto, tiempoLlamadas } = getExportData();
+      const payload = { tiempoTrayecto, tiempoLlamadas, jobs: jobsToExport };
       const dataStr =
         "data:text/json;charset=utf-8," +
-        encodeURIComponent(JSON.stringify(jobsToExport, null, 2));
+        encodeURIComponent(JSON.stringify(payload, null, 2));
       const downloadAnchorNode = document.createElement("a");
       downloadAnchorNode.setAttribute("href", dataStr);
       downloadAnchorNode.setAttribute(
@@ -1012,6 +1014,7 @@ export function initReportManager(context) {
       document.body.appendChild(downloadAnchorNode);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
+      resetTracker();
     });
   }
 
