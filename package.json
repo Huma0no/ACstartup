@@ -9,6 +9,11 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "sqlite3": "^5.1.7"
+  },
   "devDependencies": {
     "@playwright/test": "^1.57.0"
   }
