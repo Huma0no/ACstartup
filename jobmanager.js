@@ -10,7 +10,7 @@ import {
   setActiveJobAddress,
   getJobByAddress,
 } from "./jobs.js";
-import { normalizeAddress, calculateCFM } from "./utils.js";
+import { normalizeAddress } from "./utils.js";
 import { heaters, unidadesExteriores } from "./weightInData.js";
 import { toggleWorkspace, switchToTab, createChip } from "./ui.js";
 import { STORAGE_KEYS } from "./constants.js";

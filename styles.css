@@ -102,8 +102,7 @@ body {
 
 /* Estilos comunes para elementos */
 .container,
-.section,
-.navbar {
+.section {
   padding: 4px;
   border: 2px solid;
   border-color: var(--container-border-light) var(--container-border-dark)
@@ -131,17 +130,6 @@ body {
   color: var(--button-text-active);
   font-size: var(--font-size);
   font-weight: bold;
-}
-
-.theme-select {
-  appearance: none;
-  background: transparent;
-  border: none;
-  font-size: 1.2em;
-  cursor: pointer;
-  padding: 0 4px;
-  text-align: center;
-  width: auto;
 }
 
 /* Theme Switch (Apagador) */
@@ -315,11 +303,6 @@ h1 {
 .job-face {
   padding: 6px;
   width: 100%;
-}
-
-.equip-title {
-  font-weight: bold;
-  font-size: 9.5pt;
 }
 
 .equip-grid {
@@ -664,16 +647,6 @@ input[type="range"]::-moz-range-thumb {
   border-color: var(--container-border-dark);
 }
 
-.inline-select-group {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.inline-select-group .input-select {
-  flex: 1 1 160px;
-}
-
 #quantity-value {
   font-size: var(--font-size);
   color: var(--text-color);
@@ -708,23 +681,12 @@ input[type="range"]::-moz-range-thumb {
   z-index: var(--z-raised);
 }
 
-/* Efecto de enfoque: Difuminar los no seleccionados */
-#report-content.has-selection .report-card:not(.selected) {
-  opacity: 0.4;
-  filter: blur(2px);
-  transform: scale(0.98);
-}
-
 .report-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
   margin-bottom: 8px;
-}
-
-.report-head .delete-all-inline {
-  margin-left: auto;
 }
 
 .report-title {
@@ -1180,9 +1142,6 @@ select optgroup {
 .mb-1 {
   margin-bottom: 4px;
 }
-.mb-2 {
-  margin-bottom: 8px;
-}
 .flex-row {
   display: flex;
   gap: 8px;
@@ -1398,12 +1357,6 @@ select optgroup {
   color: var(--text-color) !important;
 }
 
-.file-status-text {
-  font-size: 0.85em;
-  text-align: center;
-  color: var(--text-color);
-  opacity: 0.8;
-}
 
 .btn-download-zip {
   margin-top: 0;
@@ -2126,17 +2079,6 @@ input.input-lg {
   color: white;
 }
 
-/* Misc (Grey) */
-.btn-misc {
-  background-color: var(--acc-grey-bg);
-  color: var(--acc-grey-text);
-  border-color: var(--acc-grey-border);
-}
-.btn.btn-misc.active {
-  background-color: var(--acc-grey-active);
-  color: white;
-}
-
 /* Ocultar botón Weight-In-Data (ahora es automático) */
 [data-accessory="Weight-In-Data"] {
   display: none !important;
@@ -2152,105 +2094,9 @@ input.input-lg {
    NEW WORKSPACE LAYOUT (Accordion + Single Screen)
    ======================================== */
 
-.workspace-global-bar {
-  background: var(--container-bg);
-  padding: 12px;
-  border-bottom: 1px solid var(--container-border-dark);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.toggles-row {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  justify-content: space-around;
-}
-
-/* Toggle Switch Moderno */
-.toggle-switch-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  background: var(--button-bg);
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--container-border-dark);
-}
-
-.toggle-switch-container input {
-  display: none;
-}
-
-.toggle-slider {
-  width: 36px;
-  height: 20px;
-  background-color: #ccc;
-  border-radius: 20px;
-  position: relative;
-  transition: var(--tr-std);
-}
-
-.toggle-slider::before {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: var(--tr-std);
-}
-
-.toggle-switch-container input:checked + .toggle-slider {
-  background-color: var(--button-bg-active);
-}
-
-.toggle-switch-container input:checked + .toggle-slider::before {
-  transform: translateX(16px);
-}
-
 .toggle-label {
   font-weight: bold;
   font-size: 0.9em;
-}
-
-/* Grid Buttons (Tarjetas) */
-.grid-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.card-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  border: 2px solid var(--container-border-dark);
-  border-radius: 8px;
-  background: var(--button-bg);
-  cursor: pointer;
-  position: relative;
-  min-height: 70px;
-  transition: all 0.15s;
-}
-
-.card-btn.active {
-  background: var(--button-bg-active);
-  color: var(--button-text-active);
-  border-color: var(--button-bg-active);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
 
 .card-add {
@@ -2260,24 +2106,6 @@ input.input-lg {
   font-size: 1.2em;
   font-weight: bold;
   opacity: 0.4;
-}
-
-.card-btn.active .card-add {
-  content: "✓";
-  opacity: 1;
-  color: white;
-}
-
-.card-icon {
-  font-size: 1.8em;
-  margin-bottom: 4px;
-}
-
-.card-label {
-  font-size: 0.85em;
-  font-weight: bold;
-  text-align: center;
-  line-height: 1.2;
 }
 
 /* ========================================
@@ -2578,28 +2406,6 @@ html[data-theme="paper"] .app-header-controls .btn:hover {
   box-shadow: none;
 }
 
-/* Navbar */
-html[data-theme="paper"] .navbar {
-  background: var(--container-bg);
-  border: 1px solid var(--container-border-dark);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border-radius: var(--border-radius);
-}
-
-html[data-theme="paper"] .nav-link {
-  background: var(--button-bg);
-  border: 1px solid var(--container-border-dark);
-  text-decoration: none;
-  color: var(--btn-text);
-  font-family: var(--font-family);
-  font-weight: 500;
-  border-radius: var(--border-radius);
-}
-
-html[data-theme="paper"] .nav-link:hover {
-  background: var(--button-bg-hover);
-}
-
 /* Buttons */
 html[data-theme="paper"] .btn {
   background: linear-gradient(180deg, #ffffff 0%, #f1f5fb 100%);
@@ -2723,14 +2529,6 @@ html[data-theme="paper"] .job-item {
 
 html[data-theme="paper"] .job-item::before {
   display: none;
-}
-
-html[data-theme="paper"] .has-active-job .job-item.active-job {
-  border: 2px solid var(--color-primary) !important;
-  background: #eff6ff !important;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2) !important;
-  transform: none;
-  z-index: var(--z-2);
 }
 
 html[data-theme="paper"] .job-item.selected label {
@@ -3863,24 +3661,6 @@ html[data-theme="darkMode"] .ts-provider-chip {
   }
 }
 
-/* Claude response */
-.ts-claude-response {
-  background: var(--input-bg);
-  border: 1px solid var(--container-border-dark);
-  padding: 12px;
-  font-size: 0.83em;
-  line-height: 1.55;
-  color: var(--text-color);
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 340px;
-  overflow-y: auto;
-  border-radius: var(--border-radius);
-}
-.ts-claude-response.hidden {
-  display: none;
-}
-
 /* ── Chat history ── */
 .ts-chat-history {
   display: flex;
@@ -4144,11 +3924,6 @@ html[data-theme="darkMode"] .ts-severity-badge.ts-critical {
 .ts-job-picker-item:hover {
   background: var(--button-bg-hover);
 }
-.ts-job-picker-item.ts-selected {
-  background: var(--button-bg-active);
-  color: var(--button-text-active);
-  border-color: var(--container-border-dark);
-}
 .ts-job-picker-address {
   font-weight: bold;
   font-size: 0.85em;
@@ -4173,14 +3948,6 @@ html[data-theme="darkMode"] .ts-severity-badge.ts-critical {
   border-radius: var(--border-radius);
 }
 
-/* No jobs empty state */
-.ts-no-jobs {
-  font-size: 0.82em;
-  color: var(--text-color);
-  opacity: 0.6;
-  text-align: center;
-  padding: 10px 0;
-}
 
 /* Generic mode badge */
 .ts-generic-badge {

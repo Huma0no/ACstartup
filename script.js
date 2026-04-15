@@ -1604,7 +1604,6 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("./sw.js", { updateViaCache: "none" })
       .then((reg) => {
-        console.log("Service Worker registered successfully");
         reg.addEventListener("updatefound", () => {
           const newWorker = reg.installing;
           newWorker.addEventListener("statechange", () => {

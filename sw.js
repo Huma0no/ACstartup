@@ -1,4 +1,4 @@
-const CACHE_NAME = "service-call-v15";
+const CACHE_NAME = "service-call-v16";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,7 +24,6 @@ const ASSETS = [
   "./troubleshootingEngine.js",
   "./claudeAssist.js",
   "./troubleshootingPanel.js",
-  "./formmanager.js",
   "./reportmanager.js",
   "./lv.js",
   "./manifest.json",
