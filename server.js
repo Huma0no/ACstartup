@@ -593,7 +593,31 @@ app.patch("/api/jobs/:id/notes", (req, res) => {
   });
 });
 
-// 9c. PATCH weight_in_json for a job
+// 9c. PATCH address of a saved job
+app.patch("/api/jobs/:id/address", (req, res) => {
+  const id = req.params.id;
+  const { address, edited_by } = req.body;
+  if (!address?.trim()) return res.status(400).json({ error: "address required" });
+  const newAddr = address.trim().toUpperCase();
+
+  db.get("SELECT address FROM jobs WHERE id = ?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Job not found" });
+    if (row.address === newAddr) return res.json({ ok: true });
+
+    db.run("UPDATE jobs SET address = ? WHERE id = ?", [newAddr, id], function (err) {
+      if (err) {
+        if (err.message.includes("UNIQUE"))
+          return res.status(409).json({ error: "Ya existe un job en esta dirección para la misma fecha" });
+        return res.status(500).json({ error: err.message });
+      }
+      logEdit(id, "address", row.address, newAddr, edited_by);
+      res.json({ ok: true });
+    });
+  });
+});
+
+// 9d. PATCH weight_in_json for a job
 app.patch("/api/jobs/:id/weight_in", (req, res) => {
   const id = req.params.id;
   const { weight_in_json, edited_by } = req.body;

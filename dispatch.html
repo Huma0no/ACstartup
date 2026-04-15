@@ -1778,11 +1778,12 @@
             <!-- ── NIVEL 1: Captura rápida ── -->
 
             <!-- Address -->
-            <div class="edit-field" style="margin-bottom:10px">
+            <div class="edit-field" style="margin-bottom:10px;position:relative" id="nj-addr-wrap">
               <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Address</label>
               <input type="text" id="nj-address" placeholder="32122 WATERLILY VIEW COURT"
                 style="font-size:14px;font-family:var(--mono);text-transform:uppercase"
-                oninput="this.value=this.value.toUpperCase()" />
+                oninput="this.value=this.value.toUpperCase();njAddrOnInput(this.value)" />
+              <div id="nj-addr-dropdown" class="gs-dropdown" style="display:none"></div>
             </div>
 
             <!-- Service chips -->
@@ -5865,6 +5866,73 @@
         if (resetBtn)  resetBtn.style.display = "none";
       }
 
+      // ── New Job: address autocomplete from history ──
+      let _njAddrTimer = null;
+
+      function njAddrOnInput(val) {
+        clearTimeout(_njAddrTimer);
+        const dd = document.getElementById("nj-addr-dropdown");
+        if (val.length < 2) { dd.style.display = "none"; return; }
+        _njAddrTimer = setTimeout(() => njAddrSearch(val), 250);
+      }
+
+      async function njAddrSearch(q) {
+        const dd = document.getElementById("nj-addr-dropdown");
+        dd.innerHTML = `<div class="gs-empty" style="padding:8px 12px">Searching…</div>`;
+        dd.style.display = "block";
+        try {
+          const res = await fetch(API_BASE + "/jobs/search?q=" + encodeURIComponent(q));
+          if (!res.ok) { dd.style.display = "none"; return; }
+          const results = await res.json();
+          if (!results.length) { dd.style.display = "none"; return; }
+          // One entry per address — most recent
+          const seen = new Map();
+          results.forEach(r => { if (!seen.has(r.address)) seen.set(r.address, r); });
+          const unique = [...seen.values()].slice(0, 6);
+          dd.innerHTML = unique.map((r, i) => `
+            <div class="gs-item" onclick="njAddrSelect(${i})">
+              <span class="gs-item-icon">🕐</span>
+              <div class="gs-item-main">
+                <div class="gs-item-title">${esc(r.address)}</div>
+                <div class="gs-item-sub">${r.date || ""}${r.technician ? " · " + esc(r.technician) : ""}${r.indoor_model ? " · " + esc(r.indoor_model) : ""}</div>
+              </div>
+            </div>`).join("");
+          dd._results = unique;
+        } catch(_) { dd.style.display = "none"; }
+      }
+
+      function njAddrSelect(idx) {
+        const dd = document.getElementById("nj-addr-dropdown");
+        const r  = dd._results?.[idx];
+        if (!r) return;
+        const addrInput = document.getElementById("nj-address");
+        if (addrInput) addrInput.value = r.address;
+        if (r.subdivision) { const el = document.getElementById("nj-subdivision"); if (el) el.value = r.subdivision; }
+        if (r.builder)     { const el = document.getElementById("nj-builder");     if (el) el.value = r.builder;     }
+        if (r.indoor_model)  njAutoFillEquip("furnace", r.indoor_model,  NJ_HEATER_DATA);
+        if (r.outdoor_model) njAutoFillEquip("outdoor", r.outdoor_model, NJ_OUTDOOR_DATA);
+        dd.style.display = "none";
+      }
+
+      function njAutoFillEquip(field, model, data) {
+        const seriesSel = document.getElementById(`nj-${field}-series`);
+        const modelSel  = document.getElementById(`nj-${field}`);
+        if (!seriesSel || !modelSel) return;
+        const series = Object.entries(data).find(([, models]) => models.includes(model))?.[0];
+        if (!series) return;
+        seriesSel.value = series;
+        njLoadModels(field);
+        modelSel.value = model;
+        njModelSelected(field, modelSel);
+      }
+
+      document.addEventListener("click", (e) => {
+        if (!document.getElementById("nj-addr-wrap")?.contains(e.target)) {
+          const dd = document.getElementById("nj-addr-dropdown");
+          if (dd) dd.style.display = "none";
+        }
+      });
+
       // Init after EQUIPMENT is defined (merged with reports DOMContentLoaded below)
 
       // ── New Job: service chips ──
@@ -7591,6 +7659,12 @@
           <!-- EDIT mode -->
           <div id="hd-edit-${record.id}" style="display:none">
             <div style="margin-bottom:10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Address</div>
+              <input type="text" id="hd-addr-${record.id}" value="${esc(record.address||"")}"
+                style="width:100%;font-size:12px;padding:6px 8px;background:var(--bg2);border:1px solid var(--amber-dim);border-radius:3px;color:var(--amber);font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
+                oninput="this.value=this.value.toUpperCase()" />
+            </div>
+            <div style="margin-bottom:10px">
               <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Report Text</div>
               <textarea id="hd-rt-${record.id}" rows="3" style="width:100%;font-size:12px;line-height:1.5;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:8px;resize:vertical;box-sizing:border-box">${esc(record.report_text||"")}</textarea>
             </div>
@@ -9054,6 +9128,21 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       // Save all changes for a record
       async function hdSave(jobId) {
         const editedBy = document.getElementById(`hd-editor-${jobId}`).value.trim() || "dispatcher";
+
+        // 0. Save address (if changed)
+        const newAddr = document.getElementById(`hd-addr-${jobId}`)?.value.trim().toUpperCase();
+        if (newAddr) {
+          const addrRes = await fetch(`${API_BASE}/jobs/${jobId}/address`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: newAddr, edited_by: editedBy }),
+          });
+          if (!addrRes.ok) {
+            const err = await addrRes.json().catch(() => ({}));
+            alert("Error al actualizar dirección: " + (err.error || "error desconocido"));
+            return;
+          }
+        }
 
         // 1. Save report_text
         const rt = document.getElementById(`hd-rt-${jobId}`).value;

@@ -120,7 +120,7 @@ export function initJobManager(context) {
     return false;
   }
 
-  function addJobs() {
+  async function addJobs() {
     const addressesInput = UI.addressInput.value.trim();
     const detailsInput = UI.addressDetailsInput
       ? UI.addressDetailsInput.value.trim()
@@ -168,25 +168,47 @@ export function initJobManager(context) {
       return;
     }
 
-    addresses.forEach((address) => {
+    // Consultar historial para todas las direcciones de una vez
+    let historyMap = {};
+    try {
+      const resp = await fetch("/api/jobs/batch-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addresses: addresses.map(normalizeAddress) }),
+      });
+      if (resp.ok) historyMap = await resp.json();
+    } catch (_) {
+      // Servidor no disponible — continuar sin historial
+    }
+
+    for (const address of addresses) {
       const normalized = normalizeAddress(address);
+      const history = historyMap[normalized] || [];
+      const latest = history[0] || null;
+
+      const tstatFromHistory =
+        latest?.items?.find((i) => i.category === "Thermostat") || null;
+
       addJob({
         address: normalized,
         details: detailsInput,
         subdivision: subdivisionInput,
         builder: builderInput,
-        heaterModel: selectedHeater,
-        outdoorModel: selectedOutdoor,
+        heaterModel:  selectedHeater  || latest?.indoor_model  || "",
+        outdoorModel: selectedOutdoor || latest?.outdoor_model || "",
         heaterModel2: isTwoSystems ? selectedHeater2 : "",
         outdoorModel2: isTwoSystems ? selectedOutdoor2 : "",
         isTwoSystems: isTwoSystems,
         thermostat: selectedTstat
           ? { type: selectedTstat, qty: selectedTstatQty }
-          : null,
-        extractedAccessories: selectedAcc, // Ya es un array
+          : tstatFromHistory
+            ? { type: tstatFromHistory.item_name, qty: tstatFromHistory.quantity }
+            : null,
+        extractedAccessories: selectedAcc,
+        addressHistory: history,
         savedState: null,
       });
-    });
+    }
 
     UI.addressInput.value = "";
     setState({ address: "" });
