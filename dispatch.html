@@ -4791,6 +4791,15 @@
         };
 
         const hasWid2 = Object.values(wid2).some(v => v !== '' && v != null);
+        const hasEquip2 = !!(j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems);
+
+        // Always-visible equipment label+input (no data-cef — never hidden)
+        const equipField = (id, label, val) =>
+          `<div style="margin-bottom:6px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--text-dim);margin-bottom:2px">${label}</div>
+            ${inp(id, val || '')}
+          </div>`;
 
         return `
           <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -4819,10 +4828,28 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-bottom:4px">
             ${field(`ce-subdiv-${idx}`,      'Subdivision',   j.subdivision)}
             ${field(`ce-builder-${idx}`,     'Builder',       j.builder)}
-            ${field(`ce-indoor-${idx}`,      'Indoor Model',  j.heaterModel)}
-            ${field(`ce-outdoor-${idx}`,     'Outdoor Model', j.outdoorModel)}
-            ${field(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant)}
           </div>
+
+          <!-- Equipment — always visible regardless of weigh-in data -->
+          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--ice);margin-bottom:8px">Equipment — System 1</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+              ${equipField(`ce-indoor-${idx}`,      'Indoor Model',  j.heaterModel)}
+              ${equipField(`ce-outdoor-${idx}`,     'Outdoor Model', j.outdoorModel)}
+              ${equipField(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant)}
+            </div>
+          </div>
+
+          ${hasEquip2 ? `
+          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                        color:var(--ice);margin-bottom:8px">Equipment — System 2</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+              ${equipField(`ce-indoor2-${idx}`,  'Indoor Model 2',  j.heaterModel2)}
+              ${equipField(`ce-outdoor2-${idx}`, 'Outdoor Model 2', j.outdoorModel2)}
+            </div>
+          </div>` : ''}
 
           <!-- Notes -->
           <div style="margin-bottom:10px">
@@ -5022,12 +5049,14 @@
         if (!j.savedState) j.savedState = {};
 
         // Basic fields
-        j.address     = document.getElementById(`ce-addr-${idx}`).value.trim();
-        j.subdivision = document.getElementById(`ce-subdiv-${idx}`)?.value.trim() ?? j.subdivision;
-        j.builder     = document.getElementById(`ce-builder-${idx}`)?.value.trim() ?? j.builder;
-        j.heaterModel = document.getElementById(`ce-indoor-${idx}`)?.value.trim() ?? j.heaterModel;
-        j.outdoorModel= document.getElementById(`ce-outdoor-${idx}`)?.value.trim() ?? j.outdoorModel;
-        j.refrigerant = document.getElementById(`ce-refrigerant-${idx}`)?.value.trim() ?? j.refrigerant;
+        j.address      = document.getElementById(`ce-addr-${idx}`).value.trim();
+        j.subdivision  = document.getElementById(`ce-subdiv-${idx}`)?.value.trim() ?? j.subdivision;
+        j.builder      = document.getElementById(`ce-builder-${idx}`)?.value.trim() ?? j.builder;
+        j.heaterModel  = document.getElementById(`ce-indoor-${idx}`)?.value.trim() ?? j.heaterModel;
+        j.outdoorModel = document.getElementById(`ce-outdoor-${idx}`)?.value.trim() ?? j.outdoorModel;
+        j.refrigerant  = document.getElementById(`ce-refrigerant-${idx}`)?.value.trim() ?? j.refrigerant;
+        j.heaterModel2  = document.getElementById(`ce-indoor2-${idx}`)?.value.trim() ?? j.heaterModel2 ?? "";
+        j.outdoorModel2 = document.getElementById(`ce-outdoor2-${idx}`)?.value.trim() ?? j.outdoorModel2 ?? "";
         j.savedState.notes = document.getElementById(`ce-notes-${idx}`).value.trim();
 
         // Thermostat
@@ -6242,7 +6271,7 @@
           return jobs.filter((j) => ids.includes(j.id));
         }
 
-        function doExportPWA() {
+        async function doExportPWA() {
           const selected = getSelectedExportJobs();
           if (selected.length === 0) {
             showExportStatus("⚠ Select at least one job", "var(--amber)");
@@ -6295,6 +6324,22 @@
             "Daikin One Touch": "Daikin One",
           };
 
+          // Fetch address history for all selected jobs
+          let historyMap = {};
+          try {
+            const addresses = selected
+              .map((j) => (j.address || "").toUpperCase().trim())
+              .filter(Boolean);
+            const resp = await fetch(API_BASE + "/jobs/batch-history", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ addresses }),
+            });
+            if (resp.ok) historyMap = await resp.json();
+          } catch (_) {
+            // Server unavailable — export without history
+          }
+
           const pwaJobs = selected.map((j) => {
             // Extract thermostat from accessory hints (if any)
             const hints = j.accessoryHints || [];
@@ -6308,14 +6353,18 @@
               .filter((h) => !TSTAT_HINTS.includes(h))
               .map((h) => HINT_TO_ACC[h] || h);
 
+            const addr = (j.address || "").toUpperCase().trim();
+            const history = historyMap[addr] || [];
+            const latest = history[0] || null;
+
             return {
               // ── Core fields (PWA loadJobsFromLocalStorage uses these) ──
-              address: (j.address || "").toUpperCase().trim(),
+              address: addr,
               details: j.importantNotes || "",
               subdivision: j.subdivision || "",
               builder: j.builder || "",
-              heaterModel: j.furnaceModel || j.heaterModel || "",
-              outdoorModel: j.outdoorModel || "",
+              heaterModel: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
+              outdoorModel: j.outdoorModel || latest?.outdoor_model || "",
               heaterModel2: j.furnaceModel2 || j.heaterModel2 || "",
               outdoorModel2: j.outdoorModel2 || "",
               isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
@@ -6324,6 +6373,7 @@
               allHeaters: [],
               allUnits: [],
               savedState: null,
+              addressHistory: history,
               // ── Extra dispatch fields (PWA stores but ignores) ──
               orderNumber: j.orderNumber || "",
               scheduledTime: j.scheduledTime || "",
@@ -6526,7 +6576,7 @@
         return jobs.filter((j) => ids.includes(j.id));
       }
 
-      function doExportPWA() {
+      async function doExportPWA() {
         const selected = getSelectedExportJobs();
         if (selected.length === 0) {
           showExportStatus("⚠ Select at least one job", "var(--amber)");
@@ -6579,6 +6629,22 @@
           "Daikin One Touch": "Daikin One",
         };
 
+        // Fetch address history for all selected jobs
+        let historyMap = {};
+        try {
+          const addresses = selected
+            .map((j) => (j.address || "").toUpperCase().trim())
+            .filter(Boolean);
+          const resp = await fetch(API_BASE + "/jobs/batch-history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ addresses }),
+          });
+          if (resp.ok) historyMap = await resp.json();
+        } catch (_) {
+          // Server unavailable — export without history
+        }
+
         const pwaJobs = selected.map((j) => {
           // Extract thermostat from accessory hints (if any)
           const hints = j.accessoryHints || [];
@@ -6592,14 +6658,18 @@
             .filter((h) => !TSTAT_HINTS.includes(h))
             .map((h) => HINT_TO_ACC[h] || h);
 
+          const addr = (j.address || "").toUpperCase().trim();
+          const history = historyMap[addr] || [];
+          const latest = history[0] || null;
+
           return {
             // ── Core fields (PWA loadJobsFromLocalStorage uses these) ──
-            address: (j.address || "").toUpperCase().trim(),
+            address: addr,
             details: j.importantNotes || "",
             subdivision: j.subdivision || "",
             builder: j.builder || "",
-            heaterModel: j.furnaceModel || j.heaterModel || "",
-            outdoorModel: j.outdoorModel || "",
+            heaterModel: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
+            outdoorModel: j.outdoorModel || latest?.outdoor_model || "",
             heaterModel2: j.furnaceModel2 || j.heaterModel2 || "",
             outdoorModel2: j.outdoorModel2 || "",
             isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
@@ -6608,6 +6678,7 @@
             allHeaters: [],
             allUnits: [],
             savedState: null,
+            addressHistory: history,
             // ── Extra dispatch fields (PWA stores but ignores) ──
             orderNumber: j.orderNumber || "",
             scheduledTime: j.scheduledTime || "",
@@ -7663,6 +7734,35 @@
               <input type="text" id="hd-addr-${record.id}" value="${esc(record.address||"")}"
                 style="width:100%;font-size:12px;padding:6px 8px;background:var(--bg2);border:1px solid var(--amber-dim);border-radius:3px;color:var(--amber);font-family:var(--mono);box-sizing:border-box;text-transform:uppercase"
                 oninput="this.value=this.value.toUpperCase()" />
+            </div>
+            <div style="margin-bottom:12px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);margin-bottom:8px">Equipment — System 1</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+                <div>
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">Indoor Model</div>
+                  <input type="text" id="hd-in1-${record.id}" value="${esc(record.indoor_model||"")}"
+                    style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box" />
+                </div>
+                <div>
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">Outdoor Model</div>
+                  <input type="text" id="hd-out1-${record.id}" value="${esc(record.outdoor_model||"")}"
+                    style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box" />
+                </div>
+              </div>
+              ${(record.indoor_model_2 || record.outdoor_model_2) ? `
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);margin:10px 0 8px">Equipment — System 2</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+                <div>
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">Indoor Model 2</div>
+                  <input type="text" id="hd-in2-${record.id}" value="${esc(record.indoor_model_2||"")}"
+                    style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box" />
+                </div>
+                <div>
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">Outdoor Model 2</div>
+                  <input type="text" id="hd-out2-${record.id}" value="${esc(record.outdoor_model_2||"")}"
+                    style="width:100%;font-size:12px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box" />
+                </div>
+              </div>` : ""}
             </div>
             <div style="margin-bottom:10px">
               <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Report Text</div>
@@ -9144,7 +9244,20 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
           }
         }
 
-        // 1. Save report_text
+        // 1. Save equipment models
+        await fetch(`${API_BASE}/jobs/${jobId}/equipment`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            indoor_model:    document.getElementById(`hd-in1-${jobId}`)?.value.trim() ?? "",
+            outdoor_model:   document.getElementById(`hd-out1-${jobId}`)?.value.trim() ?? "",
+            indoor_model_2:  document.getElementById(`hd-in2-${jobId}`)?.value.trim() ?? "",
+            outdoor_model_2: document.getElementById(`hd-out2-${jobId}`)?.value.trim() ?? "",
+            edited_by: editedBy,
+          }),
+        });
+
+        // 2. Save report_text
         const rt = document.getElementById(`hd-rt-${jobId}`).value;
         await fetch(`${API_BASE}/jobs/${jobId}/report_text`, {
           method: "PATCH",
