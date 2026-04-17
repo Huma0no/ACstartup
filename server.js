@@ -38,6 +38,8 @@ function initDB() {
       builder TEXT,
       indoor_model TEXT,
       outdoor_model TEXT,
+      indoor_model_2 TEXT,
+      outdoor_model_2 TEXT,
       weight_in_json TEXT,
       weight_in_2_json TEXT,
       UNIQUE(address, date)
@@ -49,6 +51,8 @@ function initDB() {
       "builder TEXT",
       "indoor_model TEXT",
       "outdoor_model TEXT",
+      "indoor_model_2 TEXT",
+      "outdoor_model_2 TEXT",
       "weight_in_json TEXT",
       "weight_in_2_json TEXT",
       "report_text TEXT",
@@ -178,9 +182,9 @@ app.post("/api/import", async (req, res) => {
   const insertJob = db.prepare(
     `INSERT INTO jobs (
       address, date, technician, total_price, notes, created_at,
-      subdivision, builder, indoor_model, outdoor_model, weight_in_json, weight_in_2_json,
-      report_text
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      subdivision, builder, indoor_model, outdoor_model, indoor_model_2, outdoor_model_2,
+      weight_in_json, weight_in_2_json, report_text
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertItem = db.prepare(
     `INSERT INTO job_items (job_id, category, item_name, quantity, price) VALUES (?, ?, ?, ?, ?)`
@@ -233,6 +237,8 @@ app.post("/api/import", async (req, res) => {
           job.builder || "",
           job.heaterModel || "",
           job.outdoorModel || "",
+          job.heaterModel2 || "",
+          job.outdoorModel2 || "",
           JSON.stringify(state.weightInData || {}),
           JSON.stringify(state.weightInData2 || {}),
           job.reportText || "",
@@ -453,6 +459,7 @@ app.post("/api/jobs/batch-history", (req, res) => {
     const sql = `
       SELECT j.id, j.date, j.technician, j.notes,
              j.indoor_model, j.outdoor_model,
+             j.indoor_model_2, j.outdoor_model_2,
              j.weight_in_json, j.weight_in_2_json,
              j.subdivision, j.builder,
              (SELECT json_group_array(json_object(
@@ -630,6 +637,36 @@ app.patch("/api/jobs/:id/weight_in", (req, res) => {
       res.json({ ok: true });
     });
   });
+});
+
+// 9e. PATCH equipment models for a job
+app.patch("/api/jobs/:id/equipment", (req, res) => {
+  const id = req.params.id;
+  const { indoor_model, outdoor_model, indoor_model_2, outdoor_model_2, edited_by } = req.body;
+  db.get(
+    "SELECT indoor_model, outdoor_model, indoor_model_2, outdoor_model_2 FROM jobs WHERE id = ?",
+    [id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: "Job not found" });
+      const newIn1  = indoor_model    !== undefined ? indoor_model    : row.indoor_model;
+      const newOut1 = outdoor_model   !== undefined ? outdoor_model   : row.outdoor_model;
+      const newIn2  = indoor_model_2  !== undefined ? indoor_model_2  : row.indoor_model_2;
+      const newOut2 = outdoor_model_2 !== undefined ? outdoor_model_2 : row.outdoor_model_2;
+      db.run(
+        "UPDATE jobs SET indoor_model = ?, outdoor_model = ?, indoor_model_2 = ?, outdoor_model_2 = ? WHERE id = ?",
+        [newIn1, newOut1, newIn2, newOut2, id],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          if (newIn1  !== row.indoor_model)    logEdit(id, "indoor_model",    row.indoor_model,    newIn1,  edited_by);
+          if (newOut1 !== row.outdoor_model)   logEdit(id, "outdoor_model",   row.outdoor_model,   newOut1, edited_by);
+          if (newIn2  !== row.indoor_model_2)  logEdit(id, "indoor_model_2",  row.indoor_model_2,  newIn2,  edited_by);
+          if (newOut2 !== row.outdoor_model_2) logEdit(id, "outdoor_model_2", row.outdoor_model_2, newOut2, edited_by);
+          res.json({ ok: true });
+        }
+      );
+    }
+  );
 });
 
 // 9d. PATCH a single job_item (price, quantity, item_name, category)

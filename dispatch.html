@@ -6465,8 +6465,8 @@
           const hints = j.accessoryHints || [];
           const tstatHint = hints.find((h) => TSTAT_HINTS.includes(h));
           const thermostat = tstatHint
-            ? { type: TSTAT_NAME_MAP[tstatHint] || tstatHint, qty: "1" }
-            : null;
+            ? { type: TSTAT_NAME_MAP[tstatHint] || tstatHint, qty: j.thermostat?.qty || "1" }
+            : (j.thermostat || null);
 
           // Map hints → PWA accessory names (exclude tstat hints — they go in thermostat field)
           const extractedAccessories = hints
