@@ -1931,7 +1931,9 @@
                 <option value="Harmony">Harmony</option>
                 <option value="RDS">RDS</option>
                 <option value="Trane Harness">Trane Harness</option>
-                <option value="LP Kit">LP Kit</option>
+                <option value="LP Kit Lennox 1stg">LP Kit Lennox 1stg</option>
+                <option value="LP Kit Lennox 2stg">LP Kit Lennox 2stg</option>
+                <option value="LP Kit Goodman">LP Kit Goodman</option>
                 <option value="eBypass">eBypass</option>
                 <option value="__new__" style="font-weight:700">+ New…</option>
               </select>
@@ -2474,7 +2476,7 @@
         <div class="panel" id="panel-reports">
           <div class="sec-header">
             <div class="sec-title">Reports</div>
-            <div class="sec-sub">Equipment · Refrigerant · Income</div>
+            <div class="sec-sub">Equipment · Refrigerant · Income · Restock</div>
             <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="loadReportsPanel()">↻ Refresh</button>
           </div>
 
@@ -2574,6 +2576,34 @@
               </div>
 
             </div><!-- /3-col grid -->
+          </div>
+
+          <!-- ── Restock Queue ── -->
+          <div class="card" style="margin:12px 20px 0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+              <div>
+                <div class="card-title" style="margin:0">Restock Queue</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Pending equipment — oldest first</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button type="button" class="btn btn-outline btn-sm" onclick="loadRestockPending()">↻ Load</button>
+                <button type="button" class="btn btn-amber btn-sm" id="restock-print-btn" style="display:none" onclick="printAndMarkRestock()">🖨 Print &amp; Mark Restocked</button>
+              </div>
+            </div>
+            <div id="restock-list" style="display:flex;flex-direction:column;gap:8px">
+              <div style="color:var(--text-dim);font-size:11px">Click Load to view pending restock items.</div>
+            </div>
+            <details style="margin-top:12px">
+              <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em;user-select:none" onclick="loadRestockHistory()">
+                <span style="color:var(--amber)">▸</span> Restock History
+              </summary>
+              <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:12px;background:var(--bg2)">
+                <div class="tbl-wrap" id="restock-hist-wrap" style="display:none;max-height:260px;overflow-y:auto">
+                  <table><thead id="restock-hist-thead"></thead><tbody id="restock-hist-tbody"></tbody></table>
+                </div>
+                <div id="restock-hist-empty" style="color:var(--text-dim);font-size:11px">Click to load history.</div>
+              </div>
+            </details>
           </div>
 
           <!-- ── Quick Stats (collapsible) ── -->
@@ -3167,7 +3197,9 @@
               <option value="Harmony">Harmony</option>
               <option value="RDS">RDS</option>
               <option value="Trane Harness">Trane Harness</option>
-              <option value="LP Kit">LP Kit</option>
+              <option value="LP Kit Lennox 1stg">LP Kit Lennox 1stg</option>
+              <option value="LP Kit Lennox 2stg">LP Kit Lennox 2stg</option>
+              <option value="LP Kit Goodman">LP Kit Goodman</option>
               <option value="eBypass">eBypass</option>
               <option value="__new__" style="font-weight:700">+ New…</option>
             </select>
@@ -3854,7 +3886,9 @@
         "Ecoil Wire",
         "Trane Harness",
         "Harness",
-        "LP Kit",
+        "LP Kit Lennox 1stg",
+        "LP Kit Lennox 2stg",
+        "LP Kit Goodman",
         "RDS",
         "Float Switch",
         "A2L Kit",
@@ -5762,7 +5796,9 @@
         "Dehum",
         "Ecoil Wire",
         "Trane Harness",
-        "LP Kit",
+        "LP Kit Lennox 1stg",
+        "LP Kit Lennox 2stg",
+        "LP Kit Goodman",
         "RDS",
         "A2L Kit",
       ];
@@ -6421,7 +6457,9 @@
           Dehum: "Dehum",
           "Ecoil Wire": "Ecoil Wire",
           "Trane Harness": "Trane Harness",
-          "LP Kit": "LP Kit",
+          "LP Kit Lennox 1stg": "LP Kit Lennox 1stg",
+          "LP Kit Lennox 2stg": "LP Kit Lennox 2stg",
+          "LP Kit Goodman": "LP Kit Goodman",
           RDS: "RDS",
         };
 
@@ -8369,6 +8407,198 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
         const w = window.open("", "_blank", "width=820,height=640");
         w.document.write(html);
         w.document.close();
+      }
+
+      // ═══════════════════════════════════════
+      // RESTOCK QUEUE
+      // ═══════════════════════════════════════
+      function restockSyncMaster() {
+        const master = document.getElementById("restock-master-cb");
+        if (!master) return;
+        const all = document.querySelectorAll(".restock-cb");
+        const checked = document.querySelectorAll(".restock-cb:checked");
+        master.indeterminate = checked.length > 0 && checked.length < all.length;
+        master.checked = checked.length === all.length;
+        const countEl = document.getElementById("restock-count");
+        if (countEl) countEl.textContent = `${checked.length} / ${all.length} selected`;
+      }
+
+      function restockSyncGroup(groupIdx) {
+        const groupCb = document.querySelector(`.restock-group-cb[data-group="${groupIdx}"]`);
+        if (!groupCb) return;
+        const all     = document.querySelectorAll(`.restock-cb[data-group="${groupIdx}"]`);
+        const checked = document.querySelectorAll(`.restock-cb[data-group="${groupIdx}"]:checked`);
+        groupCb.indeterminate = checked.length > 0 && checked.length < all.length;
+        groupCb.checked = checked.length === all.length;
+      }
+
+      function restockToggleAll(masterCb) {
+        document.querySelectorAll(".restock-cb").forEach(cb => cb.checked = masterCb.checked);
+        document.querySelectorAll(".restock-group-cb").forEach(cb => { cb.checked = masterCb.checked; cb.indeterminate = false; });
+        restockSyncMaster();
+      }
+
+      function restockToggleGroup(groupCb) {
+        const idx = groupCb.dataset.group;
+        document.querySelectorAll(`.restock-cb[data-group="${idx}"]`).forEach(cb => cb.checked = groupCb.checked);
+        restockSyncMaster();
+      }
+
+      async function loadRestockPending() {
+        const list     = document.getElementById("restock-list");
+        const printBtn = document.getElementById("restock-print-btn");
+        list.innerHTML = '<div style="color:var(--text-dim);font-size:11px">Loading...</div>';
+        printBtn.style.display = "none";
+        try {
+          const res = await fetch(`${API_BASE}/restock/pending`);
+          if (!res.ok) throw new Error(await res.text());
+          const items = await res.json();
+          if (!items.length) {
+            list.innerHTML = '<div style="color:var(--text-dim);font-size:11px">No pending restock items.</div>';
+            return;
+          }
+          // Group preserving oldest-first order from server
+          const groups = [];
+          const groupMap = {};
+          items.forEach(item => {
+            const key = `${item.date}|${item.address}`;
+            if (!groupMap[key]) {
+              groupMap[key] = { date: item.date, address: item.address, items: [] };
+              groups.push(groupMap[key]);
+            }
+            groupMap[key].items.push(item);
+          });
+
+          const totalItems = items.length;
+          list.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text)">
+                <input type="checkbox" id="restock-master-cb" checked onchange="restockToggleAll(this)" style="accent-color:var(--amber)" />
+                Select all
+              </label>
+              <span style="color:var(--text-dim);font-size:11px" id="restock-count">${totalItems} / ${totalItems} selected</span>
+            </div>
+            ${groups.map((g, gi) => `
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+                <input type="checkbox" class="restock-group-cb" checked data-group="${gi}"
+                  onchange="restockToggleGroup(this)" style="accent-color:var(--amber)" />
+                <span style="color:var(--amber);font-size:11px;font-family:monospace;white-space:nowrap">${g.date}</span>
+                <span style="font-size:12px;font-weight:600">${esc(g.address)}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px 18px;padding-left:22px">
+                ${g.items.map(item => `
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text)">
+                    <input type="checkbox" class="restock-cb" checked
+                      data-id="${item.job_item_id}"
+                      data-group="${gi}"
+                      data-date="${item.date}"
+                      data-address="${item.address.replace(/"/g, '&quot;')}"
+                      data-name="${item.item_name.replace(/"/g, '&quot;')}"
+                      data-qty="${Math.round(item.quantity)}"
+                      onchange="restockSyncGroup(${gi});restockSyncMaster()"
+                      style="accent-color:var(--amber)" />
+                    ${esc(item.item_name)}${item.quantity > 1 ? `<span style="color:var(--text-dim);margin-left:2px">x${Math.round(item.quantity)}</span>` : ""}
+                  </label>
+                `).join("")}
+              </div>
+            </div>
+          `).join("")}`;
+          printBtn.style.display = "";
+        } catch(e) {
+          list.innerHTML = `<div style="color:var(--text-dim);font-size:11px">Error: ${e.message}</div>`;
+        }
+      }
+
+      async function printAndMarkRestock() {
+        const checked = Array.from(document.querySelectorAll(".restock-cb:checked"));
+        if (!checked.length) { alert("No items selected."); return; }
+        const ids = checked.map(cb => parseInt(cb.dataset.id));
+        if (!confirm(`Print and mark ${ids.length} item(s) as restocked?`)) return;
+
+        // Build print data grouped by date+address
+        const groups = [];
+        const groupMap = {};
+        checked.forEach(cb => {
+          const key = `${cb.dataset.date}|${cb.dataset.address}`;
+          if (!groupMap[key]) {
+            groupMap[key] = { date: cb.dataset.date, address: cb.dataset.address, items: [] };
+            groups.push(groupMap[key]);
+          }
+          groupMap[key].items.push(cb.dataset.qty > 1 ? `${cb.dataset.name} x${cb.dataset.qty}` : cb.dataset.name);
+        });
+
+        const genDate = new Date().toLocaleDateString("en-US", { year:"numeric", month:"short", day:"numeric" });
+        const rows = groups.map(g =>
+          `<tr><td>${g.date}</td><td>${g.address}</td><td>${g.items.join(", ")}</td></tr>`
+        ).join("");
+        const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<title>Restock List — ${genDate}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"DM Mono","Courier New",monospace; font-size:12px; color:#111; padding:32px; }
+  h1 { font-size:18px; font-weight:700; margin-bottom:4px; }
+  .meta { font-size:11px; color:#555; margin-bottom:20px; }
+  table { width:100%; border-collapse:collapse; }
+  th { background:#1a1a2e; color:#f5a623; text-align:left; padding:7px 10px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  td { padding:6px 10px; border-bottom:1px solid #e0e0e0; vertical-align:top; }
+  tr:nth-child(even) td { background:#f7f7fa; }
+  tr.total td { border-top:2px solid #1a1a2e; font-weight:700; background:#f0f0f8; }
+  @media print { body { padding:16px; } button { display:none; } }
+</style></head><body>
+<h1>Restock List</h1>
+<div class="meta">Generated: ${genDate} &nbsp;|&nbsp; ${ids.length} item(s) · ${groups.length} address(es)</div>
+<table>
+<thead><tr><th>Date</th><th>Address</th><th>Equipment</th></tr></thead>
+<tbody>${rows}<tr class="total"><td colspan="3">${ids.length} item(s) — ${groups.length} address(es)</td></tr></tbody>
+</table>
+<div style="margin-top:16px;text-align:right"><button onclick="window.print()" style="padding:6px 18px;background:#1a1a2e;color:#f5a623;border:none;cursor:pointer;font-size:12px;border-radius:3px">🖨 Print</button></div>
+</body></html>`;
+        const w = window.open("", "_blank", "width=820,height=640");
+        w.document.write(html);
+        w.document.close();
+
+        try {
+          const r = await fetch(`${API_BASE}/restock/mark`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          await loadRestockPending();
+        } catch(e) {
+          alert("Print opened, but error marking items: " + e.message);
+        }
+      }
+
+      async function loadRestockHistory() {
+        const wrap  = document.getElementById("restock-hist-wrap");
+        const empty = document.getElementById("restock-hist-empty");
+        const tbody = document.getElementById("restock-hist-tbody");
+        const thead = document.getElementById("restock-hist-thead");
+        empty.textContent = "Loading...";
+        wrap.style.display = "none";
+        try {
+          const res = await fetch(`${API_BASE}/restock/history`);
+          if (!res.ok) throw new Error(await res.text());
+          const rows = await res.json();
+          if (!rows.length) { empty.textContent = "No history yet."; return; }
+          thead.innerHTML = `<tr><th>Restocked</th><th>Job Date</th><th>Address</th><th>Item</th><th>Qty</th></tr>`;
+          tbody.innerHTML = rows.map(r => {
+            const ds = new Date(r.restocked_at).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
+            return `<tr>
+              <td style="white-space:nowrap;color:var(--text-dim)">${ds}</td>
+              <td class="amber" style="white-space:nowrap">${r.date}</td>
+              <td>${esc(r.address)}</td>
+              <td style="color:var(--ice)">${esc(r.item_name)}</td>
+              <td style="text-align:center">${Math.round(r.quantity)}</td>
+            </tr>`;
+          }).join("");
+          empty.textContent = "";
+          wrap.style.display = "";
+        } catch(e) {
+          empty.textContent = "Error: " + e.message;
+        }
       }
 
       // ═══════════════════════════════════════

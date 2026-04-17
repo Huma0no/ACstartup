@@ -570,32 +570,49 @@
           const tbody = document.querySelector("#inventory-table tbody");
           tbody.innerHTML = "";
 
-          data.forEach((item) => {
-            const tr = document.createElement("tr");
-            const isLow = item.quantity <= item.min_threshold;
+          // Group by category
+          const ORDER = ["Thermostat", "Accessory", "Refrigerant", "Consumable"];
+          const groups = {};
+          data.forEach(item => {
+            const cat = item.category || "Other";
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(item);
+          });
 
-            let stockDisplay;
-            if (item.unit === "oz") {
-              const lbs = Math.floor(item.quantity / 16);
-              const oz = (item.quantity % 16).toFixed(1);
-              stockDisplay = `${lbs} lb ${oz} oz`;
-            } else {
-              stockDisplay = `${item.quantity} ${item.unit || "ea"}`;
-            }
+          ORDER.concat(Object.keys(groups).filter(c => !ORDER.includes(c))).forEach(cat => {
+            if (!groups[cat]) return;
+            // Group header row
+            const hdr = document.createElement("tr");
+            hdr.innerHTML = `<td colspan="5" style="background:#1a1a2e;color:#f5a623;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:6px 12px">${cat}s</td>`;
+            tbody.appendChild(hdr);
 
-            tr.innerHTML = `
-              <td>${item.item_name}</td>
-              <td><span class="cat-badge">${item.category}</span></td>
-              <td class="${isLow ? "low-stock" : ""}">${stockDisplay}</td>
-              <td>${isLow ? "⚠️ Restock" : "✅ OK"}</td>
-              <td>
-                <button type="button" class="btn btn-sm"
-                  onclick="openAdjustModal(${item.id}, '${item.item_name}', ${item.quantity}, '${item.unit || "ea"}')">
-                  Ajustar
-                </button>
-              </td>
-            `;
-            tbody.appendChild(tr);
+            groups[cat].forEach(item => {
+              const tr = document.createElement("tr");
+              const isLow = item.quantity <= item.min_threshold;
+
+              let stockDisplay;
+              if (item.unit === "oz") {
+                const lbs = Math.floor(item.quantity / 16);
+                const oz = (item.quantity % 16).toFixed(1);
+                stockDisplay = `${lbs} lb ${oz} oz`;
+              } else {
+                stockDisplay = `${item.quantity} ${item.unit || "ea"}`;
+              }
+
+              tr.innerHTML = `
+                <td>${item.item_name}</td>
+                <td><span class="cat-badge">${item.category}</span></td>
+                <td class="${isLow ? "low-stock" : ""}">${stockDisplay}</td>
+                <td>${isLow ? "⚠️ Restock" : "✅ OK"}</td>
+                <td>
+                  <button type="button" class="btn btn-sm"
+                    onclick="openAdjustModal(${item.id}, '${item.item_name}', ${item.quantity}, '${item.unit || "ea"}')">
+                    Ajustar
+                  </button>
+                </td>
+              `;
+              tbody.appendChild(tr);
+            });
           });
         } catch (e) {
           console.error(e);
@@ -806,19 +823,16 @@
 
           // Helper para renderizar tarjeta técnica
           const renderTechCard = (jsonStr, indoor, outdoor, title) => {
-            if (!jsonStr || jsonStr === "{}") return "";
-            let data;
+            let data = {};
             try {
-              data = JSON.parse(jsonStr);
-            } catch (e) {
-              return "";
-            }
+              if (jsonStr && jsonStr !== "{}") data = JSON.parse(jsonStr);
+            } catch (e) {}
 
-            // Verificar si hay datos reales
-            const hasData = Object.values(data).some(
+            // Verificar si hay datos de weigh-in o modelos de equipo
+            const hasWeighIn = Object.values(data).some(
               (v) => v && v.toString().trim() !== ""
             );
-            if (!hasData) return "";
+            if (!hasWeighIn && !indoor && !outdoor) return "";
 
             const fields = [
               { l: "Line Config", v: data.factoryLineConfig },
@@ -924,8 +938,8 @@
             );
             const tech2 = renderTechCard(
               record.weight_in_2_json,
-              "",
-              "",
+              record.indoor_model_2 || "",
+              record.outdoor_model_2 || "",
               "System 2"
             );
 

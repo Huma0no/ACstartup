@@ -471,14 +471,16 @@ const init = () => {
       const essentialsContainer = document.createElement("div");
       essentialsContainer.className = "system-essentials-grid";
 
-      // Definir orden y estilo (Float, Trane, Ecoil, RDS, LP Kit, Other)
+      // Definir orden y estilo (Float, Trane, Ecoil, RDS, LP Kits, Other)
       const orderedItems = [
-        { name: ACCESSORIES.FLOAT_SWITCH, style: "btn-hardware" },
-        { name: ACCESSORIES.TRANE_HARNESS, style: "btn-wiring" },
-        { name: ACCESSORIES.ECOIL_WIRE, style: "btn-wiring" },
-        { name: ACCESSORIES.RDS, style: "btn-safety" },
-        { name: ACCESSORIES.LP_KIT, style: "btn-hardware" },
-        { name: ACCESSORIES.OTRO, style: "btn-hardware" },
+        { name: ACCESSORIES.FLOAT_SWITCH,       style: "btn-hardware" },
+        { name: ACCESSORIES.TRANE_HARNESS,      style: "btn-wiring" },
+        { name: ACCESSORIES.ECOIL_WIRE,         style: "btn-wiring" },
+        { name: ACCESSORIES.RDS,                style: "btn-safety" },
+        { name: ACCESSORIES.LP_KIT_LENNOX_1STG, style: "btn-hardware" },
+        { name: ACCESSORIES.LP_KIT_LENNOX_2STG, style: "btn-hardware" },
+        { name: ACCESSORIES.LP_KIT_GOODMAN,     style: "btn-hardware" },
+        { name: ACCESSORIES.OTRO,               style: "btn-hardware" },
         // Items restantes (al final para mantener visibilidad)
         { name: ACCESSORIES.A2L, style: "btn-safety" },
         { name: ACCESSORIES.HARNESS, style: "btn-wiring" },

@@ -107,6 +107,14 @@ function initDB() {
       created_at INTEGER
     )`);
 
+    // 5. Restock tracking
+    db.run(`CREATE TABLE IF NOT EXISTS restock_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_item_id INTEGER NOT NULL,
+      restocked_at INTEGER NOT NULL,
+      FOREIGN KEY(job_item_id) REFERENCES job_items(id)
+    )`);
+
   });
 }
 
@@ -119,24 +127,25 @@ function seedInventory() {
     { name: "R32", cat: "Refrigerant", unit: "oz", qty: 3200, min: 100 },
 
     // Termostatos
-    { name: "T-4", cat: "Thermostat", unit: "each", qty: 10, min: 2 },
-    { name: "T-6", cat: "Thermostat", unit: "each", qty: 10, min: 2 },
-    { name: "T-10", cat: "Thermostat", unit: "each", qty: 5, min: 1 },
-    { name: "Ecobee", cat: "Thermostat", unit: "each", qty: 5, min: 1 },
-    { name: "Daikin One", cat: "Thermostat", unit: "each", qty: 5, min: 1 },
+    { name: "T-4",       cat: "Thermostat", unit: "each", qty: 0,  min: 1 },
+    { name: "T-6",       cat: "Thermostat", unit: "each", qty: 10, min: 2 },
+    { name: "T-10",      cat: "Thermostat", unit: "each", qty: 5,  min: 1 },
+    { name: "T-8321",    cat: "Thermostat", unit: "each", qty: 0,  min: 1 },
+    { name: "Ecobee",    cat: "Thermostat", unit: "each", qty: 5,  min: 1 },
+    { name: "Daikin One",cat: "Thermostat", unit: "each", qty: 5,  min: 1 },
+    { name: "TH2110",    cat: "Thermostat", unit: "each", qty: 0,  min: 1 },
 
     // Accesorios
-    { name: "Zone Board", cat: "Accessory", unit: "each", qty: 5, min: 1 },
-    { name: "Float Switch", cat: "Accessory", unit: "each", qty: 20, min: 5 },
-    { name: "RDS", cat: "Accessory", unit: "each", qty: 10, min: 2 },
-    { name: "DAPC", cat: "Accessory", unit: "each", qty: 5, min: 1 },
-    {
-      name: "Surge Protector",
-      cat: "Accessory",
-      unit: "each",
-      qty: 10,
-      min: 2,
-    },
+    { name: "Float Switch",       cat: "Accessory", unit: "each", qty: 20, min: 5 },
+    { name: "HZ322",              cat: "Accessory", unit: "each", qty: 4,  min: 1 },
+    { name: "Harmony",            cat: "Accessory", unit: "each", qty: 7,  min: 1 },
+    { name: "UT3000",             cat: "Accessory", unit: "each", qty: 0,  min: 1 },
+    { name: "DAPC",               cat: "Accessory", unit: "each", qty: 5,  min: 1 },
+    { name: "RDS",                cat: "Accessory", unit: "each", qty: 10, min: 2 },
+    { name: "LP Kit Lennox 1stg", cat: "Accessory", unit: "each", qty: 4,  min: 1 },
+    { name: "LP Kit Lennox 2stg", cat: "Accessory", unit: "each", qty: 0,  min: 1 },
+    { name: "LP Kit Goodman",     cat: "Accessory", unit: "each", qty: 2,  min: 1 },
+    { name: "Surge Protector",    cat: "Accessory", unit: "each", qty: 10, min: 2 },
 
     // Consumibles (Rastreables)
     { name: "Fuses 3A", cat: "Consumable", unit: "each", qty: 50, min: 10 },
@@ -1178,6 +1187,52 @@ app.get("/api/reports/custom/refrigerant", (req, res) => {
       oz_used: parseFloat(r.oz_used || 0),
       lbs_display: (parseFloat(r.oz_used || 0) / 16).toFixed(2) + " lb",
     })));
+  });
+});
+
+// ─── RESTOCK QUEUE ───────────────────────────────────────────────────────────
+
+// RQ-1. Pending restock — Thermostat+Accessory items not yet restocked, oldest first
+app.get("/api/restock/pending", (req, res) => {
+  const sql = `
+    SELECT ji.id AS job_item_id, ji.item_name, ji.quantity, j.date, j.address
+    FROM job_items ji
+    JOIN jobs j ON ji.job_id = j.id
+    WHERE ji.category IN ('Thermostat', 'Accessory')
+      AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
+    ORDER BY j.date ASC, j.id ASC, ji.item_name ASC
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// RQ-2. Mark items as restocked
+app.post("/api/restock/mark", (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: "ids array required" });
+  const now = Date.now();
+  const stmt = db.prepare("INSERT OR IGNORE INTO restock_items (job_item_id, restocked_at) VALUES (?, ?)");
+  ids.forEach(id => stmt.run([id, now]));
+  stmt.finalize(err => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ ok: true, count: ids.length });
+  });
+});
+
+// RQ-3. Restock history — all restocked items, newest first
+app.get("/api/restock/history", (req, res) => {
+  const sql = `
+    SELECT ji.item_name, ji.quantity, j.date, j.address, r.restocked_at
+    FROM restock_items r
+    JOIN job_items ji ON ji.id = r.job_item_id
+    JOIN jobs j ON ji.job_id = j.id
+    ORDER BY r.restocked_at DESC
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
   });
 });
 
