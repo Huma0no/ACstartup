@@ -8523,8 +8523,20 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
           groupMap[key].items.push(cb.dataset.qty > 1 ? `${cb.dataset.name} x${cb.dataset.qty}` : cb.dataset.name);
         });
 
+        // Build summary: total qty per item name
+        const summaryMap = {};
+        checked.forEach(cb => {
+          const name = cb.dataset.name;
+          const qty  = parseInt(cb.dataset.qty) || 1;
+          summaryMap[name] = (summaryMap[name] || 0) + qty;
+        });
+        const summaryRows = Object.entries(summaryMap)
+          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .map(([name, qty]) => `<tr><td>${name}</td><td class="num">${qty}</td></tr>`)
+          .join("");
+
         const genDate = new Date().toLocaleDateString("en-US", { year:"numeric", month:"short", day:"numeric" });
-        const rows = groups.map(g =>
+        const detailRows = groups.map(g =>
           `<tr><td>${g.date}</td><td>${g.address}</td><td>${g.items.join(", ")}</td></tr>`
         ).join("");
         const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
@@ -8533,19 +8545,30 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:"DM Mono","Courier New",monospace; font-size:12px; color:#111; padding:32px; }
   h1 { font-size:18px; font-weight:700; margin-bottom:4px; }
+  h2 { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:20px 0 6px; color:#1a1a2e; }
   .meta { font-size:11px; color:#555; margin-bottom:20px; }
-  table { width:100%; border-collapse:collapse; }
+  table { width:100%; border-collapse:collapse; margin-bottom:4px; }
   th { background:#1a1a2e; color:#f5a623; text-align:left; padding:7px 10px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
   td { padding:6px 10px; border-bottom:1px solid #e0e0e0; vertical-align:top; }
   tr:nth-child(even) td { background:#f7f7fa; }
   tr.total td { border-top:2px solid #1a1a2e; font-weight:700; background:#f0f0f8; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; color:#c8820a; }
+  .summary-wrap { display:inline-block; min-width:220px; }
   @media print { body { padding:16px; } button { display:none; } }
 </style></head><body>
 <h1>Restock List</h1>
 <div class="meta">Generated: ${genDate} &nbsp;|&nbsp; ${ids.length} item(s) · ${groups.length} address(es)</div>
+<h2>Summary</h2>
+<div class="summary-wrap">
+<table>
+<thead><tr><th>Item</th><th style="text-align:right">Qty</th></tr></thead>
+<tbody>${summaryRows}<tr class="total"><td>${Object.keys(summaryMap).length} models</td><td class="num">${ids.length} units</td></tr></tbody>
+</table>
+</div>
+<h2>Detail</h2>
 <table>
 <thead><tr><th>Date</th><th>Address</th><th>Equipment</th></tr></thead>
-<tbody>${rows}<tr class="total"><td colspan="3">${ids.length} item(s) — ${groups.length} address(es)</td></tr></tbody>
+<tbody>${detailRows}<tr class="total"><td colspan="3">${ids.length} item(s) — ${groups.length} address(es)</td></tr></tbody>
 </table>
 <div style="margin-top:16px;text-align:right"><button onclick="window.print()" style="padding:6px 18px;background:#1a1a2e;color:#f5a623;border:none;cursor:pointer;font-size:12px;border-radius:3px">🖨 Print</button></div>
 </body></html>`;
