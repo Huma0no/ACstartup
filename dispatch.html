@@ -593,18 +593,6 @@
       /* ═══ PROPERTY PANEL ═══ */
       .prop-summary-hidden { display: none; }
       .prop-summary-visible { display: block; }
-      #prop-search-input {
-        background: var(--bg2);
-        border: 1px solid var(--border2);
-        color: var(--text-bright);
-        font-family: var(--mono);
-        font-size: 13px;
-        padding: 8px 12px;
-        border-radius: 3px;
-        outline: none;
-        transition: border-color .15s;
-      }
-      #prop-search-input:focus { border-color: var(--amber-dim); }
 
       /* ═══ DATE FILTER BAR ═══ */
       .date-filter-bar {
@@ -2377,13 +2365,6 @@
           </div>
 
           <div class="card">
-            <input
-              type="text"
-              id="history-filter"
-              placeholder="Filter by address, tech, notes..."
-              style="width: 100%; margin-bottom: 12px"
-              oninput="filterHistory()"
-            />
             <div class="tbl-wrap" style="max-height: 580px; overflow-y: auto">
               <table>
                 <thead>
@@ -2415,15 +2396,8 @@
             <div class="sec-sub">Address service history lookup</div>
           </div>
 
-          <!-- Search bar -->
-          <div style="padding:16px 20px 0;display:flex;gap:8px">
-            <input
-              type="text"
-              id="prop-search-input"
-              placeholder="Enter address or subdivision..."
-              style="flex:1"
-              onkeydown="if(event.key==='Enter')searchProperty()"
-            />
+          <!-- Search bar — driven by unified #gs-input in topbar -->
+          <div style="padding:16px 20px 0;display:flex;gap:8px;justify-content:flex-end">
             <button class="btn btn-primary btn-sm" onclick="searchProperty()">Search</button>
             <button class="btn btn-ghost btn-sm" onclick="clearPropertyPanel()">✕ Clear</button>
           </div>
@@ -3249,8 +3223,9 @@
       const TECH_STORE = "dispatch_techs_v1";
       const API_BASE = "http://localhost:3000/api";
 
-      let jobs = []; // all jobs for the day
-      let techs = []; // technicians
+      let jobs = [];
+      let techs = [];
+      let _currentPanel = "home";
       let _dragId = null;
       let _syncTimer = null;
       let _boardDate = ""; // "" = All, "today" = today, "yesterday" = yesterday, or YYYY-MM-DD
@@ -3331,9 +3306,10 @@
         if (name === "history") loadHistoryPanel();
         if (name === "payments") loadPaymentsPanel();
         if (name === "reports") loadReportsPanel();
-        if (name === "property") {
-          // Focus search input when opening the panel
-          setTimeout(() => document.getElementById("prop-search-input")?.focus(), 50);
+        _currentPanel = name;
+        gsUpdatePlaceholder();
+        if (name === "property" || name === "history") {
+          setTimeout(() => document.getElementById("gs-input")?.focus(), 50);
         }
       }
       document.querySelectorAll(".nav-item").forEach((item) => {
@@ -5366,9 +5342,12 @@
       async function checkServerStatus() {
         const dot   = document.getElementById("server-dot");
         const label = document.getElementById("server-label");
+        const ctrl  = new AbortController();
+        const tid   = setTimeout(() => ctrl.abort(), 5000);
 
         try {
-          const res = await fetch(API_BASE + "/ping", { cache: "no-store" });
+          const res = await fetch(API_BASE + "/ping", { cache: "no-store", signal: ctrl.signal });
+          clearTimeout(tid);
           if (!res.ok) throw new Error();
 
           const wasOffline = _serverOnline === false;
@@ -5385,6 +5364,7 @@
             checkLowStock();
           }
         } catch (e) {
+          clearTimeout(tid);
           _serverOnline = false;
           dot.className   = "pulse offline";
           label.className = "server-status-label offline";
@@ -7864,8 +7844,8 @@
 
       // ── Global Search ──
       let _gsTimer    = null;
-      let _gsResults  = []; // flat list of result objects for keyboard nav
-      let _gsActive   = -1; // active index for keyboard nav
+      let _gsResults  = [];
+      let _gsActive   = -1;
 
       function gsAddCallFromSearch(addr) {
         gsClear();
@@ -7874,6 +7854,13 @@
           const f = document.getElementById("nj-address");
           if (f) { f.value = addr; f.dispatchEvent(new Event("input")); }
         }, 80);
+      }
+
+      function gsUpdatePlaceholder() {
+        const inp = document.getElementById("gs-input");
+        if (!inp) return;
+        const labels = { history: "Filter history…", property: "Search address or subdivision… ↵" };
+        inp.placeholder = labels[_currentPanel] || "Search jobs, address, tech… ⌘K";
       }
 
       function gsOpen() {
@@ -7902,6 +7889,8 @@
         const val = document.getElementById("gs-input").value.trim();
         document.getElementById("gs-clear").style.display = val ? "block" : "none";
         clearTimeout(_gsTimer);
+        if (_currentPanel === "history") { filterHistory(); return; }
+        if (_currentPanel === "property") return; // trigger on Enter
         if (val.length < 2) { gsCloseDropdown(); return; }
         _gsTimer = setTimeout(() => gsRunSearch(val), 250);
       }
@@ -7918,6 +7907,7 @@
           gsHighlight();
         } else if (e.key === "Enter") {
           e.preventDefault();
+          if (_currentPanel === "property") { searchProperty(); return; }
           if (_gsActive >= 0 && _gsResults[_gsActive]) {
             gsSelect(_gsResults[_gsActive]);
           }
@@ -8017,8 +8007,8 @@
             const safeAddr = addr.replace(/&/g,"&amp;").replace(/"/g,"&quot;");
 
             html += `<div class="gs-item" style="padding:8px 12px;cursor:pointer"
-              data-recs="${safeRecs}" data-addr="${safeAddr}"
-              onclick="gsCloseDropdown();openAddrHistModal(JSON.parse(this.dataset.recs),this.dataset.addr)">
+              data-addr="${safeAddr}"
+              onclick="gsCloseDropdown();openPropertySearch(this.dataset.addr)">
               <span class="gs-item-icon" style="color:var(--text-dim)">🏠</span>
               <div class="gs-item-main">
                 <div class="gs-item-title">${esc(addr)}</div>
@@ -9089,14 +9079,14 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       function openPropertySearch(addr) {
         switchPanel("property");
-        const inp = document.getElementById("prop-search-input");
-        if (inp) { inp.value = addr; }
+        const inp = document.getElementById("gs-input");
+        if (inp) { inp.value = addr; inp.dispatchEvent(new Event("input")); }
         searchProperty(addr);
       }
 
       function clearPropertyPanel() {
-        const inp = document.getElementById("prop-search-input");
-        if (inp) inp.value = "";
+        const inp = document.getElementById("gs-input");
+        if (inp) { inp.value = ""; document.getElementById("gs-clear").style.display = "none"; }
         document.getElementById("prop-summary-card").className = "card prop-summary-hidden";
         document.getElementById("prop-empty").style.display = "block";
         document.getElementById("prop-tbl-wrap").style.display = "none";
@@ -9106,7 +9096,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       }
 
       async function searchProperty(overrideQuery) {
-        const q = (overrideQuery || document.getElementById("prop-search-input")?.value || "").trim();
+        const q = (overrideQuery || document.getElementById("gs-input")?.value || "").trim();
         if (!q) return;
 
         const empty = document.getElementById("prop-empty");
@@ -9128,6 +9118,34 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
             empty.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-dim)">
               <div style="font-size:28px;margin-bottom:8px">🔍</div>
               <div>No records found for "<strong style="color:var(--text)">${esc(q)}</strong>"</div>
+            </div>`;
+            return;
+          }
+
+          // Multiple distinct addresses → show picker instead of combined records
+          const distinctAddrs = [...new Set(propJobs.map(j => j.address))];
+          if (distinctAddrs.length > 1) {
+            summaryCard.className = "card prop-summary-hidden";
+            tblWrap.style.display = "none";
+            const grouped = {};
+            propJobs.forEach(j => {
+              if (!grouped[j.address]) grouped[j.address] = { count: 0, last: "" };
+              grouped[j.address].count++;
+              if (j.date > grouped[j.address].last) grouped[j.address].last = j.date;
+            });
+            empty.style.display = "block";
+            empty.innerHTML = `<div style="padding:16px 20px">
+              <div style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">${distinctAddrs.length} addresses match "${esc(q)}"</div>
+              ${Object.entries(grouped).map(([addr, info]) => {
+                const safeAddr = addr.replace(/'/g,"\\'");
+                const lastFmt = info.last ? new Date(info.last+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
+                return `<div onclick="openPropertySearch('${safeAddr}')"
+                  style="padding:10px 14px;border:1px solid var(--border2);border-radius:4px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color .15s"
+                  onmouseover="this.style.borderColor='var(--amber-dim)'" onmouseout="this.style.borderColor='var(--border2)'">
+                  <span style="color:var(--text-bright);font-family:var(--mono);font-size:13px">${esc(addr)}</span>
+                  <span style="color:var(--text-dim);font-size:11px;white-space:nowrap">${info.count} visit${info.count!==1?"s":""} · ${lastFmt}</span>
+                </div>`;
+              }).join("")}
             </div>`;
             return;
           }
@@ -9176,7 +9194,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       }
 
       function filterHistory() {
-        const q = document.getElementById("history-filter").value.toLowerCase();
+        const q = document.getElementById("gs-input").value.toLowerCase();
         const filtered = _histAllJobs.filter((j) =>
           `${j.address} ${j.technician} ${j.notes} ${j.date}`
             .toLowerCase()
