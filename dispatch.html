@@ -8025,6 +8025,11 @@
                 ${eq ? `<div class="gs-item-sub">${esc(eq)}</div>` : ""}
                 <div class="gs-item-sub">${lastDate}</div>
               </div>
+              <button type="button" data-addr="${safeAddr}"
+                onclick="event.stopPropagation();gsAddCallFromSearch(this.dataset.addr)"
+                style="flex-shrink:0;background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber);border-radius:4px;padding:4px 10px;font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">
+                ＋ Add Call
+              </button>
             </div>`;
           });
         }
