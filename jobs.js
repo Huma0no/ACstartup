@@ -618,36 +618,7 @@ export function renderJobsList(
       job.addressHistory.forEach((h) => {
         const entry = document.createElement("div");
         entry.className = "job-history-entry";
-
-        const header = document.createElement("div");
-        header.className = "job-history-header";
-        header.textContent = `📅 ${h.date}  👷 ${h.technician || "—"}`;
-        entry.appendChild(header);
-
-        const models = document.createElement("div");
-        models.className = "job-history-models";
-        if (h.indoor_model)  models.textContent += `🔵 ${h.indoor_model}  `;
-        if (h.outdoor_model) models.textContent += `🔴 ${h.outdoor_model}`;
-        if (models.textContent.trim()) entry.appendChild(models);
-
-        if (h.notes) {
-          const notesEl = document.createElement("div");
-          notesEl.className = "job-history-notes";
-          notesEl.textContent = h.notes;
-          entry.appendChild(notesEl);
-        }
-
-        if (h.items && h.items.length > 0) {
-          const itemsList = document.createElement("ul");
-          itemsList.className = "job-history-items";
-          h.items.forEach((it) => {
-            const li = document.createElement("li");
-            li.textContent = `${it.category}: ${it.item_name} ×${it.quantity}`;
-            itemsList.appendChild(li);
-          });
-          entry.appendChild(itemsList);
-        }
-
+        entry.textContent = h;
         historyPanel.appendChild(entry);
       });
 

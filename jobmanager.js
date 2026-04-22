@@ -63,6 +63,7 @@ export function initJobManager(context) {
                     allHeaters: item.allHeaters || [],
                     allUnits: item.allUnits || [],
                     savedState: item.savedState || null,
+                    addressHistory: item.addressHistory || [],
                   }
             )
           : [];
@@ -406,7 +407,6 @@ export function initJobManager(context) {
         const historyMap = await resp.json();
         jobs.forEach((job) => {
           const history = historyMap[job.address] || [];
-          job.addressHistory = history;
 
           if (history.length > 0) {
             const latest = history[0]; // sorted date DESC
@@ -417,6 +417,29 @@ export function initJobManager(context) {
               if (tstatItem) job.thermostat = { type: tstatItem.item_name, qty: tstatItem.quantity };
             }
           }
+
+          job.addressHistory = history.map((r) => {
+            const parts = [];
+            if (r.date) parts.push(r.date);
+            if (r.address) parts.push(r.address);
+            if (r.notes && r.notes.trim()) parts.push(r.notes.trim());
+            (r.items || []).forEach((item) => {
+              const label = item.quantity && Number(item.quantity) !== 1
+                ? `${item.quantity}x ${item.item_name}`
+                : item.item_name;
+              parts.push(label);
+            });
+            try {
+              const wi  = r.weight_in_json  ? JSON.parse(r.weight_in_json)  : null;
+              const wi2 = r.weight_in_2_json ? JSON.parse(r.weight_in_2_json) : null;
+              const hasWi  = wi  && Object.values(wi).some((v) => v && String(v).trim());
+              const hasWi2 = wi2 && Object.values(wi2).some((v) => v && String(v).trim());
+              if (hasWi && hasWi2) parts.push("weigh-in data recorded (2 Systems)");
+              else if (hasWi)      parts.push("weigh-in data recorded");
+              else if (hasWi2)     parts.push("Sys2 weigh-in data recorded");
+            } catch (_) {}
+            return parts.join(", ");
+          });
         });
       }
     } catch (_) {

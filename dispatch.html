@@ -6407,6 +6407,31 @@
         return jobs.filter((j) => ids.includes(j.id));
       }
 
+      function buildRecordSummary(record) {
+        const parts = [];
+        if (record.date) parts.push(record.date);
+        if (record.address) parts.push(record.address);
+        if (record.notes && record.notes.trim()) parts.push(record.notes.trim());
+        const items = Array.isArray(record.items) ? record.items : [];
+        items.forEach((item) => {
+          const label =
+            item.quantity && Number(item.quantity) !== 1
+              ? `${item.quantity}x ${item.item_name}`
+              : item.item_name;
+          parts.push(label);
+        });
+        try {
+          const wi  = record.weight_in_json  ? JSON.parse(record.weight_in_json)  : null;
+          const wi2 = record.weight_in_2_json ? JSON.parse(record.weight_in_2_json) : null;
+          const hasWi  = wi  && Object.values(wi).some((v) => v && String(v).trim());
+          const hasWi2 = wi2 && Object.values(wi2).some((v) => v && String(v).trim());
+          if (hasWi && hasWi2) parts.push("weigh-in data recorded (2 Systems)");
+          else if (hasWi)      parts.push("weigh-in data recorded");
+          else if (hasWi2)     parts.push("Sys2 weigh-in data recorded");
+        } catch (_) {}
+        return parts.join(", ");
+      }
+
       async function doExportPWA() {
         const selected = getSelectedExportJobs();
         if (selected.length === 0) {
@@ -6511,7 +6536,7 @@
             allHeaters: [],
             allUnits: [],
             savedState: null,
-            addressHistory: history,
+            addressHistory: history.map((r) => buildRecordSummary(r)),
             // ── Extra dispatch fields (PWA stores but ignores) ──
             orderNumber: j.orderNumber || "",
             scheduledTime: j.scheduledTime || "",
