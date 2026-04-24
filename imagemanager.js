@@ -389,6 +389,49 @@ export function initImageManager(context) {
   downloadBtn.style.marginTop = "15px";
   downloadBtn.disabled = true;
 
+  const safeModel = (model) =>
+    model ? "_" + model.replace(/[^a-z0-9]/gi, "_").toUpperCase() : "";
+
+  async function buildAndDownloadZip() {
+    const state = getState();
+    const safeAddress = (state.address || "Job")
+      .replace(/[^a-z0-9]/gi, "_")
+      .toUpperCase();
+
+    const JSZip = await loadJSZip();
+    const zip = new JSZip();
+
+    const addToZip = async (key, suffix) => {
+      let imgData = key.startsWith("extra_")
+        ? currentImages.extras.get(key)
+        : { file: currentImages[key], gps: currentImages[key + "Gps"] };
+      if (!imgData?.file) return;
+      let fileToSave = imgData.file;
+      if (imgData.gps)
+        fileToSave = await addGpsToImage(fileToSave, imgData.gps.lat, imgData.gps.lon);
+      zip.file(`${safeAddress}${suffix}.jpg`, fileToSave);
+    };
+
+    await addToZip("weight",  "_WEIGHT"           + safeModel(state.outdoorModel));
+    await addToZip("fan",     "_FAN"              + safeModel(state.heaterModel));
+    await addToZip("weight2", "_WEIGHT_SYS2"      + safeModel(state.outdoorModel2));
+    await addToZip("fan2",    "_FAN_SYS2"         + safeModel(state.heaterModel2));
+
+    for (const photo of state.extraPhotos ?? []) {
+      await addToZip(photo.id, "_" + photo.label.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase());
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const link = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(content),
+      download: `${safeAddress}_PHOTOS.zip`,
+    });
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    _zipDownloaded = true;
+  }
+
   downloadBtn.onclick = async (e) => {
     e.preventDefault();
     const hasImages =
@@ -399,77 +442,8 @@ export function initImageManager(context) {
     const originalText = downloadBtn.innerHTML;
     downloadBtn.innerHTML = "⏳ Creando ZIP...";
     downloadBtn.disabled = true;
-
     try {
-      const JSZip = await loadJSZip();
-      const zip = new JSZip();
-      const state = getState();
-
-      // Usar la dirección actual para el nombre del archivo
-      const safeAddress = (state.address || "Job")
-        .replace(/[^a-z0-9]/gi, "_")
-        .toUpperCase();
-
-      // Función auxiliar para agregar al ZIP
-      const addToZip = async (key, fileNameSuffix) => {
-        let imgData = key.startsWith("extra_")
-          ? currentImages.extras.get(key)
-          : { file: currentImages[key], gps: currentImages[key + "Gps"] };
-        // Normalizar estructura si viene del objeto plano antiguo
-        if (!key.startsWith("extra_") && currentImages[key])
-          imgData = {
-            file: currentImages[key],
-            gps: currentImages[key + "Gps"],
-          };
-
-        if (imgData && imgData.file) {
-          const ext = "jpg";
-          let fileToSave = imgData.file;
-          if (imgData.gps) {
-            fileToSave = await addGpsToImage(
-              fileToSave,
-              imgData.gps.lat,
-              imgData.gps.lon
-            );
-          }
-          zip.file(`${safeAddress}${fileNameSuffix}.${ext}`, fileToSave);
-        }
-      };
-
-      // Helper para sanitizar nombres de modelo
-      const safeModel = (model) =>
-        model ? "_" + model.replace(/[^a-z0-9]/gi, "_").toUpperCase() : "";
-
-      // Procesar Sistema 1
-      await addToZip("weight", "_WEIGHT" + safeModel(state.outdoorModel));
-      await addToZip("fan", "_FAN" + safeModel(state.heaterModel));
-
-      // Procesar Sistema 2
-      await addToZip(
-        "weight2",
-        "_WEIGHT_SYS2" + safeModel(state.outdoorModel2)
-      );
-      await addToZip("fan2", "_FAN_SYS2" + safeModel(state.heaterModel2));
-
-      // Procesar Extras
-      if (state.extraPhotos && state.extraPhotos.length > 0) {
-        for (const photo of state.extraPhotos) {
-          // Sanitizar etiqueta para nombre de archivo
-          const safeLabel = photo.label
-            .replace(/[^a-zA-Z0-9]/g, "_")
-            .toUpperCase();
-          await addToZip(photo.id, `_${safeLabel}`);
-        }
-      }
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(content);
-      link.download = `${safeAddress}_PHOTOS.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      _zipDownloaded = true;
+      await buildAndDownloadZip();
     } catch (err) {
       console.error(err);
       alert("Error al crear el ZIP de respaldo.");
@@ -616,6 +590,7 @@ export function initImageManager(context) {
       return fixed + currentImages.extras.size;
     },
     triggerDownload: () => downloadBtn.click(),
+    downloadPhotos: buildAndDownloadZip,
     resetImages: () => {
       currentImages = {
         weight: null,

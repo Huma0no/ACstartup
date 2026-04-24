@@ -11,6 +11,7 @@ import { getActiveJobAddress, getJobByAddress } from "./jobs.js";
 import { unidadesExteriores } from "./weightInData.js";
 import {
   showUndoToast,
+  showToast,
   switchToTab,
   hideValidationErrors,
   showValidationErrors,
@@ -21,12 +22,9 @@ export function initReportManager(context) {
     UI,
     getState,
     saveToLocalStorage,
-    clearLocalStorage,
-    enablePostReportButtons,
     disablePostReportButtons,
     removeJobFromList,
     getCurrentImages,
-    imageManager,
   } = context;
 
   // State local para reportes
@@ -237,83 +235,6 @@ export function initReportManager(context) {
   }
 
   // --- Modal: Download Photos Warning ---
-  function showImageWarningModal(count, onConfirm) {
-    const existing = document.getElementById("_img-warn-modal");
-    if (existing) existing.remove();
-
-    const photoWord = count === 1 ? "photo has" : "photos have";
-    const overlay = document.createElement("div");
-    overlay.id = "_img-warn-modal";
-    overlay.style.cssText = `
-      position:fixed;inset:0;z-index:9999;
-      background:rgba(0,0,0,0.6);
-      display:flex;align-items:center;justify-content:center;
-      padding:16px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-      animation:fadeIn 0.15s ease;
-    `;
-
-    overlay.innerHTML = `
-      <div style="
-        background:var(--container-bg,#fff);
-        border:1px solid var(--border-color,#ddd);
-        border-radius:12px;
-        padding:28px 24px 22px;
-        max-width:360px;width:100%;
-        box-shadow:0 24px 64px rgba(0,0,0,0.5);
-        text-align:center;
-      ">
-        <div style="font-size:36px;margin-bottom:10px">📷</div>
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--text-color,#111)">
-          ${count} ${photoWord} not been downloaded
-        </div>
-        <div style="font-size:13px;color:var(--text-muted,#666);margin-bottom:22px;line-height:1.5">
-          Would you like to download the photos before generating the report?
-        </div>
-        <div style="display:flex;flex-direction:column;gap:9px">
-          <button id="_img-warn-dl" style="
-            width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;
-            background:var(--grad-primary,#0066ff);color:#fff;
-            font-weight:700;font-size:13px;letter-spacing:0.4px;
-            box-shadow:0 4px 16px rgba(56,190,255,0.35);
-          ">💾 Download Photos &amp; Generate Report</button>
-          <button id="_img-warn-skip" style="
-            width:100%;padding:10px;border-radius:8px;cursor:pointer;
-            background:transparent;
-            border:1px solid var(--border-color,#ccc);
-            color:var(--text-color,#333);font-size:13px;font-weight:600;
-          ">Generate Without Downloading</button>
-          <button id="_img-warn-cancel" style="
-            width:100%;padding:8px;border-radius:8px;cursor:pointer;
-            background:transparent;border:none;
-            color:var(--text-muted,#888);font-size:12px;
-          ">Cancel</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    const closeModal = (cb) => {
-      overlay.style.pointerEvents = "none";
-      setTimeout(() => {
-        overlay.remove();
-        if (cb) cb();
-      }, 80);
-    };
-
-    overlay.querySelector("#_img-warn-dl").onclick = () => {
-      closeModal(() => {
-        if (imageManager) imageManager.triggerDownload();
-        setTimeout(onConfirm, 300);
-      });
-    };
-    overlay.querySelector("#_img-warn-skip").onclick = () => closeModal(onConfirm);
-    overlay.querySelector("#_img-warn-cancel").onclick = () => closeModal();
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeModal();
-    });
-  }
-
   // --- Acciones de Reporte ---
   function editReport(reportWrapper) {
     if (!reportWrapper) return;
@@ -797,7 +718,7 @@ export function initReportManager(context) {
   }
 
   // --- Event Listeners ---
-  UI.generateReportButton.addEventListener("click", (e) => {
+  UI.generateReportButton.addEventListener("click", async (e) => {
     e.preventDefault();
     hideValidationErrors();
 
@@ -820,12 +741,11 @@ export function initReportManager(context) {
       return;
     }
 
-    const undownloaded = imageManager ? imageManager.getUndownloadedCount() : 0;
-    if (undownloaded > 0) {
-      showImageWarningModal(undownloaded, generateReportProcess);
-    } else {
-      generateReportProcess();
-    }
+    const mgr = context.imageManager;
+    const undownloaded = mgr ? mgr.getUndownloadedCount() : 0;
+    if (undownloaded > 0) await mgr.downloadPhotos();
+    generateReportProcess();
+    if (undownloaded > 0) showToast(`📥 ${undownloaded} photo${undownloaded !== 1 ? "s" : ""} auto-downloaded`);
   });
 
   UI.reportEditButton.addEventListener("click", () => {
