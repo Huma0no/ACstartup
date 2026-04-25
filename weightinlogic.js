@@ -1,6 +1,5 @@
 import { getState, setState } from "./state.js";
-import { unidadesExteriores } from "./weightInData.js";
-import { debounce } from "./utils.js";
+import { unidadesExteriores, debounce } from "./src/data.js";
 
 let inputs1 = {};
 let inputs2 = {};

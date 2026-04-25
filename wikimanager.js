@@ -1,5 +1,4 @@
-import { howToGuides } from "./howToData.js";
-import { STORAGE_KEYS } from "./constants.js";
+import { howToGuides, STORAGE_KEYS } from "./src/data.js";
 
 export function initWikiManager() {
   const modal = document.getElementById("wiki-modal");

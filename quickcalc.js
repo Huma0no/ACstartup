@@ -1,4 +1,4 @@
-import { ouncesToPoundsAndOunces } from "./weightInData.js";
+import { ouncesToPoundsAndOunces } from "./src/data.js";
 
 export function initQuickCalc() {
   const quickPies = document.getElementById("quick-pies");

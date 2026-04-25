@@ -3,7 +3,7 @@ import {
   ACCESSORIES,
   TWO_SYSTEMS_ACCESSORIES,
   PRICES,
-} from "./constants.js";
+} from "./src/data.js";
 import { hasWeightInData } from "./state.js";
 
 export function calculateFinancials(state) {

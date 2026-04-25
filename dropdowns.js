@@ -3,7 +3,7 @@ import {
   outdoorUnitLinks,
   heaters,
   unidadesExteriores,
-} from "./weightInData.js";
+} from "./src/data.js";
 
 // Modal Logic — refs and listeners are initialized inside DOMContentLoaded (see bottom of file)
 let modal, modalList, modalTitleEl, modalCloseBtn;

@@ -4,8 +4,8 @@
 // ============================================================
 
 import { getState } from "./state.js";
-import { getJobs, getActiveJobAddress } from "./jobs.js";
-import { TSTAT_DATA, normalizeTstatKey } from "./tstatData.js";
+import { getJobs, getActiveJobAddress } from "./src/jobs.js";
+import { TSTAT_DATA, normalizeTstatKey } from "./src/data.js";
 import {
   SYMPTOM,
   SYMPTOM_LABELS,

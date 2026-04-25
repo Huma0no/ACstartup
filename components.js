@@ -1,4 +1,4 @@
-import { SERVICES, OPTIONS, ACCESSORIES, FIXES } from "./constants.js";
+import { SERVICES, OPTIONS, ACCESSORIES, FIXES } from "./src/data.js";
 import { createChip } from "./ui.js";
 
 export const Components = {

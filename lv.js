@@ -1,4 +1,4 @@
-import { getActiveJobAddress, getJobByAddress } from "./jobs.js";
+import { getActiveJobAddress, getJobByAddress } from "./src/jobs.js";
 
 // ─── Series → image slug maps ──────────────────────────────────────────────
 

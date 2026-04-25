@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from "./constants.js";
+import { STORAGE_KEYS } from "./src/data.js";
 
 // --- LIGHTBOX ---
 let lightboxOverlay = null;

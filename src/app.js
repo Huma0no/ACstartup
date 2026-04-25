@@ -1,5 +1,4 @@
-import { calculateFinancials } from "./pricing.js";
-import { heaters, unidadesExteriores } from "./weightInData.js";
+import { calculateFinancials } from "../pricing.js";
 import {
   showLightbox,
   hideErrorDialog,
@@ -19,8 +18,8 @@ import {
   initThemeSwitcher,
   populateSelect,
   setupDynamicModelVisibility,
-} from "./ui.js";
-import { initQuickCalc } from "./quickCalc.js";
+} from "../ui.js";
+import { initQuickCalc } from "../quickcalc.js";
 import {
   saveJobState,
   getActiveJobAddress,
@@ -34,8 +33,8 @@ import {
   hasWeightInData,
   defaultWeightInData,
   subscribe,
-} from "./state.js";
-import { initWeightInLogic } from "./weightInLogic.js";
+} from "../state.js";
+import { initWeightInLogic } from "../weightinlogic.js";
 import {
   APP_ICON_URL,
   STORAGE_KEYS,
@@ -43,13 +42,15 @@ import {
   ACCESSORIES,
   FIXES,
   OPTIONS,
-} from "./constants.js";
-import { debounce } from "./utils.js";
-import { validateState } from "./validation.js";
-import { Components } from "./components.js";
-import { initImageManager } from "./imageManager.js";
-import { initJobManager } from "./jobManager.js";
-import { initReportManager } from "./reportmanager.js";
+  debounce,
+  heaters,
+  unidadesExteriores,
+} from "./data.js";
+import { validateState } from "../validation.js";
+import { Components } from "../components.js";
+import { initImageManager } from "../imagemanager.js";
+import { initJobManager } from "./jobs.js";
+import { initReportManager } from "./reports.js";
 
 // Objeto central para referencias del DOM (Mejora de Mantenimiento y Escalado)
 const UI = {};

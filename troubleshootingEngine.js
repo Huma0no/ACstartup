@@ -10,7 +10,7 @@ import {
   thermostats,
   accessories,
   zoningBoards,
-} from "./equipmentData.js";
+} from "./src/data.js";
 
 // ─────────────────────────────────────────────
 // SYMPTOM CATEGORIES
