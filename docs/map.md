@@ -21,7 +21,7 @@
 │
 ├── src/
 │   ├── data.js             # ✅ Construido
-│   ├── storage.js          # 🔲 Pendiente
+│   ├── storage.js          # ✅ Construido
 │   ├── jobs.js             # 🔲 Pendiente
 │   ├── workspace.js        # 🔲 Pendiente
 │   ├── reports.js          # 🔲 Pendiente
@@ -67,6 +67,34 @@ Fuente de verdad de todos los datos estáticos. Ningún otro módulo define prec
 
 **Depende de:** Nada.  
 **Lo usan:** Todos los módulos de `/src`.
+
+---
+
+### `src/storage.js` ✅
+Capa única de acceso a localStorage. Ningún otro módulo lee ni escribe localStorage directamente.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `getJobs` | function | Retorna el array completo de jobs |
+| `saveJob` | function | Upsert de un job por `id` |
+| `deleteJob` | function | Elimina un job por `id` |
+| `getCompletions` | function | Retorna el array de completions |
+| `saveCompletion` | function | Upsert de un completion por `jobId` |
+| `deleteCompletion` | function | Elimina un completion por `jobId` |
+| `getWorkspaceState` | function | Lee el estado activo del workspace |
+| `saveWorkspaceState` | function | Guarda el estado del workspace |
+| `clearWorkspaceState` | function | Elimina el estado del workspace |
+| `getActiveJobId` | function | Retorna el id del job activo |
+| `setActiveJobId` | function | Guarda o limpia el id del job activo |
+| `getSettings` | function | Lee la configuración completa |
+| `saveSettings` | function | Guarda la configuración completa |
+| `exportBackup` | function | Serializa jobs + completions + settings a JSON |
+| `importBackup` | function | Restaura datos desde un JSON de backup |
+
+**Depende de:** `src/data.js` — importa `STORAGE_KEYS`.  
+**Lo usan:** `jobs.js`, `workspace.js`, `reports.js`, `settings.js`.
 
 ---
 
