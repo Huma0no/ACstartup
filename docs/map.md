@@ -22,7 +22,7 @@
 ├── src/
 │   ├── data.js             # ✅ Construido
 │   ├── storage.js          # ✅ Construido
-│   ├── jobs.js             # 🔲 Pendiente
+│   ├── jobs.js             # ✅ Construido
 │   ├── workspace.js        # 🔲 Pendiente
 │   ├── reports.js          # 🔲 Pendiente
 │   ├── settings.js         # 🔲 Pendiente
@@ -95,6 +95,27 @@ Capa única de acceso a localStorage. Ningún otro módulo lee ni escribe localS
 
 **Depende de:** `src/data.js` — importa `STORAGE_KEYS`.  
 **Lo usan:** `jobs.js`, `workspace.js`, `reports.js`, `settings.js`.
+
+---
+
+### `src/jobs.js` ✅
+CRUD de jobs, agrupación por subdivisión con color auto-asignado, detección de time-sensitive, y ordenamiento.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `createJob` | function | Genera uuid, normaliza campos, guarda y retorna el job |
+| `updateJob` | function | Upsert de un job existente |
+| `removeJob` | function | Elimina un job por `id` |
+| `getJobById` | function | Busca un job por `id` |
+| `getAllJobs` | function | Retorna todos los jobs |
+| `sortJobs` | function | Jobs con `savedState` primero, resto sin orden específico |
+| `groupBySubdivision` | function | Retorna `{ subdivision, colorIndex, jobs[] }[]` — colorIndex 1–8 por orden de aparición |
+| `isTimeSensitive` | function | Detecta keywords URGENT, MUST, VISIT AM, VISIT PM en texto de PDF |
+
+**Depende de:** `src/storage.js` — todo acceso a datos pasa por aquí.  
+**Lo usan:** `app.js`, `workspace.js`, `importer.js`.
 
 ---
 
