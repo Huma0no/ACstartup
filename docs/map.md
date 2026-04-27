@@ -27,7 +27,7 @@
 │   ├── reports.js          # ✅ Construido
 │   ├── settings.js         # ✅ Construido
 │   ├── importer.js         # ✅ Construido
-│   ├── ai.js               # 🔲 Pendiente
+│   ├── ai.js               # ✅ Construido
 │   └── diagrams.js         # 🔲 Pendiente
 │
 └── docs/
@@ -214,6 +214,27 @@ Configuración de la app: detección de primer inicio, onboarding de precios, pr
 
 **Depende de:** `src/data.js` (DEFAULT_PRICES), `src/storage.js` (getSettings, saveSettings).  
 **Lo usan:** `app.js`, `workspace.js` (vía getPrices()).
+
+---
+
+### `src/ai.js` ✅
+Chat IA con el proveedor activo según `settings.js`. Sin render de UI. Sin acceso directo a localStorage.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `initChat` | function | Inicializa (o re-inicializa) el chat con contexto del job activo. Resetea historial. Pasa `null` si no hay job activo — scope HVAC se mantiene igual |
+| `sendMessage` | function | Envía mensaje del usuario, llama al proveedor activo, retorna texto de respuesta. Mantiene historial multi-turno en memoria. Lanza error si no hay API key, proveedor desconocido, o fallo de red |
+| `clearHistory` | function | Resetea el historial sin cambiar el system prompt actual |
+| `getHistory` | function | Retorna copia del historial actual `[{role, content}]` |
+
+**Proveedores soportados:** `"anthropic"` (claude-haiku-4-5), `"openai"` (gpt-4o), `"google"` (gemini-2.0-flash). El proveedor activo y el API key se leen de `settings.js`.
+
+**System prompt:** estrictamente limitado a HVAC. Incluye contexto del job: modelos de equipo (furnace, coil, outdoor) y links de manuales (`serviceManual`, `documentLibrary`, `blower`) de `system1` y `system2`.
+
+**Depende de:** `src/settings.js` — `getSettings()`.  
+**Lo usan:** `app.js`.
 
 ---
 
