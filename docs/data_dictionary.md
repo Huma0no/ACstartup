@@ -81,8 +81,17 @@ El objeto `system1` es requerido. Sus campos internos son todos opcionales — p
 | `furnace` | string | Visible | Número de modelo del furnace / air handler |
 | `coil` | string | **Oculto por default** | Número de modelo del coil evaporador — visible al expandir |
 | `outdoor` | string | Visible | Número de modelo de la unidad exterior |
+| `links` | Links | — | URLs de documentación del equipo — todos opcionales, default `""` |
 
-> Los 3 campos se exportan siempre en el JSON hacia Dispatch, independientemente de si están visibles en la UI.
+> Los 3 campos de modelo se exportan siempre en el JSON hacia Dispatch, independientemente de si están visibles en la UI.
+
+### Links
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `serviceManual` | string | URL al service manual del equipo |
+| `documentLibrary` | string | URL a la librería de documentos del fabricante |
+| `blower` | string | URL a la tabla de velocidades del blower |
 
 > Campos eliminados: `allHeaters`, `allUnits` — huérfanos sin consumidores activos.
 
