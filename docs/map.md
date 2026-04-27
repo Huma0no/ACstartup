@@ -28,7 +28,7 @@
 │   ├── settings.js         # ✅ Construido
 │   ├── importer.js         # ✅ Construido
 │   ├── ai.js               # ✅ Construido
-│   └── diagrams.js         # 🔲 Pendiente
+│   └── diagrams.js         # ✅ Construido
 │
 └── docs/
     ├── requirements.md
@@ -235,6 +235,27 @@ Chat IA con el proveedor activo según `settings.js`. Sin render de UI. Sin acce
 
 **Depende de:** `src/settings.js` — `getSettings()`.  
 **Lo usan:** `app.js`.
+
+---
+
+### `src/diagrams.js` ✅
+Lookup de URLs de diagramas, pre-descarga via Cache API, detección de disponibilidad offline. Sin render de UI. Sin acceso a localStorage.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `getLinksForJob` | function | Extrae todas las URLs de manuales/diagramas de `job.system1.links` y `job.system2?.links`. Retorna `[{ label, url }]` solo con entradas no vacías |
+| `lookupByModel` | function | Lookup por número de modelo en el catálogo de equipos. Retorna `null` hasta que el catálogo se pueble en `data.js` (Phase 2, map.md §6) |
+| `isAvailableOffline` | function | Retorna `true` si la URL ya está en el cache de diagramas |
+| `downloadDiagram` | function | Trigger manual — cachea una URL individual. No-op si ya está cacheada. Lanza si la red falla |
+| `precacheJob` | function | Pre-descarga en paralelo todas las URLs del job. Nunca lanza — retorna `{ cached, failed }`. Seguro llamar offline |
+| `precacheJobs` | function | Batch — llama `precacheJob` por cada job del array. Retorna `{ cached, failed }` agregado. Llamar desde `importer.js` al importar jobs |
+
+**Cache:** usa `"hvac-diagrams-v1"` — cache independiente del cache de la app para sobrevivir actualizaciones del SW. **Nota:** el `sw.js` activo (legacy) borra caches que no sean `CACHE_NAME` en activate — respetar `hvac-diagrams-v1` al reescribir `sw.js`.
+
+**Depende de:** Nada — usa solo Cache API del navegador.  
+**Lo usan:** `app.js`, `importer.js`.
 
 ---
 
