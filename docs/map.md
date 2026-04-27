@@ -23,7 +23,7 @@
 │   ├── data.js             # ✅ Construido
 │   ├── storage.js          # ✅ Construido
 │   ├── jobs.js             # ✅ Construido
-│   ├── workspace.js        # 🔲 Pendiente
+│   ├── workspace.js        # ✅ Construido
 │   ├── reports.js          # 🔲 Pendiente
 │   ├── settings.js         # 🔲 Pendiente
 │   ├── importer.js         # 🔲 Pendiente
@@ -116,6 +116,44 @@ CRUD de jobs, agrupación por subdivisión con color auto-asignado, detección d
 
 **Depende de:** `src/storage.js` — todo acceso a datos pasa por aquí.  
 **Lo usan:** `app.js`, `workspace.js`, `importer.js`.
+
+---
+
+### `src/workspace.js` ✅
+Estado del workspace activo: carga el job, registra selecciones, calcula total en tiempo real, guarda progreso, y construye el objeto Completion al finalizar. Sin render de UI.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `initWorkspace` | function | Carga el job; restaura progreso guardado si el `jobId` coincide |
+| `getState` | function | Retorna el estado actual del workspace |
+| `clearWorkspace` | function | Limpia estado en memoria y en storage |
+| `toggleService` | function | Activa/desactiva un servicio; aplica reglas de exclusividad |
+| `setThermostat` | function | Setea termostato y cantidad |
+| `toggleAccessory` | function | Activa/desactiva accesorio de catálogo o precio libre |
+| `toggleFix` | function | Activa/desactiva fix de catálogo o precio libre |
+| `setOption` | function | Setea `isTwoSystems` o `isTemporary` |
+| `setSystem2Models` | function | Guarda modelos del Sistema 2 descubiertos en campo |
+| `setWeightInData` | function | Guarda datos de carga para sistema 1 o 2 |
+| `setNotes` | function | Guarda notas de campo |
+| `addPhoto` / `removePhoto` | function | Agrega o elimina foto del array |
+| `calculateTotals` | function | Función pura — aplica las 8 reglas de negocio del data dictionary §7 |
+| `saveProgress` | function | Persiste el estado via `storage.js` |
+| `buildCompletion` | function | Ensambla el objeto `Completion` completo listo para `reports.js` |
+
+**Reglas de negocio implementadas:**
+1. AC + Heat = $30 combinados, no $60
+2. 2 Systems duplica precio de servicio y accesorios marcados
+3. Prestart es mutuamente excluyente con AC/Heat/Finish
+4. Finish reemplaza el precio de AC/Heat — base $20
+5. Weight-In + Finish = $10 + $10 addon
+6. Cancel anula todo cobro
+7. Temporarily modifica solo el texto del reporte
+8. Precios del usuario sobreescriben defaults vía parámetro `prices`
+
+**Depende de:** `src/data.js`, `src/storage.js`.  
+**Lo usan:** `app.js`, `reports.js`.
 
 ---
 
