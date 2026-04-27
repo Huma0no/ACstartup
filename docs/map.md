@@ -26,7 +26,7 @@
 │   ├── workspace.js        # ✅ Construido
 │   ├── reports.js          # ✅ Construido
 │   ├── settings.js         # ✅ Construido
-│   ├── importer.js         # 🔲 Pendiente
+│   ├── importer.js         # ✅ Construido
 │   ├── ai.js               # 🔲 Pendiente
 │   └── diagrams.js         # 🔲 Pendiente
 │
@@ -170,6 +170,23 @@ Genera el texto exacto del reporte por job y el reporte diario completo. Sin ren
 | `exportCSV` | function | Serializa a CSV con 43 columnas: Date, Address, Subdivision, Builder, Service_Type, Service_Price, Thermostat, Tstat_Qty, Accessories, Accessories_Price, Fixes, Fixes_Price, Notes, Total, Indoor_Model, Outdoor_Model, 12 columnas weigh-in sys1, Refrigerant, Indoor_Model_2, Outdoor_Model_2, 12 columnas weigh-in sys2 |
 
 **Depende de:** Nada — recibe los datos como parámetros.  
+**Lo usan:** `app.js`.
+
+---
+
+### `src/importer.js` ✅
+Importa jobs desde Dispatch JSON. Sin render de UI. Sin acceso directo a localStorage.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `importFromJSON` | function | Parsea JSON de Dispatch (array o job único), valida campos requeridos, guarda jobs nuevos via `jobs.js`. Retorna `{ imported, skipped, errors[] }` |
+| `importFromPDF` | function | Placeholder — retorna error indicando que PDF import está pendiente para Fase 3 |
+
+**Validación:** campos requeridos según data_dictionary.md §2 — `id`, `date`, `address`, `subdivision`, `builder`, `system1`. Jobs con `id` ya existente en storage se omiten sin sobreescribir.
+
+**Depende de:** `src/jobs.js` — `getJobById`, `updateJob`.  
 **Lo usan:** `app.js`.
 
 ---
