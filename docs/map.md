@@ -25,7 +25,7 @@
 │   ├── jobs.js             # ✅ Construido
 │   ├── workspace.js        # ✅ Construido
 │   ├── reports.js          # ✅ Construido
-│   ├── settings.js         # 🔲 Pendiente
+│   ├── settings.js         # ✅ Construido
 │   ├── importer.js         # 🔲 Pendiente
 │   ├── ai.js               # 🔲 Pendiente
 │   └── diagrams.js         # 🔲 Pendiente
@@ -174,6 +174,32 @@ Genera el texto exacto del reporte por job y el reporte diario completo. Sin ren
 
 ---
 
+### `src/settings.js` ✅
+Configuración de la app: detección de primer inicio, onboarding de precios, proveedor de IA y API key, tema dark/light. Sin render de UI. Sin acceso directo a localStorage.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `initSettings` | function | Carga desde storage y aplica defaults para claves faltantes. Llamar una vez al inicio antes que cualquier módulo lea settings |
+| `getSettings` | function | Retorna el objeto settings en memoria |
+| `isFirstLaunch` | function | `true` si `onboardingComplete === false` — indica que el usuario no ha completado el setup inicial |
+| `completeOnboarding` | function | Marca onboarding completo y persiste |
+| `setTechName` | function | Actualiza nombre del técnico y persiste |
+| `setTheme` | function | `"dark"` \| `"light"` — persiste preferencia; `app.js` aplica al DOM (`data-mode`) |
+| `setAiProvider` | function | Persiste el proveedor de IA seleccionado |
+| `setAiApiKey` | function | Persiste el API key |
+| `setPrice` | function | Override de un precio individual. `setPrice(category, name, value)` — category: "SERVICE" \| "ACCESSORY" \| "FIX"; name: null para scalars como WEIGHT_IN_FINISH_ADDON |
+| `resetPrices` | function | Borra todos los overrides, revierte a DEFAULT_PRICES |
+| `getPrices` | function | Retorna DEFAULT_PRICES con overrides del usuario aplicados — objeto listo para pasar a `calculateTotals()` |
+
+**Nota de diseño:** `prices` en storage es un objeto sparse — solo almacena lo que el usuario cambió. `getPrices()` hace el merge en memoria sobre DEFAULT_PRICES.
+
+**Depende de:** `src/data.js` (DEFAULT_PRICES), `src/storage.js` (getSettings, saveSettings).  
+**Lo usan:** `app.js`, `workspace.js` (vía getPrices()).
+
+---
+
 ### `styles/app.css` ✅
 Design system completo. Todos los estilos de la app.
 
@@ -282,6 +308,7 @@ Export JSON → Dispatch
 | 3 | Mapa interactivo de dependencias | docs/ |
 | 4 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
 | 5 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
+| 6 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
 
 ---
 
