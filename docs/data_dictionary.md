@@ -103,9 +103,9 @@ Representa el trabajo realizado en un job. Se genera al completar el workspace.
   "isTemporary": false,
   "refrigerant": "R-454B",
   "outdoorModel": "GLXS4BA4210",
-  "heaterModel": "GR9S800805C",
+  "indoorModel": "GR9S800805C",
   "outdoorModel2": null,
-  "heaterModel2": null,
+  "indoorModel2": null,
   "services": [],
   "selectedThermostat": null,
   "thermostatQuantity": 1,
@@ -138,9 +138,9 @@ Representa el trabajo realizado en un job. Se genera al completar el workspace.
 | `isTemporary` | boolean | true = "AC (Temporarily) started" en el reporte |
 | `refrigerant` | string | Tipo de refrigerante — ver sección 6 (R-410A, R-454B) |
 | `outdoorModel` | string | Modelo outdoor Sistema 1 |
-| `heaterModel` | string | Modelo furnace Sistema 1 |
+| `indoorModel` | string | Modelo furnace Sistema 1 |
 | `outdoorModel2` | string \| null | Modelo outdoor Sistema 2 |
-| `heaterModel2` | string \| null | Modelo furnace Sistema 2 |
+| `indoorModel2` | string \| null | Modelo furnace Sistema 2 |
 | `services` | ServiceItem[] | Servicios realizados |
 | `selectedThermostat` | object \| null | Termostato seleccionado |
 | `thermostatQuantity` | number | Cantidad de termostatos |

@@ -285,9 +285,9 @@ export function buildCompletion(job, prices = DEFAULT_PRICES) {
     isTemporary:        s.isTemporary,
     refrigerant:        "",         // resolved by caller from equipment data
     outdoorModel:       job.system1?.outdoor || "",
-    heaterModel:        job.system1?.furnace || "",
+    indoorModel:        job.system1?.furnace || "",
     outdoorModel2:      (s.system2 ?? job.system2)?.outdoor || null,
-    heaterModel2:       (s.system2 ?? job.system2)?.furnace || null,
+    indoorModel2:       (s.system2 ?? job.system2)?.furnace || null,
     services:           _buildServiceItems(s, totals.service),
     selectedThermostat: s.selectedThermostat ? { name: s.selectedThermostat } : null,
     thermostatQuantity: s.thermostatQuantity,

@@ -220,7 +220,7 @@ savedState, addressHistory[]
 ```
 jobId, address, subdivision, builder, timestamp,
 isTwoSystems, isTemporary, refrigerant,
-outdoorModel, heaterModel, outdoorModel2, heaterModel2,
+outdoorModel, indoorModel, outdoorModel2, indoorModel2,
 services[], selectedThermostat, thermostatQuantity,
 accessories[], fixes[], weightInData, weightInData2,
 notes, photos[], totals{service, accessory, fix, total},
