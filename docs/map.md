@@ -20,6 +20,7 @@
 │   └── app.css             # Design system — 3 temas (A/B/C), dark/light toggle
 │
 ├── src/
+│   ├── app.js              # ✅ Construido
 │   ├── data.js             # ✅ Construido
 │   ├── storage.js          # ✅ Construido
 │   ├── jobs.js             # ✅ Construido
@@ -235,6 +236,30 @@ Chat IA con el proveedor activo según `settings.js`. Sin render de UI. Sin acce
 
 **Depende de:** `src/settings.js` — `getSettings()`.  
 **Lo usan:** `app.js`.
+
+---
+
+### `src/app.js` ✅
+Punto de entrada. Inicializa todos los módulos en orden, maneja navegación entre tabs, conecta eventos del HTML con los módulos, y actualiza la UI después de cada acción. Sin lógica de negocio — toda lógica vive en los módulos especializados.
+
+**Responsabilidades:**
+
+| Área | Descripción |
+|---|---|
+| Init | SW registration, `initSettings()`, aplica tema al DOM, restaura job activo interrumpido |
+| Tab navigation | Activa/oculta panels por `data-tab`; dispara `renderReports()` y `renderLV()` al entrar |
+| Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse; delete; start/resume → workspace |
+| Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes, weight-in, notas, fotos |
+| Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → limpia workspace → navega a Reports |
+| Reports tab | Renderiza completions; botón Copy vía `navigator.clipboard` |
+| LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
+| Settings modal | Theme toggle (`data-mode`), proveedor IA, API key save/clear |
+| Add Job | Dialog dinámico con campos requeridos → `createJob()` → `precacheJobs([job])` |
+| Troubleshooting | Abre/cierra `#ts-drawer`; body pendiente |
+| Photos | File input → FileReader → `addPhoto()`; geolocation no-blocking |
+
+**Depende de:** todos los módulos de `src/`.  
+**No exporta nada** — es el entry point.
 
 ---
 
