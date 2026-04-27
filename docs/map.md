@@ -24,7 +24,7 @@
 │   ├── storage.js          # ✅ Construido
 │   ├── jobs.js             # ✅ Construido
 │   ├── workspace.js        # ✅ Construido
-│   ├── reports.js          # 🔲 Pendiente
+│   ├── reports.js          # ✅ Construido
 │   ├── settings.js         # 🔲 Pendiente
 │   ├── importer.js         # 🔲 Pendiente
 │   ├── ai.js               # 🔲 Pendiente
@@ -157,6 +157,23 @@ Estado del workspace activo: carga el job, registra selecciones, calcula total e
 
 ---
 
+### `src/reports.js` ✅
+Genera el texto exacto del reporte por job y el reporte diario completo. Sin render de UI. Sin acceso a localStorage.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `generateReportText` | function | Ensambla el texto de un completion siguiendo el formato §8 del data dictionary. No re-aplica reglas de negocio — los displayNames y precios ya vienen resueltos desde `workspace.js` |
+| `generateDailyReport` | function | Concatena el `reportText` de todos los completions del día separados por párrafo. Si un completion no tiene `reportText`, lo genera on-the-fly |
+| `exportJSON` | function | Serializa el array de completions a JSON con indentación |
+| `exportCSV` | function | Serializa a CSV con 43 columnas: Date, Address, Subdivision, Builder, Service_Type, Service_Price, Thermostat, Tstat_Qty, Accessories, Accessories_Price, Fixes, Fixes_Price, Notes, Total, Indoor_Model, Outdoor_Model, 12 columnas weigh-in sys1, Refrigerant, Indoor_Model_2, Outdoor_Model_2, 12 columnas weigh-in sys2 |
+
+**Depende de:** Nada — recibe los datos como parámetros.  
+**Lo usan:** `app.js`.
+
+---
+
 ### `styles/app.css` ✅
 Design system completo. Todos los estilos de la app.
 
@@ -264,6 +281,7 @@ Export JSON → Dispatch
 | 2 | Equipment catalog por marca — modelos, refrigerante, diagramas | data.js |
 | 3 | Mapa interactivo de dependencias | docs/ |
 | 4 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
+| 5 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
 
 ---
 
