@@ -560,6 +560,9 @@ export const PRODUCT_LINKS = {
 // SERIES GROUP FUNCTIONS — derive optgroup data from catalog order. No duplication.
 // ---------------------------------------------------------------------------
 
+export function getIndoorModel(model)  { return INDOOR_CATALOG[model]  || null; }
+export function getOutdoorModel(model) { return OUTDOOR_CATALOG[model] || null; }
+
 export function getIndoorSeriesGroups() {
   const order = [];
   const map   = new Map();
