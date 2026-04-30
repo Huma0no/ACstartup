@@ -1,6 +1,6 @@
 # HVAC Field Tool — Project Map
 **Rama activa:** build/desde-cero  
-**Última actualización:** Abril 2026
+**Última actualización:** Abril 2026 (rev 2)
 
 > Documento vivo. Se actualiza antes de cada commit.
 > Qué existe, qué hace, cómo se conecta.
@@ -29,7 +29,8 @@
 │   ├── settings.js         # ✅ Construido
 │   ├── importer.js         # ✅ Construido
 │   ├── ai.js               # ✅ Construido
-│   └── diagrams.js         # ✅ Construido
+│   ├── diagrams.js         # ✅ Construido
+│   └── utils.js            # ✅ Construido
 │
 └── docs/
     ├── requirements.md
@@ -65,6 +66,15 @@ Fuente de verdad de todos los datos estáticos. Ningún otro módulo define prec
 | `DEFAULT_PRICES` | object | Precios por servicio, accesorio y fix |
 | `ACCESSORY_DISPLAY` | object | Strings exactos de accesorios en el reporte |
 | `FIX_DISPLAY` | object | Strings exactos de fixes en el reporte |
+| `INDOOR_CATALOG` | object | Modelos indoor Lennox: `hType`, `pESP`, `series`, `imagen` (ruta relativa a `/images/`) |
+| `OUTDOOR_CATALOG` | object | Modelos outdoor Lennox: `btu`, `freon`, `FactoryCharge`, `revisedCharge`, `series`, `imagen` |
+| `SERIES_LINKS` | object | Links de manuales por serie indoor — `serviceManual`, `documentLibrary`, `blower` |
+| `OUTDOOR_LINKS` | object | Links de manuales por modelo outdoor |
+| `PRODUCT_LINKS` | object | Links de producto por modelo (landing pages / spec sheets) |
+| `getIndoorModel` | function | `(model: string) → entry \| null` — lookup en `INDOOR_CATALOG` |
+| `getOutdoorModel` | function | `(model: string) → entry \| null` — lookup en `OUTDOOR_CATALOG` |
+| `getIndoorSeriesGroups` | function | Retorna `{ seriesName: [model, ...] }` — agrupa `INDOOR_CATALOG` por campo `series` |
+| `getOutdoorSeriesGroups` | function | Retorna `{ seriesName: [model, ...] }` — agrupa `OUTDOOR_CATALOG` por campo `series` |
 
 **Depende de:** Nada.  
 **Lo usan:** Todos los módulos de `/src`.
@@ -249,12 +259,13 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Init | SW registration, `initSettings()`, aplica tema al DOM, restaura job activo interrumpido |
 | Tab navigation | Activa/oculta panels por `data-tab`; dispara `renderReports()` y `renderLV()` al entrar |
 | Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse; delete; start/resume → workspace |
+| Job card | Visible siempre: dirección, chips de builder/subdivisión, chips de termostato y accesorios pre-seleccionados. Al expandir: chips de outdoor (ton, refrigerante, carga, CFM) y equip-grid con imagen del indoor model (`getIndoorModel().imagen`); click en imagen abre `#lightbox` |
 | Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes, weight-in, notas, fotos |
 | Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → limpia workspace → navega a Reports |
 | Reports tab | Renderiza completions; botón Copy vía `navigator.clipboard` |
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
 | Settings modal | Theme toggle (`data-mode`), proveedor IA, API key save/clear |
-| Add Job | Dialog dinámico con campos requeridos → `createJob()` → `precacheJobs([job])` |
+| Add Job | Sección inline en `#tab-jobs` (no dialog); campos: dirección, subdivision, builder, fecha, notas, 2 Systems, time-sensitive, termostato (modelo + qty), accesorios multi-select, modelos indoor/outdoor con selects por serie + links de manuales → `createJob()` → `precacheJobs([job])` |
 | Troubleshooting | Abre/cierra `#ts-drawer`; body pendiente |
 | Photos | File input → FileReader → `addPhoto()`; geolocation no-blocking |
 
@@ -281,6 +292,20 @@ Lookup de URLs de diagramas, pre-descarga via Cache API, detección de disponibi
 
 **Depende de:** Nada — usa solo Cache API del navegador.  
 **Lo usan:** `app.js`, `importer.js`.
+
+---
+
+### `src/utils.js` ✅
+Funciones utilitarias compartidas sin dependencias.
+
+**Exporta:**
+
+| Export | Tipo | Descripción |
+|---|---|---|
+| `ouncesToPoundsAndOunces` | function | Convierte oz a string "X lb Y oz" (o solo "Y oz" si < 16 oz) — usado en chips de carga de refrigerante en el job card |
+
+**Depende de:** Nada.  
+**Lo usan:** `app.js`.
 
 ---
 
@@ -320,11 +345,14 @@ Shell de la app. Estructura de 4 tabs, 5 steps en workspace, 3 modales, drawer, 
 ```
 id, date, address, subdivision, builder, contact,
 serviceTime, timeSensitive, isTwoSystems, details,
-jobAccessories[], system1{furnace, coil, outdoor},
+jobThermostat{model, qty} | null,
+jobAccessories[],
+system1{furnace, coil, outdoor},
 system2{furnace, coil, outdoor} | null,
 savedState, addressHistory[]
 ```
-> `coil` oculto por default en UI.
+> `coil` oculto por default en UI.  
+> `jobThermostat` y `jobAccessories` son los valores pre-seleccionados desde el formulario de creación del job — no deben confundirse con las selecciones del workspace que el técnico hace en campo.
 
 ### Completion
 ```
@@ -388,11 +416,12 @@ Export JSON → Dispatch
 | # | Pendiente | Módulo |
 |---|---|---|
 | 1 | EXTENDED_WIRE sub-opciones: "cond", "ecoil" | data.js / workspace.js |
-| 2 | Equipment catalog por marca — modelos, refrigerante, diagramas | data.js |
+| 2 | ~~Equipment catalog por marca — modelos, refrigerante, diagramas~~ ✅ Completado — `INDOOR_CATALOG`, `OUTDOOR_CATALOG`, helpers de lookup y series en `data.js` | — |
 | 3 | Mapa interactivo de dependencias | docs/ |
 | 4 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
 | 5 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
 | 6 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
+| 7 | Imágenes indoor con nombre de archivo en lowercase en disco pero uppercase en el catálogo — falla en Netlify (Linux, case-sensitive) | data.js / images/ |
 
 ---
 
