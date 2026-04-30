@@ -136,6 +136,21 @@ function jobCardHTML(job, ci) {
     job.isTwoSystems && s2 ? _sysRow(s2.furnace, s2.outdoor, "2: ") : "",
   ].filter(Boolean).join("");
 
+  const _equipCard = (furnace, label) => {
+    if (!furnace) return "";
+    const d = getIndoorModel(furnace);
+    if (!d?.imagen) return "";
+    return `<div class="equip-card">
+      <div class="equip-heading">${esc(label)}</div>
+      <div class="equip-model">${esc(furnace)}</div>
+      <div class="equip-image"><img src="${esc(d.imagen)}" alt="${esc(furnace)}" loading="lazy"></div>
+    </div>`;
+  };
+  const equipCards = [
+    _equipCard(s1.furnace, "System 1"),
+    job.isTwoSystems && s2 ? _equipCard(s2.furnace, "System 2") : "",
+  ].filter(Boolean).join("");
+
   return `
 <li class="job-item${inProg ? " expanded" : ""}" data-id="${esc(job.id)}"
     style="border-left-color:var(--subdivision-${ci})">
@@ -152,6 +167,7 @@ function jobCardHTML(job, ci) {
       </div>
     </div>
     ${expandChips ? `<div class="job-chip-row">${expandChips}</div>` : ""}
+    ${equipCards ? `<div class="equip-grid">${equipCards}</div>` : ""}
     <button class="btn-start-job" data-start="${esc(job.id)}">
       ${inProg ? "▶ Resume" : "▶ Start"}
     </button>
