@@ -25,6 +25,7 @@ export function createJob(data) {
     isTwoSystems:   data.isTwoSystems   || false,
     details:        data.details        || "",
     jobAccessories: data.jobAccessories || [],
+    jobThermostat:  data.jobThermostat  || null,
     system1: {
       furnace: data.system1?.furnace || "",
       coil:    data.system1?.coil    || "",

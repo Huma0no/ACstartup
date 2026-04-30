@@ -44,6 +44,12 @@ export function initWorkspace(job) {
     notes:               "",
     photos:              [],
   };
+  for (const name of (job.jobAccessories || []))
+    _state.selectedAccessories.push(name);
+  if (job.jobThermostat?.model) {
+    _state.selectedThermostat = job.jobThermostat.model;
+    _state.thermostatQuantity = job.jobThermostat.qty || 1;
+  }
 }
 
 export function getState() {

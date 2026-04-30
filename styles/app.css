@@ -327,8 +327,8 @@ textarea { resize: vertical; }
   align-items: stretch;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: var(--space-1);
-  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  gap: 0;
   z-index: var(--z-navbar);
 }
 
@@ -340,24 +340,24 @@ textarea { resize: vertical; }
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   transition: var(--tr-fast);
   border: none;
+  border-bottom: 2px solid transparent;
   background: transparent;
   cursor: pointer;
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
   white-space: nowrap;
 }
 
 .tab-btn:hover {
-  background: var(--color-surface-raised);
   color: var(--color-text-primary);
 }
 
 .tab-btn.active {
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  color: var(--color-accent);
   font-weight: var(--font-weight-bold);
+  border-bottom-color: var(--color-accent);
 }
 
 .tab-btn.completed {
@@ -989,12 +989,16 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Chip row (tech data, shown on expand) */
 .job-chip-row {
-  display: flex;
+  display: none;
   flex-wrap: wrap;
   gap: var(--space-1);
   padding: var(--space-2) 0;
   border-top: 1px solid var(--color-border);
   margin-top: var(--space-2);
+}
+
+.job-item.expanded .job-chip-row {
+  display: flex;
 }
 
 .job-chip-row .chip {
@@ -2380,6 +2384,8 @@ input[type="number"]::-webkit-outer-spin-button {
    ─────────────────────────────────────────────────────────────── */
 
 dialog.modal {
+  /* cerrado por defecto — display:none es el valor nativo del browser
+     para <dialog>; no lo sobreescribimos aquí */
   position: fixed;
   inset: 0;
   margin: auto;
@@ -2391,8 +2397,6 @@ dialog.modal {
   color: var(--color-text-primary);
   padding: 0;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
   box-shadow: var(--shadow-md);
 }
 
@@ -2403,6 +2407,8 @@ dialog.modal::backdrop {
 }
 
 dialog.modal[open] {
+  display: flex;
+  flex-direction: column;
   animation: scaleIn 0.2s ease-out both;
 }
 
@@ -2718,4 +2724,16 @@ dialog.modal[open] {
 .mt-3         { margin-top: var(--space-3); }
 .mb-2         { margin-bottom: var(--space-2); }
 .input-row    { display: flex; gap: var(--space-2); align-items: center; }
+.form-row     { display: flex; gap: var(--space-2); align-items: flex-start; }
+.form-row > * { flex: 1; min-width: 0; }
 .section-divider { border-top: 1px dashed var(--color-border); padding-top: var(--space-3); }
+
+.series-links { display: flex; flex-wrap: wrap; gap: var(--space-2); font-size: var(--font-size-xs); }
+.series-links a { color: var(--color-accent); text-decoration: none; }
+.series-links a:hover { text-decoration: underline; }
+
+.chip-remove { background: none; border: none; color: inherit; cursor: pointer;
+               padding: 0 0 0 var(--space-1); min-height: unset; width: auto; opacity: 0.6; }
+.chip-remove:hover { opacity: 1; }
+
+.add-job-section { border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-3); }

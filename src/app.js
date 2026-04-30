@@ -14,12 +14,16 @@ import {
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
 import { generateReportText } from "./reports.js";
+import { ouncesToPoundsAndOunces } from "./utils.js";
 import { getLinksForJob, isAvailableOffline, downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
 import {
   SERVICES, ACCESSORIES, FIXES, THERMOSTATS, BUILDERS,
   ACCESSORY_DISPLAY, FIX_DISPLAY,
   CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
+  getIndoorSeriesGroups, getOutdoorSeriesGroups,
+  getIndoorModel, getOutdoorModel,
+  SERIES_LINKS, OUTDOOR_LINKS,
 } from "./data.js";
 
 // ---------------------------------------------------------------------------
@@ -27,6 +31,7 @@ import {
 // ---------------------------------------------------------------------------
 
 let _activeJob = null;
+let _newJobAccChips = [];
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -67,15 +72,15 @@ function openTab(name) {
 // Jobs tab
 // ---------------------------------------------------------------------------
 
-function renderJobs(filter = "") {
-  const all    = sortJobs(getAllJobs());
-  const jobs   = filter
-    ? all.filter((j) => j.address.toLowerCase().includes(filter.toLowerCase()))
-    : all;
-  const list   = document.getElementById("jobs-list");
+function renderJobs() {
+  const jobs = sortJobs(getAllJobs());
+  const list = document.getElementById("jobs-list");
+
+  const section = document.getElementById("add-job-section");
+  if (section && !jobs.length) section.classList.remove("hidden");
 
   if (!jobs.length) {
-    list.innerHTML = `<li class="empty-state">${filter ? "No matches" : "No jobs"}</li>`;
+    list.innerHTML = `<li class="empty-state">No jobs</li>`;
     return;
   }
 
@@ -91,6 +96,46 @@ function jobCardHTML(job, ci) {
   const s1     = job.system1 || {};
   const s2     = job.system2;
 
+  // Col 1 Row 2 of job-top grid — always visible
+  const techChips = [
+    job.jobThermostat?.model && (() => {
+      const qty = job.jobThermostat.qty || 1;
+      return `<span class="chip chip-sm chip-primary">🌡 ${esc(qty > 1 ? `${qty}× ${job.jobThermostat.model}` : job.jobThermostat.model)}</span>`;
+    })(),
+    ...(job.jobAccessories || []).map((a) =>
+      `<span class="chip chip-sm chip-accessory">📦 ${esc(ACCESSORY_DISPLAY[a] || a.toLowerCase())}</span>`
+    ),
+    job.isTwoSystems && `<span class="chip chip-sm chip-secondary">2️⃣ Systems</span>`,
+  ].filter(Boolean).join("");
+
+  // Expand-only: model + tech chips for one system
+  const _sysRow = (furnace, outdoor, prefix = "") => {
+    const chips = [
+      furnace && `<span class="chip chip-sm chip-primary">${esc(prefix + furnace)}</span>`,
+      outdoor && `<span class="chip chip-sm chip-secondary">${esc(prefix + outdoor)}</span>`,
+    ];
+    const d = outdoor ? getOutdoorModel(outdoor) : null;
+    if (d) {
+      const ton    = d.btu ? (d.btu / 12000).toFixed(1) : null;
+      const cfgMax = d.btu ? Math.round((d.btu / 12000) * 400) : null;
+      const cfgMin = cfgMax ? Math.round(cfgMax * 0.85) : null;
+      chips.push(
+        ton                    && `<span class="chip chip-sm chip-outline">${prefix}Ton ${ton}</span>`,
+        d.freon                && `<span class="chip chip-sm chip-outline">${prefix}${esc(d.freon)}</span>`,
+        d.FactoryCharge        && `<span class="chip chip-sm chip-outline">${prefix}${esc(ouncesToPoundsAndOunces(d.FactoryCharge))}</span>`,
+        d.revisedCharge > 0    && `<span class="chip chip-sm chip-outline">${prefix}Over: ${d.revisedCharge} oz</span>`,
+        cfgMax                 && `<span class="chip chip-sm chip-outline">${prefix}Max CFM ${cfgMax}</span>`,
+        cfgMin                 && `<span class="chip chip-sm chip-outline">${prefix}Min CFM ${cfgMin}</span>`,
+      );
+    }
+    return chips.filter(Boolean).join("");
+  };
+
+  const expandChips = [
+    _sysRow(s1.furnace, s1.outdoor),
+    job.isTwoSystems && s2 ? _sysRow(s2.furnace, s2.outdoor, "2: ") : "",
+  ].filter(Boolean).join("");
+
   return `
 <li class="job-item${inProg ? " expanded" : ""}" data-id="${esc(job.id)}"
     style="border-left-color:var(--subdivision-${ci})">
@@ -99,22 +144,14 @@ function jobCardHTML(job, ci) {
     <div class="job-top">
       <div class="job-top-addr"><strong>${esc(job.address)}</strong></div>
       <div class="job-top-spacer"></div>
+      ${techChips ? `<div class="job-top-tech">${techChips}</div>` : ""}
       <div class="job-top-meta">
         <span class="chip chip-sm chip-secondary">🏗 ${esc(job.builder)}</span>
         <span class="chip chip-sm chip-secondary">🏘 ${esc(job.subdivision)}</span>
         ${badge}${ts}
       </div>
     </div>
-    <div class="equip-grid">
-      <div class="equip-card">
-        <div class="equip-heading">System 1</div>
-        <div class="equip-model">${esc(s1.furnace || "—")} · ${esc(s1.outdoor || "—")}</div>
-      </div>
-      ${s2 ? `<div class="equip-card">
-        <div class="equip-heading">System 2</div>
-        <div class="equip-model">${esc(s2.furnace || "—")} · ${esc(s2.outdoor || "—")}</div>
-      </div>` : ""}
-    </div>
+    ${expandChips ? `<div class="job-chip-row">${expandChips}</div>` : ""}
     <button class="btn-start-job" data-start="${esc(job.id)}">
       ${inProg ? "▶ Resume" : "▶ Start"}
     </button>
@@ -342,34 +379,159 @@ function renderSettingsModal() {
 }
 
 // ---------------------------------------------------------------------------
-// Add Job dialog — built dynamically (no slot in index.html)
+// Add Job — helpers
 // ---------------------------------------------------------------------------
 
-function buildAddJobDialog() {
-  const dlg = document.createElement("dialog");
-  dlg.id = "add-job-modal";
-  dlg.className = "modal";
-  dlg.innerHTML = `
-    <div class="modal-header">
-      <span>New Job</span>
-      <button type="button" id="add-job-close" class="btn-icon" aria-label="Close"></button>
-    </div>
+function _indoorOptgroups() {
+  return getIndoorSeriesGroups().map(({ series, models }) =>
+    `<optgroup label="${esc(series)}">${models.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("")}</optgroup>`
+  ).join("");
+}
+
+function _outdoorOptgroups() {
+  return getOutdoorSeriesGroups().map(({ series, models }) =>
+    `<optgroup label="${esc(series)}">${models.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("")}</optgroup>`
+  ).join("");
+}
+
+const _LINK_SKIP   = new Set(["linkText", "supplyLinkText", "blowerSpeedText", "blowerSpeedImage"]);
+const _LINK_LABELS = {
+  serviceManual: "Service Manual", installManual: "Install Manual",
+  lennoxPros:    "LennoxPros Docs", trane:         "Trane Technologies",
+  traneSupply:   "Trane Supply",    goodman:       "Goodman",
+  daikin:        "Daikin Comfort",
+};
+
+function _showEquipLinks(model, getFn, linksMap, container) {
+  if (!model) { container.innerHTML = ""; return; }
+  const entry = getFn(model);
+  const links = entry ? linksMap[entry.series] : null;
+  if (!links)  { container.innerHTML = ""; return; }
+  const items = Object.entries(links)
+    .filter(([k]) => !_LINK_SKIP.has(k))
+    .map(([k, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener">${_LINK_LABELS[k] || k}</a>`);
+  if (links.blowerSpeedImage)
+    items.push(`<a href="${esc(links.blowerSpeedImage)}" target="_blank" rel="noopener">${links.blowerSpeedText || "Blower Speed"}</a>`);
+  container.innerHTML = items.join(" · ");
+}
+
+function _renderNewJobAccChips() {
+  document.getElementById("new-job-acc-chips").innerHTML = _newJobAccChips
+    .map((name) => {
+      const disp = ACCESSORY_DISPLAY[name] || name.toLowerCase();
+      return `<span class="chip chip-sm chip-secondary">${esc(disp)}<button type="button" class="chip-remove" data-remove-acc="${esc(name)}" aria-label="Remove">×</button></span>`;
+    })
+    .join("");
+}
+
+function _collapseAddJobForm() {
+  _newJobAccChips = [];
+  document.getElementById("new-job-acc-chips").innerHTML  = "";
+  document.getElementById("indoor-links").innerHTML       = "";
+  document.getElementById("outdoor-links").innerHTML      = "";
+  document.getElementById("indoor-links2").innerHTML      = "";
+  document.getElementById("outdoor-links2").innerHTML     = "";
+  document.getElementById("new-job-tstat-other").classList.add("hidden");
+  document.getElementById("new-job-sys2").classList.add("hidden");
+  document.getElementById("add-job-form").reset();
+  document.getElementById("add-job-section").classList.add("hidden");
+}
+
+// ---------------------------------------------------------------------------
+// Add Job section — built dynamically, inserted inline in #tab-jobs
+// ---------------------------------------------------------------------------
+
+function buildAddJobSection() {
+  const accOpts = Object.values(ACCESSORIES)
+    .filter((a) => !CUSTOM_PRICE_ACCESSORIES.includes(a))
+    .map((a) => `<option value="${esc(a)}">${esc(ACCESSORY_DISPLAY[a] || a.toLowerCase())}</option>`)
+    .join("");
+
+  const section = document.createElement("div");
+  section.id = "add-job-section";
+  section.className = "add-job-section hidden";
+  section.innerHTML = `
     <form class="modal-body" id="add-job-form">
-      <label>Address *<input name="address" required autocomplete="off" placeholder="32122 WATERLILY VIEW CT"></label>
-      <label>Subdivision *<input name="subdivision" required autocomplete="off" placeholder="DELLROSE"></label>
-      <label>Builder *<select name="builder">
-        ${BUILDERS.map((b) => `<option value="${b}">${esc(b)}</option>`).join("")}
-      </select></label>
-      <label>Furnace / Air Handler<input name="furnace" autocomplete="off"></label>
-      <label>Outdoor Unit<input name="outdoor" autocomplete="off"></label>
-      <label>Coil<input name="coil" autocomplete="off"></label>
-      <label>Contact<input name="contact" autocomplete="off"></label>
+      <label>Address *
+        <input type="text" name="address" required autocomplete="off" placeholder="32122 WATERLILY VIEW CT">
+      </label>
+      <div class="form-row">
+        <label>Subdivision
+          <input type="text" name="subdivision" autocomplete="off" placeholder="DELLROSE">
+        </label>
+        <label>Builder
+          <input type="text" name="builder" list="builders-list" autocomplete="off">
+          <datalist id="builders-list">${BUILDERS.map((b) => `<option value="${esc(b)}">`).join("")}</datalist>
+        </label>
+      </div>
+      <label>Notes<textarea name="notes" rows="2" placeholder="Optional"></textarea></label>
+      <label class="toggle-row"><span>2 Systems</span>
+        <input type="checkbox" id="new-job-two-systems" name="two-systems">
+      </label>
+      <div class="form-row">
+        <div>
+          <label>Indoor unit
+            <select name="furnace" id="new-job-furnace">
+              <option value="">-- Select model --</option>${_indoorOptgroups()}
+            </select>
+          </label>
+          <div id="indoor-links" class="series-links"></div>
+        </div>
+        <div>
+          <label>Outdoor unit
+            <select name="outdoor" id="new-job-outdoor">
+              <option value="">-- Select model --</option>${_outdoorOptgroups()}
+            </select>
+          </label>
+          <div id="outdoor-links" class="series-links"></div>
+        </div>
+      </div>
+      <div id="new-job-sys2" class="hidden">
+        <p class="step-label">System 2</p>
+        <div class="form-row">
+          <div>
+            <label>Indoor unit 2
+              <select name="furnace2" id="new-job-furnace2">
+                <option value="">-- Select model --</option>${_indoorOptgroups()}
+              </select>
+            </label>
+            <div id="indoor-links2" class="series-links"></div>
+          </div>
+          <div>
+            <label>Outdoor unit 2
+              <select name="outdoor2" id="new-job-outdoor2">
+                <option value="">-- Select model --</option>${_outdoorOptgroups()}
+              </select>
+            </label>
+            <div id="outdoor-links2" class="series-links"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Tstat
+          <select name="tstat" id="new-job-tstat">
+            <option value="">-- Select --</option>
+            ${THERMOSTATS.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label style="flex: 0 0 4.5rem">Qty
+          <select name="tstat-qty">${[1,2,3,4,5].map((n) => `<option>${n}</option>`).join("")}</select>
+        </label>
+        <label>+ Acc
+          <select id="new-job-acc-picker">
+            <option value="">-- Add --</option>${accOpts}
+          </select>
+        </label>
+      </div>
+      <input type="text" name="tstat-other" id="new-job-tstat-other" autocomplete="off" placeholder="Tstat model name" class="hidden">
+      <div id="new-job-acc-chips"></div>
       <div class="btn-row">
         <button type="submit" class="btn-primary">Add Job</button>
         <button type="button" id="add-job-cancel" class="btn-secondary">Cancel</button>
       </div>
     </form>`;
-  document.body.appendChild(dlg);
+  document.getElementById("tab-jobs").insertBefore(section, document.getElementById("jobs-list"));
 }
 
 // ---------------------------------------------------------------------------
@@ -413,12 +575,9 @@ function wireEvents() {
     if (btn) document.getElementById(btn.dataset.scroll)?.scrollIntoView({ behavior: "smooth" });
   });
 
-  // Jobs — search + list delegation
-  document.getElementById("job-search").addEventListener("input", (e) =>
-    renderJobs(e.target.value)
-  );
+  // Jobs — list delegation
   document.getElementById("btn-add-job").addEventListener("click", () =>
-    document.getElementById("add-job-modal").showModal()
+    document.getElementById("add-job-section").classList.remove("hidden")
   );
   document.getElementById("jobs-list").addEventListener("click", (e) => {
     const del   = e.target.closest("[data-delete]");
@@ -427,7 +586,13 @@ function wireEvents() {
     const maps  = e.target.closest("[data-maps]");
     const item  = e.target.closest(".job-item");
 
-    if (del)   { removeJob(del.dataset.delete); renderJobs(document.getElementById("job-search").value); return; }
+    if (del) {
+      const dj = getJobById(del.dataset.delete);
+      if (!confirm(`Delete ${dj ? dj.address : "this job"}?`)) return;
+      removeJob(del.dataset.delete);
+      renderJobs();
+      return;
+    }
     if (start) { const j = getJobById(start.dataset.start); if (j) openWorkspace(j); return; }
     if (edit)  { toast("Edit not yet implemented", "info"); return; }
     if (maps)  { window.open(`https://maps.google.com/?q=${encodeURIComponent(maps.dataset.maps)}`, "_blank"); return; }
@@ -614,26 +779,60 @@ function wireEvents() {
     document.getElementById("ai-provider-ext-row").classList.toggle("hidden")
   );
 
-  // Add Job dialog
-  document.getElementById("add-job-close").addEventListener("click", () =>
-    document.getElementById("add-job-modal").close()
+  // Add Job form
+  document.getElementById("add-job-cancel").addEventListener("click", _collapseAddJobForm);
+  document.getElementById("new-job-two-systems").addEventListener("change", (e) =>
+    document.getElementById("new-job-sys2").classList.toggle("hidden", !e.target.checked)
   );
-  document.getElementById("add-job-cancel").addEventListener("click", () =>
-    document.getElementById("add-job-modal").close()
+  document.getElementById("new-job-furnace").addEventListener("change", (e) =>
+    _showEquipLinks(e.target.value, getIndoorModel, SERIES_LINKS, document.getElementById("indoor-links"))
   );
+  document.getElementById("new-job-furnace2").addEventListener("change", (e) =>
+    _showEquipLinks(e.target.value, getIndoorModel, SERIES_LINKS, document.getElementById("indoor-links2"))
+  );
+  document.getElementById("new-job-outdoor").addEventListener("change", (e) =>
+    _showEquipLinks(e.target.value, getOutdoorModel, OUTDOOR_LINKS, document.getElementById("outdoor-links"))
+  );
+  document.getElementById("new-job-outdoor2").addEventListener("change", (e) =>
+    _showEquipLinks(e.target.value, getOutdoorModel, OUTDOOR_LINKS, document.getElementById("outdoor-links2"))
+  );
+  document.getElementById("new-job-tstat").addEventListener("change", (e) =>
+    document.getElementById("new-job-tstat-other").classList.toggle("hidden", e.target.value !== "Other")
+  );
+  document.getElementById("new-job-acc-picker").addEventListener("change", (e) => {
+    const name = e.target.value;
+    e.target.value = "";
+    if (!name || _newJobAccChips.includes(name)) return;
+    _newJobAccChips.push(name);
+    _renderNewJobAccChips();
+  });
+  document.getElementById("new-job-acc-chips").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove-acc]");
+    if (!btn) return;
+    _newJobAccChips = _newJobAccChips.filter((a) => a !== btn.dataset.removeAcc);
+    _renderNewJobAccChips();
+  });
   document.getElementById("add-job-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    const fd  = new FormData(e.target);
+    const fd           = new FormData(e.target);
+    const tstatVal     = fd.get("tstat");
+    const tstatModel   = tstatVal === "Other" ? (fd.get("tstat-other") || "").trim() : tstatVal || "";
+    const isTwoSystems = !!fd.get("two-systems");
     const job = createJob({
-      address:     fd.get("address").toUpperCase(),
-      subdivision: fd.get("subdivision").toUpperCase(),
-      builder:     fd.get("builder"),
-      contact:     fd.get("contact"),
-      system1:     { furnace: fd.get("furnace"), coil: fd.get("coil"), outdoor: fd.get("outdoor") },
+      address:        fd.get("address").toUpperCase(),
+      subdivision:    (fd.get("subdivision") || "").toUpperCase(),
+      builder:        fd.get("builder")  || "",
+      details:        fd.get("notes")    || "",
+      isTwoSystems,
+      jobAccessories: [..._newJobAccChips],
+      jobThermostat:  tstatModel ? { model: tstatModel, qty: parseInt(fd.get("tstat-qty")) || 1 } : null,
+      system1: { furnace: fd.get("furnace")  || "", coil: "", outdoor: fd.get("outdoor")  || "" },
+      system2: isTwoSystems
+        ? { furnace: fd.get("furnace2") || "", coil: "", outdoor: fd.get("outdoor2") || "" }
+        : null,
     });
     precacheJobs([job]);
-    document.getElementById("add-job-modal").close();
-    e.target.reset();
+    _collapseAddJobForm();
     renderJobs();
     toast(`Job added: ${job.address}`, "success");
   });
@@ -657,7 +856,7 @@ function init() {
     if (job) { _activeJob = job; initWorkspace(job); initChat(job); }
   }
 
-  buildAddJobDialog();
+  buildAddJobSection();
   wireEvents();
   renderJobs();
   renderWorkspace();
