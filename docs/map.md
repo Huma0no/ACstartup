@@ -1,6 +1,6 @@
 # HVAC Field Tool — Project Map
 **Rama activa:** build/desde-cero  
-**Última actualización:** Abril 2026 (rev 2)
+**Última actualización:** Abril 2026 (rev 3)
 
 > Documento vivo. Se actualiza antes de cada commit.
 > Qué existe, qué hace, cómo se conecta.
@@ -55,17 +55,17 @@ Fuente de verdad de todos los datos estáticos. Ningún otro módulo define prec
 | `STORAGE_KEYS` | object | 7 claves de localStorage |
 | `SERVICES` | object | Tipos de servicio |
 | `STANDALONE_SERVICES` | array | Servicios mutuamente excluyentes con AC/Heat |
-| `ACCESSORIES` | object | Accesorios y sus claves |
+| `ACCESSORIES` | object | Accesorios y sus claves — `EXTENDED_WIRE` eliminado (movido a FIXES como sub-opciones) |
 | `TWO_SYSTEMS_ACCESSORIES` | array | Accesorios que duplican precio con 2 Systems |
 | `CUSTOM_PRICE_ACCESSORIES` | array | Accesorios con precio libre |
-| `FIXES` | object | Fixes y sus claves |
+| `FIXES` | object | Fixes y sus claves — incluye `EXTENDED_WIRE_FURNACE` y `EXTENDED_WIRE_CUNIT` como entradas independientes para sub-chips del grupo "Extended LV Wire"; `EXTENDED_WIRE` se conserva solo por backward-compat con completions guardados |
 | `CUSTOM_PRICE_FIXES` | array | Fixes con precio libre |
 | `THERMOSTATS` | array | T-6, T-10, Ecobee, Daikin One, TH2110 |
 | `BUILDERS` | array | Lennar, MHI, Highland, CastleRock, First America, Chesmar |
 | `REFRIGERANTS` | array | R-454B, R-32 |
 | `DEFAULT_PRICES` | object | Precios por servicio, accesorio y fix |
 | `ACCESSORY_DISPLAY` | object | Strings exactos de accesorios en el reporte |
-| `FIX_DISPLAY` | object | Strings exactos de fixes en el reporte |
+| `FIX_DISPLAY` | object | Strings exactos de fixes en el reporte — Leaks actualizados a `"Freon Leaks(eCoil/Cunit/Inside Wall)"`; nuevas entradas `"Extended Wire(Furnace)"` y `"Extended Wire(Cunit)"` |
 | `INDOOR_CATALOG` | object | Modelos indoor Lennox: `hType`, `pESP`, `series`, `imagen` (ruta relativa a `/images/`) |
 | `OUTDOOR_CATALOG` | object | Modelos outdoor Lennox: `btu`, `freon`, `FactoryCharge`, `revisedCharge`, `series`, `imagen` |
 | `SERIES_LINKS` | object | Links de manuales por serie indoor — `serviceManual`, `documentLibrary`, `blower` |
@@ -260,7 +260,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Tab navigation | Activa/oculta panels por `data-tab`; dispara `renderReports()` y `renderLV()` al entrar |
 | Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse; delete; start/resume → workspace |
 | Job card | Visible siempre: dirección, chips de builder/subdivisión, chips de termostato y accesorios pre-seleccionados. Al expandir: chips de outdoor (ton, refrigerante, carga, CFM) y equip-grid con imagen del indoor model (`getIndoorModel().imagen`); click en imagen abre `#lightbox` |
-| Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes, weight-in, notas, fotos |
+| Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes (grupos expandibles "Fixed Leaks" y "Extended LV Wire" con badge contador de seleccionados; sub-chips multi-select; chips standalone más pequeños con wrap), weight-in (Line Config como `<select>`; auto-fill de `factoryChargeOz` desde `outdoor.FactoryCharge` y `approxAdjustOz` según revisedCharge/FactoryCharge al cargar; subcooling auto-calc: `subcoolingValue = condenserSatTemp − liquidLineTemp`, `subcoolingDeviation = abs(subcoolingValue − oemSubcoolingGoal)`), notas, fotos |
 | Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → limpia workspace → navega a Reports |
 | Reports tab | Renderiza completions; botón Copy vía `navigator.clipboard` |
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
@@ -316,6 +316,8 @@ Design system completo. Todos los estilos de la app.
 - CSS variables por tema: `[data-theme="a/b/c"][data-mode="light/dark"]`
 - Componentes: chips, steps, badges, botones, cards, modales, drawer, FAB
 - Colores de subdivisión: 8 colores asignados por orden de importación
+- Clases weight-in: `.wi-grid` (3 col), `.wi-field`, `.wi-field input/select` — renombradas de `.weight-in-*` para coincidir con el HTML
+- Clases fixes: `.fix-chips-row` (chips standalone con wrap), `.chip-badge` (contador en chip de grupo), override de `.chip-sm` dentro de grupos/standalone (22 px, 11 px font)
 
 **Depende de:** `index.html` — lee `data-theme` y `data-mode` del elemento raíz.
 
@@ -415,13 +417,14 @@ Export JSON → Dispatch
 
 | # | Pendiente | Módulo |
 |---|---|---|
-| 1 | EXTENDED_WIRE sub-opciones: "cond", "ecoil" | data.js / workspace.js |
+| 1 | ~~EXTENDED_WIRE sub-opciones: "cond", "ecoil"~~ ✅ Completado — grupos expandibles "Fixed Leaks" y "Extended LV Wire" con sub-chips multi-select en workspace | data.js / app.js |
 | 2 | ~~Equipment catalog por marca — modelos, refrigerante, diagramas~~ ✅ Completado — `INDOOR_CATALOG`, `OUTDOOR_CATALOG`, helpers de lookup y series en `data.js` | — |
 | 3 | Mapa interactivo de dependencias | docs/ |
 | 4 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
 | 5 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
 | 6 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
 | 7 | Imágenes indoor con nombre de archivo en lowercase en disco pero uppercase en el catálogo — falla en Netlify (Linux, case-sensitive) | data.js / images/ |
+| 8 | SC out-of-range warnings — show discrete alert when subcooling is negative or outside expected range | app.js |
 
 ---
 
