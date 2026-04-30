@@ -60,7 +60,6 @@ export const ACCESSORIES = {
   LP_KIT_LENNOX_2STG:"LP Kit Lennox 2stg",
   LP_KIT_GOODMAN:    "LP Kit Goodman",
   WEIGHT_IN_DATA:    "Weight-In-Data",
-  EXTENDED_WIRE:     "Extended Wire",
   OUT_OF_TOWN:       "Out of town fee",
   OTRO:              "Otro",
 };
@@ -93,8 +92,10 @@ export const FIXES = {
   WIRES_JAMMED:  "Wires Jammed",
   STUCK_BLOWER:  "Stuck Blower",
   CUT_SHEETROCK: "Cut Sheetrock",
-  EXTENDED_WIRE: "Extended Wire",
-  PVC_WORK:      "PVC Work",
+  EXTENDED_WIRE:         "Extended Wire",
+  EXTENDED_WIRE_FURNACE: "Extended Wire(Furnace)",
+  EXTENDED_WIRE_CUNIT:   "Extended Wire(Cunit)",
+  PVC_WORK:              "PVC Work",
   LEAKS_ECOIL:   "Leaks Ecoil",
   LEAKS_CUNIT:   "Leaks Cunit",
   LEAKS_WALL:    "Leaks Wall",
@@ -166,7 +167,6 @@ export const DEFAULT_PRICES = {
     [ACCESSORIES.LP_KIT_LENNOX_2STG]: 20,
     [ACCESSORIES.LP_KIT_GOODMAN]:     20,
     [ACCESSORIES.WEIGHT_IN_DATA]:     10,
-    [ACCESSORIES.EXTENDED_WIRE]:       5,
   },
 
   // Weight-In addon: added to WEIGHT_IN_DATA price when Finish is also selected
@@ -178,8 +178,10 @@ export const DEFAULT_PRICES = {
     [FIXES.WIRES_JAMMED]:    5,
     [FIXES.STUCK_BLOWER]:   20,
     [FIXES.CUT_SHEETROCK]:  15,
-    [FIXES.EXTENDED_WIRE]:   5,
-    [FIXES.PVC_WORK]:       15,
+    [FIXES.EXTENDED_WIRE]:         5,
+    [FIXES.EXTENDED_WIRE_FURNACE]: 5,
+    [FIXES.EXTENDED_WIRE_CUNIT]:   5,
+    [FIXES.PVC_WORK]:             15,
     [FIXES.LEAKS_ECOIL]:    20,
     [FIXES.LEAKS_CUNIT]:    20,
     [FIXES.LEAKS_WALL]:     50,
@@ -211,7 +213,6 @@ export const ACCESSORY_DISPLAY = {
   [ACCESSORIES.LP_KIT_LENNOX_2STG]: "lp kit lennox 2stg",
   [ACCESSORIES.LP_KIT_GOODMAN]:     "lp kit goodman",
   [ACCESSORIES.WEIGHT_IN_DATA]:     "weigh-in data",
-  [ACCESSORIES.EXTENDED_WIRE]:      "extended wire",
   [ACCESSORIES.OUT_OF_TOWN]:        "out of town fee",
 };
 
@@ -221,11 +222,13 @@ export const FIX_DISPLAY = {
   [FIXES.WIRES_JAMMED]:   "wires jammed",
   [FIXES.STUCK_BLOWER]:   "stuck blower",
   [FIXES.CUT_SHEETROCK]:  "cut sheetrock",
-  [FIXES.EXTENDED_WIRE]:  "extended wire",
-  [FIXES.PVC_WORK]:       "pvc work",
-  [FIXES.LEAKS_ECOIL]:    "leaks (indoor coil)",
-  [FIXES.LEAKS_CUNIT]:    "leaks (cunit)",
-  [FIXES.LEAKS_WALL]:     "leaks (wall)",
+  [FIXES.EXTENDED_WIRE]:         "extended wire",
+  [FIXES.EXTENDED_WIRE_FURNACE]: "Extended Wire(Furnace)",
+  [FIXES.EXTENDED_WIRE_CUNIT]:   "Extended Wire(Cunit)",
+  [FIXES.PVC_WORK]:              "pvc work",
+  [FIXES.LEAKS_ECOIL]:           "Freon Leaks(eCoil)",
+  [FIXES.LEAKS_CUNIT]:           "Freon Leaks(Cunit)",
+  [FIXES.LEAKS_WALL]:            "Freon Leaks(Inside Wall)",
 };
 
 // ---------------------------------------------------------------------------

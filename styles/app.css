@@ -1460,7 +1460,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .fix-suboptions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--space-2);
   padding: var(--space-2) 0 var(--space-1) var(--space-4);
   border-left: 2px solid var(--color-accent);
@@ -1468,6 +1468,34 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .fix-suboptions.hidden { display: none; }
+
+.fix-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.fix-suboptions .chip-sm,
+.fix-chips-row .chip-sm {
+  height: 22px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  padding: 0 4px;
+  margin-left: var(--space-1);
+}
 
 .btn-fix-group {
   display: flex;
@@ -1494,28 +1522,30 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Weight-in fields grid */
-.weight-in-grid {
+.wi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: var(--space-3) var(--space-2);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
 }
 
-.weight-in-field {
+.wi-field {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
 }
 
-.weight-in-field span {
+.wi-field span {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-secondary);
 }
 
-.weight-in-field input {
-  min-height: 44px;
-  font-size: var(--font-size-sm);
+.wi-field input,
+.wi-field select {
+  min-height: 36px;
+  font-size: var(--font-size-xs);
   text-align: center;
+  padding: 0 var(--space-1);
 }
 
 .weightin-next-row {

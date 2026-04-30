@@ -211,12 +211,45 @@ const WI_FIELDS = [
   ["subcoolingDeviation", "SC Deviation °F"],
 ];
 
+const LINE_CONFIG_OPTIONS = [
+  "", "10ft (Trane)", "25ft Trane revisedCharge",
+  "15ft Daikin", "15ft Goodman", "15ft Lennox", "30ft Lennox revisedCharge",
+];
+
+const FIX_GROUPS = [
+  {
+    label: "Fixed Leaks",
+    id:    "leaks",
+    fixes: [
+      { key: FIXES.LEAKS_ECOIL, label: "at eCoil" },
+      { key: FIXES.LEAKS_CUNIT, label: "at Cunit" },
+      { key: FIXES.LEAKS_WALL,  label: "inside Wall" },
+    ],
+  },
+  {
+    label: "Extended LV Wire",
+    id:    "ext-lv",
+    fixes: [
+      { key: FIXES.EXTENDED_WIRE_FURNACE, label: "Furnace" },
+      { key: FIXES.EXTENDED_WIRE_CUNIT,   label: "Cunit" },
+    ],
+  },
+];
+
 function wiGridHTML(data, attr) {
-  return `<div class="wi-grid">${WI_FIELDS.map(([key, lbl]) =>
-    `<label class="wi-field"><span>${lbl}</span>
-     <input type="text" inputmode="decimal" ${attr}="${key}" value="${esc(data?.[key] ?? "")}">
-     </label>`
-  ).join("")}</div>`;
+  return `<div class="wi-grid">${WI_FIELDS.map(([key, lbl]) => {
+    let field;
+    if (key === "factoryLineConfig") {
+      const val  = data?.[key] ?? "";
+      const opts = LINE_CONFIG_OPTIONS.map((o) =>
+        `<option value="${esc(o)}"${o === val ? " selected" : ""}>${esc(o) || "—"}</option>`
+      ).join("");
+      field = `<select ${attr}="${key}">${opts}</select>`;
+    } else {
+      field = `<input type="text" inputmode="decimal" ${attr}="${key}" value="${esc(data?.[key] ?? "")}">`;
+    }
+    return `<label class="wi-field"><span>${lbl}</span>${field}</label>`;
+  }).join("")}</div>`;
 }
 
 function renderWorkspace() {
@@ -282,16 +315,48 @@ function renderWorkspace() {
   }).join("");
 
   // Step 5 — Fixes
-  document.getElementById("fixes-list").innerHTML = Object.values(FIXES).map((n) => {
-    const active = state.selectedFixes.includes(n) || state.customFixes.some((f) => f.name === n);
-    const disp   = FIX_DISPLAY[n] || n.toLowerCase();
-    const custom = CUSTOM_PRICE_FIXES.includes(n) ? " data-custom" : "";
-    return `<button class="chip chip-sm${active ? " chip-accessory" : ""}" data-fix="${esc(n)}"${custom}>${esc(disp)}</button>`;
+  const _groupedKeys = new Set(FIX_GROUPS.flatMap((g) => g.fixes.map((f) => f.key)));
+  const _groupsHTML  = FIX_GROUPS.map((group) => {
+    const count   = group.fixes.filter((f) => state.selectedFixes.includes(f.key)).length;
+    const badge   = count > 0 ? ` <span class="chip-badge">${count}</span>` : "";
+    const subHTML = group.fixes.map((f) => {
+      const active = state.selectedFixes.includes(f.key);
+      return `<button class="chip chip-sm${active ? " chip-accessory" : ""}" data-fix="${esc(f.key)}">${esc(f.label)}</button>`;
+    }).join("");
+    return `<div class="fix-group">
+      <button class="chip chip-sm${count > 0 ? " chip-primary" : ""}" data-group-toggle="${esc(group.id)}">${esc(group.label)}${badge}</button>
+      <div class="fix-suboptions${count > 0 ? "" : " hidden"}" id="fix-group-${esc(group.id)}">${subHTML}</div>
+    </div>`;
   }).join("");
+  const _standaloneHTML = Object.values(FIXES)
+    .filter((n) => !_groupedKeys.has(n) && n !== FIXES.EXTENDED_WIRE)
+    .map((n) => {
+      const active = state.selectedFixes.includes(n) || state.customFixes.some((f) => f.name === n);
+      const disp   = FIX_DISPLAY[n] || n.toLowerCase();
+      const custom = CUSTOM_PRICE_FIXES.includes(n) ? " data-custom" : "";
+      return `<button class="chip chip-sm${active ? " chip-accessory" : ""}" data-fix="${esc(n)}"${custom}>${esc(disp)}</button>`;
+    }).join("");
+  document.getElementById("fixes-list").innerHTML =
+    _groupsHTML + `<div class="fix-chips-row">${_standaloneHTML}</div>`;
 
   // Step 6 — Weight-In
+  let wiData1 = state.weightInData || {};
+  const _wiOutdoor = getOutdoorModel(s1.outdoor);
+  if (_wiOutdoor) {
+    const _needFc  = !wiData1.factoryChargeOz && _wiOutdoor.FactoryCharge;
+    const _needAdj = !wiData1.approxAdjustOz;
+    if (_needFc || _needAdj) {
+      if (_needFc) wiData1 = { ...wiData1, factoryChargeOz: String(_wiOutdoor.FactoryCharge) };
+      if (_needAdj) {
+        const _lc = wiData1.factoryLineConfig || "";
+        const _adj = _lc.includes("revisedCharge") ? _wiOutdoor.revisedCharge : _wiOutdoor.FactoryCharge;
+        if (_adj) wiData1 = { ...wiData1, approxAdjustOz: String(_adj) };
+      }
+      setWeightInData(wiData1, 1);
+    }
+  }
   document.getElementById("weight-in-fields").innerHTML =
-    wiGridHTML(state.weightInData, "data-wi") +
+    wiGridHTML(wiData1, "data-wi") +
     (state.isTwoSystems
       ? `<p class="step-label">System 2</p>${wiGridHTML(state.weightInData2, "data-wi2")}`
       : "");
@@ -631,6 +696,7 @@ function wireEvents() {
     const tst   = e.target.closest("[data-tstat]");
     const qty   = e.target.closest("[data-qty]");
     const acc   = e.target.closest("[data-accessory]");
+    const grp   = e.target.closest("[data-group-toggle]");
     const fix   = e.target.closest("[data-fix]");
     const photo = e.target.closest("[data-photo]");
     const lb    = e.target.closest("[data-lightbox]");
@@ -658,6 +724,11 @@ function wireEvents() {
       }
       saveProgress(); renderWorkspace(); return;
     }
+    if (grp) {
+      const groupEl = document.getElementById(`fix-group-${grp.dataset.groupToggle}`);
+      if (groupEl) groupEl.classList.toggle("hidden");
+      return;
+    }
     if (fix) {
       if ("custom" in fix.dataset) {
         const p = prompt(`Price for ${fix.dataset.fix}:`);
@@ -683,12 +754,25 @@ function wireEvents() {
     }
   });
 
-  // Workspace — checkboxes
+  // Workspace — checkboxes + Line Config select
   wsForm.addEventListener("change", (e) => {
     const state = getState();
     if (!state) return;
-    if (e.target.id === "ws-two-systems") { setOption("isTwoSystems", e.target.checked); saveProgress(); renderWorkspace(); }
-    if (e.target.id === "ws-temporarily") { setOption("isTemporary",  e.target.checked); saveProgress(); }
+    if (e.target.id === "ws-two-systems") { setOption("isTwoSystems", e.target.checked); saveProgress(); renderWorkspace(); return; }
+    if (e.target.id === "ws-temporarily") { setOption("isTemporary",  e.target.checked); saveProgress(); return; }
+    if (e.target.dataset.wi === "factoryLineConfig") {
+      const data = {};
+      wsForm.querySelectorAll("[data-wi]").forEach((inp) => { data[inp.getAttribute("data-wi")] = inp.value; });
+      const outdoor = getOutdoorModel(_activeJob?.system1?.outdoor);
+      if (outdoor) {
+        const autoVal = e.target.value.includes("revisedCharge") ? outdoor.revisedCharge : outdoor.FactoryCharge;
+        data.approxAdjustOz = autoVal ? String(autoVal) : "";
+        const approxInput = wsForm.querySelector('[data-wi="approxAdjustOz"]');
+        if (approxInput) approxInput.value = data.approxAdjustOz;
+      }
+      setWeightInData(data, 1);
+      updatePriceDisplay(); saveProgress();
+    }
   });
 
   // Workspace — text inputs (notes + weight-in)
@@ -703,6 +787,21 @@ function wireEvents() {
       const attr = sys === 1 ? "data-wi" : "data-wi2";
       const data = {};
       wsForm.querySelectorAll(`[${attr}]`).forEach((inp) => { data[inp.getAttribute(attr)] = inp.value; });
+      // Auto-calc subcooling
+      const liq  = parseFloat(data.liquidLineTemp);
+      const csat = parseFloat(data.condenserSatTemp);
+      if (!isNaN(liq) && !isNaN(csat)) {
+        data.subcoolingValue = String(csat - liq);
+        const scInput = wsForm.querySelector(`[${attr}="subcoolingValue"]`);
+        if (scInput) scInput.value = data.subcoolingValue;
+      }
+      const scVal   = parseFloat(data.subcoolingValue);
+      const oemGoal = parseFloat(data.oemSubcoolingGoal);
+      if (!isNaN(scVal) && !isNaN(oemGoal)) {
+        data.subcoolingDeviation = String(Math.abs(scVal - oemGoal));
+        const devInput = wsForm.querySelector(`[${attr}="subcoolingDeviation"]`);
+        if (devInput) devInput.value = data.subcoolingDeviation;
+      }
       setWeightInData(data, sys);
       updatePriceDisplay(); saveProgress();
     }
