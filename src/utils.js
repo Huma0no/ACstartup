@@ -1,9 +1,7 @@
-// src/utils.js — Shared utility functions.
+export function ouncesToPoundsAndOunces(oz) {
+  return `${oz} oz (${(oz / 16).toFixed(2)} lb)`;
+}
 
-export function ouncesToPoundsAndOunces(ounces) {
-  const pounds = Math.floor(ounces / 16);
-  const remainingOunces = (ounces % 16).toFixed(2);
-  return pounds > 0
-    ? `${pounds} lb ${remainingOunces} oz`
-    : `${remainingOunces} oz`;
+export function getSubcoolingDefault(modelNumber) {
+  return String(modelNumber).startsWith("GL") ? 8 : 10;
 }
