@@ -143,7 +143,7 @@ function jobCardHTML(job, ci) {
     return `<div class="equip-card">
       <div class="equip-heading">${esc(label)}</div>
       <div class="equip-model">${esc(furnace)}</div>
-      <div class="equip-image"><img src="${esc(d.imagen)}" alt="${esc(furnace)}" loading="lazy"></div>
+      <div class="equip-image"><img src="${esc(d.imagen)}" alt="${esc(furnace)}" loading="lazy" data-lightbox-src="${esc(d.imagen)}"></div>
     </div>`;
   };
   const equipCards = [
@@ -612,6 +612,12 @@ function wireEvents() {
     if (start) { const j = getJobById(start.dataset.start); if (j) openWorkspace(j); return; }
     if (edit)  { toast("Edit not yet implemented", "info"); return; }
     if (maps)  { window.open(`https://maps.google.com/?q=${encodeURIComponent(maps.dataset.maps)}`, "_blank"); return; }
+    const lbImg = e.target.closest("[data-lightbox-src]");
+    if (lbImg) {
+      document.getElementById("lightbox-img").src = lbImg.dataset.lightboxSrc;
+      document.getElementById("lightbox").classList.remove("hidden");
+      return;
+    }
     if (item && !e.target.closest("button")) item.classList.toggle("expanded");
   });
 
