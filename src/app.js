@@ -14,7 +14,7 @@ import {
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
 import { generateReportText } from "./reports.js";
-import { ouncesToPoundsAndOunces } from "./utils.js";
+import { ouncesToPoundsAndOunces, calculateApproxAdjust } from "./utils.js";
 import { getLinksForJob, isAvailableOffline, downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
 import {
@@ -355,8 +355,15 @@ function renderWorkspace() {
       setWeightInData(wiData1, 1);
     }
   }
+  const _wiLc = wiData1.factoryLineConfig || "";
+  const _wiBc = _wiOutdoor ? (_wiLc.includes("revisedCharge") ? _wiOutdoor.revisedCharge : _wiOutdoor.FactoryCharge) : 0;
+  const _wiAdj = parseFloat(wiData1.adjustedOz);
+  const _wiNewTotalTxt = _wiBc && !isNaN(_wiAdj) ? ouncesToPoundsAndOunces(_wiBc + _wiAdj) : "—";
   document.getElementById("weight-in-fields").innerHTML =
     wiGridHTML(wiData1, "data-wi") +
+    `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-surface-raised);border-radius:var(--radius-sm);">` +
+    `<span style="font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);color:var(--color-text-secondary);">New Total Charge</span>` +
+    `<span id="wi-new-total-charge" style="font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);color:var(--color-accent);">${esc(_wiNewTotalTxt)}</span></div>` +
     (state.isTwoSystems
       ? `<p class="step-label">System 2</p>${wiGridHTML(state.weightInData2, "data-wi2")}`
       : "");
@@ -380,6 +387,15 @@ function updatePriceDisplay() {
   const t = calculateTotals(getState(), getPrices());
   document.getElementById("price-display").innerHTML =
     `Svc <strong>$${t.service}</strong> · Acc <strong>$${t.accessory}</strong> · Fixes <strong>$${t.fix}</strong> &nbsp; Total <strong>$${t.total}</strong>`;
+}
+
+function _renderNewTotalCharge(data, sys) {
+  if (sys !== 1) return;
+  const el = document.getElementById("wi-new-total-charge");
+  if (!el) return;
+  const fc  = parseFloat(data?.factoryChargeOz);
+  const adj = parseFloat(data?.adjustedOz);
+  el.textContent = !isNaN(fc) && !isNaN(adj) ? ouncesToPoundsAndOunces(fc + adj) : "—";
 }
 
 // ---------------------------------------------------------------------------
@@ -765,12 +781,17 @@ function wireEvents() {
       wsForm.querySelectorAll("[data-wi]").forEach((inp) => { data[inp.getAttribute("data-wi")] = inp.value; });
       const outdoor = getOutdoorModel(_activeJob?.system1?.outdoor);
       if (outdoor) {
-        const autoVal = e.target.value.includes("revisedCharge") ? outdoor.revisedCharge : outdoor.FactoryCharge;
-        data.approxAdjustOz = autoVal ? String(autoVal) : "";
+        const lineConfig  = e.target.value;
+        const baseCharge  = lineConfig.includes("revisedCharge") ? outdoor.revisedCharge : outdoor.FactoryCharge;
+        const fcInput = wsForm.querySelector('[data-wi="factoryChargeOz"]');
+        if (fcInput) { fcInput.value = String(baseCharge); data.factoryChargeOz = String(baseCharge); }
         const approxInput = wsForm.querySelector('[data-wi="approxAdjustOz"]');
+        const result      = calculateApproxAdjust(parseFloat(data.linesetLength), lineConfig);
+        data.approxAdjustOz = result !== null ? result : (baseCharge ? String(baseCharge) : "");
         if (approxInput) approxInput.value = data.approxAdjustOz;
       }
       setWeightInData(data, 1);
+      _renderNewTotalCharge(data, 1);
       updatePriceDisplay(); saveProgress();
     }
   });
@@ -802,7 +823,21 @@ function wireEvents() {
         const devInput = wsForm.querySelector(`[${attr}="subcoolingDeviation"]`);
         if (devInput) devInput.value = data.subcoolingDeviation;
       }
+      // Recalc approxAdjustOz when linesetLength changes
+      if (sys === 1 && e.target.dataset.wi === "linesetLength") {
+        const outdoor = getOutdoorModel(_activeJob?.system1?.outdoor);
+        if (outdoor) {
+          const lineConfig = data.factoryLineConfig || "";
+          const result     = calculateApproxAdjust(parseFloat(data.linesetLength), lineConfig);
+          if (result !== null) {
+            data.approxAdjustOz = result;
+            const approxInput = wsForm.querySelector('[data-wi="approxAdjustOz"]');
+            if (approxInput) approxInput.value = result;
+          }
+        }
+      }
       setWeightInData(data, sys);
+      _renderNewTotalCharge(data, sys);
       updatePriceDisplay(); saveProgress();
     }
   });

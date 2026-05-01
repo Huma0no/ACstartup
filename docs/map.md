@@ -425,6 +425,8 @@ Export JSON → Dispatch
 | 6 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
 | 7 | Imágenes indoor con nombre de archivo en lowercase en disco pero uppercase en el catálogo — falla en Netlify (Linux, case-sensitive) | data.js / images/ |
 | 8 | SC out-of-range warnings — show discrete alert when subcooling is negative or outside expected range | app.js |
+| 9 | `_renderNewTotalCharge` lives in app.js but belongs in workspace.js — migrate in next refactor session | app.js → workspace.js |
+| 10 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
 
 ---
 
