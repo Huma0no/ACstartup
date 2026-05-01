@@ -1,5 +1,8 @@
-node_modules/
+# macOS
 .DS_Store
-*.db-journal
-*.db-wal
-*.db-shm
+
+# Databases
+*.db
+
+# Dependencies (future-proofing)
+node_modules/
