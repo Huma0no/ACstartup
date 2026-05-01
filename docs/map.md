@@ -265,7 +265,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse; delete; start/resume → workspace |
 | Job card | Visible siempre: dirección, chips de builder/subdivisión, chips de termostato y accesorios pre-seleccionados. Al expandir: chips de outdoor (ton, refrigerante, carga, CFM) y equip-grid con imagen del indoor model (`getIndoorModel().imagen`); click en imagen abre `#lightbox` |
 | Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes (grupos expandibles "Fixed Leaks" y "Extended LV Wire" con badge contador de seleccionados; sub-chips multi-select; chips standalone más pequeños con wrap), weight-in (Line Config como `<select>`; auto-fill de `factoryChargeOz` desde `outdoor.FactoryCharge` y `approxAdjustOz` según revisedCharge/FactoryCharge al cargar; subcooling auto-calc: `subcoolingValue = condenserSatTemp − liquidLineTemp`, `subcoolingDeviation = abs(subcoolingValue − oemSubcoolingGoal)`), notas, fotos |
-| Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → limpia workspace → navega a Reports |
+| Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → `removeJob(id)` → limpia workspace → navega a Reports |
 | Reports tab | Renderiza completions; botón Copy vía `navigator.clipboard` |
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
 | Settings modal | Theme toggle (`data-mode`), proveedor IA, API key save/clear |
