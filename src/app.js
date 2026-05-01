@@ -8,7 +8,7 @@ import {
 } from "./jobs.js";
 import { saveCompletion, getCompletions, getActiveJobId, setActiveJobId } from "./storage.js";
 import {
-  initWorkspace, getState, clearWorkspace, setOption,
+  initWorkspace, initWeighInPhotos, getState, clearWorkspace, setOption,
   toggleService, setThermostat, toggleAccessory, toggleFix,
   setWeightInData, setNotes, addPhoto, removePhoto,
   calculateTotals, saveProgress, buildCompletion,
@@ -187,6 +187,7 @@ function openWorkspace(job) {
   _activeJob = job;
   setActiveJobId(job.id);
   initWorkspace(job);
+  initWeighInPhotos(job.address);
   initChat(job);
   openTab("workspace");
   renderWorkspace();
@@ -359,14 +360,16 @@ function renderWorkspace() {
   const _wiBc = _wiOutdoor ? (_wiLc.includes("revisedCharge") ? _wiOutdoor.revisedCharge : _wiOutdoor.FactoryCharge) : 0;
   const _wiAdj = parseFloat(wiData1.adjustedOz);
   const _wiNewTotalTxt = _wiBc && !isNaN(_wiAdj) ? ouncesToPoundsAndOunces(_wiBc + _wiAdj) : "—";
-  document.getElementById("weight-in-fields").innerHTML =
-    wiGridHTML(wiData1, "data-wi") +
-    `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-surface-raised);border-radius:var(--radius-sm);">` +
-    `<span style="font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);color:var(--color-text-secondary);">New Total Charge</span>` +
-    `<span id="wi-new-total-charge" style="font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);color:var(--color-accent);">${esc(_wiNewTotalTxt)}</span></div>` +
-    (state.isTwoSystems
-      ? `<p class="step-label">System 2</p>${wiGridHTML(state.weightInData2, "data-wi2")}`
-      : "");
+  document.getElementById("wi-fields-sys1").innerHTML = wiGridHTML(wiData1, "data-wi");
+  const _sys2Fields   = document.getElementById("wi-fields-sys2");
+  const _sys2PhotoRow = document.getElementById("wi-photo-row-2");
+  _sys2Fields.innerHTML = state.isTwoSystems
+    ? `<p class="step-label">System 2</p>${wiGridHTML(state.weightInData2, "data-wi2")}`
+    : "";
+  _sys2Fields.classList.toggle("hidden", !state.isTwoSystems);
+  _sys2PhotoRow.classList.toggle("hidden", !state.isTwoSystems);
+  const _ntcEl = document.getElementById("wi-new-total-charge");
+  if (_ntcEl) _ntcEl.textContent = _wiNewTotalTxt;
 
   // Step 7 — Notes & Photos
   document.getElementById("notes-input").value = state.notes || "";

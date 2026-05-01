@@ -120,3 +120,56 @@ export function importBackup(json) {
   if (Array.isArray(data.completions)) write(STORAGE_KEYS.REPORTS, data.completions);
   if (data.settings)                   write(STORAGE_KEYS.SETTINGS, data.settings);
 }
+
+// ---------------------------------------------------------------------------
+// Images (IndexedDB)
+// ---------------------------------------------------------------------------
+
+const DB_NAME  = "AppImagesDB";
+const DB_STORE = "images";
+
+function _openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+    };
+    request.onsuccess = (event) => resolve(event.target.result);
+    request.onerror   = (event) => reject(event.target.error);
+  });
+}
+
+export async function saveImageToDB(key, file, gps) {
+  try {
+    const db = await _openDB();
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).put({ file, gps, timestamp: Date.now() }, key);
+  } catch (e) {
+    console.error("Error saving to DB", e);
+  }
+}
+
+export async function getImageFromDB(key) {
+  try {
+    const db = await _openDB();
+    const tx = db.transaction(DB_STORE, "readonly");
+    return new Promise((resolve) => {
+      const req = tx.objectStore(DB_STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function clearImagesFromDB() {
+  try {
+    const db = await _openDB();
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).clear();
+  } catch (e) {
+    console.error(e);
+  }
+}

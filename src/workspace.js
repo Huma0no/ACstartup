@@ -9,13 +9,19 @@ import {
 } from "./data.js";
 import {
   saveWorkspaceState, getWorkspaceState, clearWorkspaceState,
+  saveImageToDB, getImageFromDB, clearImagesFromDB,
 } from "./storage.js";
+import { compressImage, getGpsFromImage } from "./utils.js";
 
 // ---------------------------------------------------------------------------
 // Module state
 // ---------------------------------------------------------------------------
 
 let _state = null;
+
+let _photos = { weight: null, fan: null, weight2: null, fan2: null };
+let _dbPrefix = "default";
+let _photoRowsInitialized = false;
 
 // ---------------------------------------------------------------------------
 // Init / teardown
@@ -57,6 +63,10 @@ export function getState() {
 }
 
 export function clearWorkspace() {
+  _photos = { weight: null, fan: null, weight2: null, fan2: null };
+  _dbPrefix = "default";
+  _photoRowsInitialized = false;
+  clearImagesFromDB();
   _state = null;
   clearWorkspaceState();
 }
@@ -396,4 +406,167 @@ function _buildFixItems(s, prices) {
     items.push({ name: fix.name, displayName: fix.name.toLowerCase(), price: fix.price });
   }
   return items;
+}
+
+// ---------------------------------------------------------------------------
+// Weigh-In photo capture — Phase 1
+// ---------------------------------------------------------------------------
+
+const _SLOT_LABELS = {
+  weight: "📁 Scale", fan: "📁 Fan Speed",
+  weight2: "📁 Scale", fan2: "📁 Fan Speed",
+};
+
+function _dbKey(key) {
+  return `${_dbPrefix}_${key}`;
+}
+
+function _clearSlot(key, objectUrl, previewContainer) {
+  URL.revokeObjectURL(objectUrl);
+  previewContainer.innerHTML = "";
+  _photos[key] = null;
+}
+
+function _showPreview(key, file, gps) {
+  const container = document.getElementById(`photo-preview-${key}`);
+  if (!container) return;
+
+  const prev = container.querySelector("img");
+  if (prev?.src?.startsWith("blob:")) URL.revokeObjectURL(prev.src);
+
+  const objectUrl = URL.createObjectURL(file);
+  container.innerHTML = "";
+
+  const img = document.createElement("img");
+  img.src = objectUrl;
+  img.style.cssText = "width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);";
+
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "btn";
+  clearBtn.textContent = "✕";
+  clearBtn.style.cssText = "padding:2px 6px;font-size:var(--font-size-xs);";
+  clearBtn.onclick = () => _clearSlot(key, objectUrl, container);
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;align-items:center;gap:var(--space-1);margin-top:var(--space-1);";
+  wrap.appendChild(img);
+
+  if (gps) {
+    const chip = document.createElement("span");
+    chip.textContent = "📍 EXIF";
+    chip.style.cssText = "font-size:var(--font-size-xs);color:var(--color-text-secondary);";
+    wrap.appendChild(chip);
+  }
+
+  wrap.appendChild(clearBtn);
+  container.appendChild(wrap);
+}
+
+async function _handleFile(file, key) {
+  try {
+    const gps        = await getGpsFromImage(file);
+    const compressed = await compressImage(file, 0.8, 1600);
+    _photos[key]     = { file: compressed, gps };
+    await saveImageToDB(_dbKey(key), compressed, gps);
+    _showPreview(key, compressed, gps);
+  } catch (e) {
+    console.error("Error processing photo:", e);
+    _photos[key] = null;
+  }
+}
+
+function _makeSlot(key) {
+  const label = _SLOT_LABELS[key] || key;
+
+  const wrap = document.createElement("div");
+  wrap.id = `photo-slot-${key}`;
+  wrap.style.cssText = "display:flex;flex-direction:column;";
+
+  const galleryInput = document.createElement("input");
+  galleryInput.type = "file";
+  galleryInput.accept = "image/*";
+  galleryInput.style.display = "none";
+  galleryInput.addEventListener("change", (e) => {
+    if (e.target.files?.[0]) _handleFile(e.target.files[0], key);
+    e.target.value = "";
+  });
+
+  const cameraInput = document.createElement("input");
+  cameraInput.type = "file";
+  cameraInput.accept = "image/*";
+  cameraInput.setAttribute("capture", "environment");
+  cameraInput.style.display = "none";
+  cameraInput.addEventListener("change", (e) => {
+    if (e.target.files?.[0]) _handleFile(e.target.files[0], key);
+    e.target.value = "";
+  });
+
+  const galleryBtn = document.createElement("button");
+  galleryBtn.type = "button";
+  galleryBtn.className = "btn";
+  galleryBtn.textContent = label;
+  galleryBtn.onclick = (e) => { e.preventDefault(); galleryInput.click(); };
+
+  const cameraBtn = document.createElement("button");
+  cameraBtn.type = "button";
+  cameraBtn.className = "btn";
+  cameraBtn.textContent = "📷";
+  cameraBtn.title = "Capture from camera";
+  cameraBtn.onclick = (e) => { e.preventDefault(); cameraInput.click(); };
+
+  const btnRow = document.createElement("div");
+  btnRow.style.cssText = "display:flex;gap:var(--space-1);align-items:center;";
+  btnRow.appendChild(galleryBtn);
+  btnRow.appendChild(cameraBtn);
+  btnRow.appendChild(galleryInput);
+  btnRow.appendChild(cameraInput);
+
+  const preview = document.createElement("div");
+  preview.id = `photo-preview-${key}`;
+
+  wrap.appendChild(btnRow);
+  wrap.appendChild(preview);
+  return wrap;
+}
+
+function _setupPhotoRow(containerId, keys, includeNTC) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;align-items:flex-start;gap:var(--space-3);margin-top:var(--space-2);flex-wrap:wrap;";
+
+  for (const key of keys) row.appendChild(_makeSlot(key));
+
+  if (includeNTC) {
+    const ntc = document.createElement("div");
+    ntc.style.cssText = "display:flex;flex-direction:column;justify-content:center;";
+    ntc.innerHTML =
+      `<span style="font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);color:var(--color-text-secondary);">New Total Charge</span>` +
+      `<span id="wi-new-total-charge" style="font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);color:var(--color-accent);">—</span>`;
+    row.appendChild(ntc);
+  }
+
+  container.appendChild(row);
+}
+
+async function _restorePhotos() {
+  for (const key of ["weight", "fan", "weight2", "fan2"]) {
+    const data = await getImageFromDB(_dbKey(key));
+    if (data?.file) {
+      _photos[key] = { file: data.file, gps: data.gps };
+      _showPreview(key, data.file, data.gps);
+    }
+  }
+}
+
+export function initWeighInPhotos(address) {
+  if (_photoRowsInitialized) return;
+  _dbPrefix = address.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 24);
+  _setupPhotoRow("wi-photo-row-1", ["weight", "fan"], true);
+  _setupPhotoRow("wi-photo-row-2", ["weight2", "fan2"], false);
+  _restorePhotos();
+  _photoRowsInitialized = true;
 }
