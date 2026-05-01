@@ -429,6 +429,7 @@ Export JSON → Dispatch
 | 10 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
 | 11 | Photos Phase 1 complete — IndexedDB storage, HEIC+JPEG compression, GPS EXIF, preview, camera+gallery buttons in Weigh-In for System 1 and System 2 | workspace.js / storage.js / utils.js |
 | 12 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
+| 13 | Accessories (2 sys) label — chips and report text now show "(2 sys)" suffix for dual-system accessories when isTwoSystems is active | app.js / workspace.js |
 
 ---
 
