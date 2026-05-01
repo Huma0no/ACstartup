@@ -103,6 +103,9 @@ Capa única de acceso a localStorage. Ningún otro módulo lee ni escribe localS
 | `saveSettings` | function | Guarda la configuración completa |
 | `exportBackup` | function | Serializa jobs + completions + settings a JSON |
 | `importBackup` | function | Restaura datos desde un JSON de backup |
+| `saveImageToDB` | function | Stores {file, gps, timestamp} in IndexedDB AppImagesDB at given key |
+| `getImageFromDB` | function | Returns stored record or null from IndexedDB |
+| `clearImagesFromDB` | function | Clears entire IndexedDB images store |
 
 **Depende de:** `src/data.js` — importa `STORAGE_KEYS`.  
 **Lo usan:** `jobs.js`, `workspace.js`, `reports.js`, `settings.js`.
@@ -152,6 +155,7 @@ Estado del workspace activo: carga el job, registra selecciones, calcula total e
 | `calculateTotals` | function | Función pura — aplica las 8 reglas de negocio del data dictionary §7 |
 | `saveProgress` | function | Persiste el estado via `storage.js` |
 | `buildCompletion` | function | Ensambla el objeto `Completion` completo listo para `reports.js` |
+| `initWeighInPhotos` | function | Initializes photo capture rows for weigh-in. Idempotent — guarded by _photoRowsInitialized flag. Sets up IndexedDB key prefix from job address, renders camera+gallery buttons for weight/fan slots per system, restores saved photos on init |
 
 **Reglas de negocio implementadas:**
 1. AC + Heat = $30 combinados, no $60
@@ -303,6 +307,10 @@ Funciones utilitarias compartidas sin dependencias.
 | Export | Tipo | Descripción |
 |---|---|---|
 | `ouncesToPoundsAndOunces` | function | Convierte oz a string "X lb Y oz" (o solo "Y oz" si < 16 oz) — usado en chips de carga de refrigerante en el job card |
+| `getSubcoolingDefault` | function | Returns expected subcooling range object {min, max} by brand string |
+| `calculateApproxAdjust` | function | Returns refrigerant adjustment excess in oz: (linesetReal - factoryLength) × multiplier (0.47 Trane, 0.6 others). Returns null if inputs invalid |
+| `compressImage` | function | Compresses image file to JPEG at 0.8 quality / 1600px max width. Handles HEIC via heic2any. Returns original file on failure |
+| `getGpsFromImage` | function | Extracts {lat, lon} from EXIF via exifr library. Returns null on miss or error |
 
 **Depende de:** Nada.  
 **Lo usan:** `app.js`.
@@ -417,19 +425,15 @@ Export JSON → Dispatch
 
 | # | Pendiente | Módulo |
 |---|---|---|
-| 1 | ~~EXTENDED_WIRE sub-opciones: "cond", "ecoil"~~ ✅ Completado — grupos expandibles "Fixed Leaks" y "Extended LV Wire" con sub-chips multi-select en workspace | data.js / app.js |
-| 2 | ~~Equipment catalog por marca — modelos, refrigerante, diagramas~~ ✅ Completado — `INDOOR_CATALOG`, `OUTDOOR_CATALOG`, helpers de lookup y series en `data.js` | — |
-| 3 | Mapa interactivo de dependencias | docs/ |
-| 4 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
-| 5 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
-| 6 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
-| 7 | Imágenes indoor con nombre de archivo en lowercase en disco pero uppercase en el catálogo — falla en Netlify (Linux, case-sensitive) | data.js / images/ |
-| 8 | SC out-of-range warnings — show discrete alert when subcooling is negative or outside expected range | app.js |
-| 9 | `_renderNewTotalCharge` lives in app.js but belongs in workspace.js — migrate in next refactor session | app.js → workspace.js |
-| 10 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
-| 11 | Photos Phase 1 complete — IndexedDB storage, HEIC+JPEG compression, GPS EXIF, preview, camera+gallery buttons in Weigh-In for System 1 and System 2 | workspace.js / storage.js / utils.js |
-| 12 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
-| 13 | Accessories (2 sys) label — chips and report text now show "(2 sys)" suffix for dual-system accessories when isTwoSystems is active | app.js / workspace.js |
+| 1 | Mapa interactivo de dependencias | docs/ |
+| 2 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
+| 3 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
+| 4 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
+| 5 | Imágenes indoor con nombre de archivo en lowercase en disco pero uppercase en el catálogo — falla en Netlify (Linux, case-sensitive) | data.js / images/ |
+| 6 | SC out-of-range warnings — show discrete alert when subcooling is negative or outside expected range | app.js |
+| 7 | `_renderNewTotalCharge` lives in app.js but belongs in workspace.js — migrate in next refactor session | app.js → workspace.js |
+| 8 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
+| 9 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
 
 ---
 
