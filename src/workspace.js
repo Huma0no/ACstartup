@@ -376,7 +376,8 @@ function _buildAccessoryItems(s, prices) {
     let price = prices.ACCESSORY[name] ?? 0;
     if (name === ACCESSORIES.WEIGHT_IN_DATA && hasFinish) price += prices.WEIGHT_IN_FINISH_ADDON;
     if (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
-    items.push({ name, displayName: ACCESSORY_DISPLAY[name] || name.toLowerCase(), price });
+    const displayName = (ACCESSORY_DISPLAY[name] || name.toLowerCase()) + (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name) ? " (2 sys)" : "");
+    items.push({ name, displayName, price });
   }
 
   const hasWeightInData =

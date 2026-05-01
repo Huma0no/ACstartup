@@ -20,7 +20,7 @@ import { initChat } from "./ai.js";
 import {
   SERVICES, ACCESSORIES, FIXES, THERMOSTATS, BUILDERS,
   ACCESSORY_DISPLAY, FIX_DISPLAY,
-  CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
+  CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES, TWO_SYSTEMS_ACCESSORIES,
   getIndoorSeriesGroups, getOutdoorSeriesGroups,
   getIndoorModel, getOutdoorModel,
   SERIES_LINKS, OUTDOOR_LINKS,
@@ -310,7 +310,8 @@ function renderWorkspace() {
   // Step 4 — Accessories
   document.getElementById("accessory-buttons").innerHTML = Object.values(ACCESSORIES).map((n) => {
     const active = state.selectedAccessories.includes(n) || state.customAccessories.some((a) => a.name === n);
-    const disp   = ACCESSORY_DISPLAY[n] || n.toLowerCase();
+    const isTwoSys = state.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(n);
+    const disp     = (ACCESSORY_DISPLAY[n] || n.toLowerCase()) + (isTwoSys ? " (2 sys)" : "");
     const custom = CUSTOM_PRICE_ACCESSORIES.includes(n) ? " data-custom" : "";
     return `<button class="chip chip-sm${active ? " chip-accessory" : ""}" data-accessory="${esc(n)}"${custom}>${esc(disp)}</button>`;
   }).join("");
