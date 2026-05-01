@@ -6,7 +6,7 @@ import {
 import {
   createJob, removeJob, getJobById, getAllJobs, sortJobs, groupBySubdivision,
 } from "./jobs.js";
-import { saveCompletion, getCompletions, getActiveJobId, setActiveJobId } from "./storage.js";
+import { saveCompletion, getCompletions, getActiveJobId, setActiveJobId, deleteCompletion } from "./storage.js";
 import {
   initWorkspace, initWeighInPhotos, getState, clearWorkspace, setOption,
   toggleService, setThermostat, toggleAccessory, toggleFix,
@@ -14,7 +14,7 @@ import {
   addSitePhoto, removeSitePhoto, getSitePhotos, getSitePhotoCount, initSitePhotos,
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
-import { generateReportText } from "./reports.js";
+import { generateReportText, generateDailyReport, exportJSON, exportCSV } from "./reports.js";
 import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage } from "./utils.js";
 import { getLinksForJob, isAvailableOffline, downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
@@ -72,6 +72,16 @@ function toast(msg, type = "info") {
   el.textContent = msg;
   document.getElementById("toast-container").appendChild(el);
   setTimeout(() => el.remove(), 3500);
+}
+
+function _shareVia(method, text) {
+  const enc = encodeURIComponent(text);
+  switch (method) {
+    case "whatsapp": window.open(`https://api.whatsapp.com/send?text=${enc}`, "_blank"); break;
+    case "sms":      window.location.href = `sms:?body=${enc}`; break;
+    case "email":    window.location.href = `mailto:?subject=${encodeURIComponent("Service Report")}&body=${enc}`; break;
+    case "copy":     navigator.clipboard.writeText(text).then(() => toast("Copied!", "success")); break;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -588,16 +598,19 @@ function _renderNewTotalCharge(data, sys) {
 // ---------------------------------------------------------------------------
 
 function renderReports() {
-  const list  = document.getElementById("reports-list");
-  const empty = document.getElementById("reports-empty");
-  const all   = getCompletions();
+  const list    = document.getElementById("reports-list");
+  const empty   = document.getElementById("reports-empty");
+  const actions = document.getElementById("reports-global-actions");
+  const all     = getCompletions();
 
   if (!all.length) {
     list.innerHTML = "";
     empty.classList.remove("hidden");
+    actions.classList.add("hidden");
     return;
   }
   empty.classList.add("hidden");
+  actions.classList.remove("hidden");
   list.innerHTML = all.map((c) => `
     <li class="report-item">
       <div class="report-addr">
@@ -607,6 +620,16 @@ function renderReports() {
       <p class="report-text">${esc(c.reportText || "")}</p>
       <div class="btn-row">
         <button class="btn btn-copy" data-copy="${esc(c.reportText || "")}">Copy</button>
+        <button class="btn" data-share-toggle="${esc(c.jobId)}">📤 Share</button>
+        <button class="btn" data-delete="${esc(c.jobId)}">🗑️</button>
+      </div>
+      <div id="share-panel-${esc(c.jobId)}" class="hidden">
+        <div class="btn-row">
+          <button class="btn" data-share-method="whatsapp" data-share-text="${esc(c.reportText || "")}">📱 WhatsApp</button>
+          <button class="btn" data-share-method="sms"      data-share-text="${esc(c.reportText || "")}">💬 SMS</button>
+          <button class="btn" data-share-method="email"    data-share-text="${esc(c.reportText || "")}">📧 Email</button>
+          <button class="btn" data-share-method="copy"     data-share-text="${esc(c.reportText || "")}">📋 Copy</button>
+        </div>
       </div>
     </li>`).join("");
 }
@@ -1042,10 +1065,45 @@ function wireEvents() {
     openTab("reports");
   });
 
-  // Reports — copy
+  // Reports — per-card actions
   document.getElementById("reports-list").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-copy]");
-    if (btn) navigator.clipboard.writeText(btn.dataset.copy).then(() => toast("Copied!", "success"));
+    const copy   = e.target.closest("[data-copy]");
+    const del    = e.target.closest("[data-delete]");
+    const toggle = e.target.closest("[data-share-toggle]");
+    const share  = e.target.closest("[data-share-method]");
+    if (copy)   navigator.clipboard.writeText(copy.dataset.copy).then(() => toast("Copied!", "success"));
+    if (del)  { deleteCompletion(del.dataset.delete); renderReports(); }
+    if (toggle) { const p = document.getElementById(`share-panel-${toggle.dataset.shareToggle}`); if (p) p.classList.toggle("hidden"); }
+    if (share)  _shareVia(share.dataset.shareMethod, share.dataset.shareText);
+  });
+
+  // Reports — global actions
+  document.getElementById("btn-share-all").addEventListener("click", () =>
+    document.getElementById("share-all-panel").classList.toggle("hidden")
+  );
+  document.getElementById("share-all-panel").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-share-all-method]");
+    if (!btn) return;
+    _shareVia(btn.dataset.shareAllMethod, generateDailyReport(getCompletions()));
+    document.getElementById("share-all-panel").classList.add("hidden");
+  });
+  document.getElementById("btn-delete-all").addEventListener("click", () => {
+    if (!confirm("Delete all reports?")) return;
+    getCompletions().forEach((c) => deleteCompletion(c.jobId));
+    renderReports();
+  });
+  document.getElementById("btn-export-json").addEventListener("click", () => {
+    const date = new Date().toISOString().slice(0, 10);
+    const url  = URL.createObjectURL(new Blob([exportJSON(getCompletions())], { type: "application/json" }));
+    Object.assign(document.createElement("a"), { href: url, download: `dashboard_import_${date}.json` }).click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById("btn-export-csv").addEventListener("click", () => {
+    const d    = new Date();
+    const date = `${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}-${String(d.getFullYear()).slice(2)}`;
+    const url  = URL.createObjectURL(new Blob([exportCSV(getCompletions())], { type: "text/csv" }));
+    Object.assign(document.createElement("a"), { href: url, download: `service_reports_${date}.csv` }).click();
+    URL.revokeObjectURL(url);
   });
 
   // LV — cache download
