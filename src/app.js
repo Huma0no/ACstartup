@@ -4,7 +4,7 @@ import {
   initSettings, getSettings, setTheme, setAiProvider, setAiApiKey, getPrices,
 } from "./settings.js";
 import {
-  createJob, updateJob, removeJob, getJobById, getAllJobs, sortJobs, groupBySubdivision,
+  createJob, removeJob, getJobById, getAllJobs, sortJobs, groupBySubdivision,
 } from "./jobs.js";
 import { saveCompletion, getCompletions, getActiveJobId, setActiveJobId } from "./storage.js";
 import {
@@ -852,7 +852,7 @@ function wireEvents() {
     const completion    = buildCompletion(_activeJob, getPrices());
     completion.reportText = generateReportText(completion);
     saveCompletion(completion);
-    updateJob({ ..._activeJob, savedState: null });
+    removeJob(_activeJob.id);
     clearWorkspace();
     setActiveJobId(null);
     _activeJob = null;
