@@ -124,6 +124,7 @@ Representa el trabajo realizado en un job. Se genera al completar el workspace.
   "weightInData2": null,
   "notes": "",
   "photos": [],
+  "sitePhotoMeta": [],
   "totals": {
     "service": 0,
     "accessory": 0,
@@ -159,6 +160,7 @@ Representa el trabajo realizado en un job. Se genera al completar el workspace.
 | `weightInData2` | WeightInData \| null | Datos de carga Sistema 2 |
 | `notes` | string | Notas de campo |
 | `photos` | Photo[] | Fotos con metadata GPS |
+| `sitePhotoMeta` | SitePhotoMeta[] | Fotos de condiciones del sitio — labels insertados en el reporte entre notas y servicios |
 | `totals` | Totals | Desglose de precios y total |
 | `reportText` | string | Texto final generado para enviar a la compañía |
 
@@ -201,6 +203,11 @@ Representa el trabajo realizado en un job. Se genera al completar el workspace.
 ### Photo
 ```json
 { "dataUrl": "base64...", "lat": 29.7604, "lng": -95.3698, "timestamp": "2026-01-08T14:30:00Z" }
+```
+
+### SitePhotoMeta
+```json
+{ "slug": "no_p_drain_1746123456789", "label": "No P-Drain" }
 ```
 
 ### Totals

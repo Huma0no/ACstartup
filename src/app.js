@@ -11,10 +11,11 @@ import {
   initWorkspace, initWeighInPhotos, getState, clearWorkspace, setOption,
   toggleService, setThermostat, toggleAccessory, toggleFix,
   setWeightInData, setNotes, addPhoto, removePhoto,
+  addSitePhoto, removeSitePhoto, getSitePhotos, getSitePhotoCount, initSitePhotos,
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
 import { generateReportText } from "./reports.js";
-import { ouncesToPoundsAndOunces, calculateApproxAdjust } from "./utils.js";
+import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage } from "./utils.js";
 import { getLinksForJob, isAvailableOffline, downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
 import {
@@ -32,6 +33,28 @@ import {
 
 let _activeJob = null;
 let _newJobAccChips = [];
+
+const SITE_PRESETS = [
+  { label: "No P-Drain",        slug: "no_p_drain" },
+  { label: "No Gas Meter",      slug: "no_gas_meter" },
+  { label: "Gas Closed",        slug: "gas_closed" },
+  { label: "No Electric Meter", slug: "no_electric_meter" },
+  { label: "Breakers Missing",  slug: "breakers_missing" },
+];
+
+let _jsZipPromise = null;
+function _loadJSZip() {
+  if (_jsZipPromise) return _jsZipPromise;
+  _jsZipPromise = new Promise((resolve, reject) => {
+    if (window.JSZip) return resolve(window.JSZip);
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload = () => resolve(window.JSZip);
+    s.onerror = (e) => { _jsZipPromise = null; reject(e); };
+    document.head.appendChild(s);
+  });
+  return _jsZipPromise;
+}
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -188,9 +211,16 @@ function openWorkspace(job) {
   setActiveJobId(job.id);
   initWorkspace(job);
   initWeighInPhotos(job.address);
+  _initSitePhotoPresets();
   initChat(job);
   openTab("workspace");
   renderWorkspace();
+  initSitePhotos().then((stored) => {
+    for (const [slug, { file, label }] of Object.entries(stored)) {
+      _renderSitePhotoThumb(slug, label, file);
+    }
+    _updateSitePhotoCount();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -385,6 +415,157 @@ function renderPhotoList(photos) {
        <button class="btn-delete-photo" data-photo="${i}" aria-label="Remove">×</button>
      </div>`
   ).join("");
+}
+
+function _updateSitePhotoCount() {
+  const n   = getSitePhotoCount();
+  const btn = document.getElementById("btn-download-site-photos");
+  btn.textContent = `💾 Download All Photos (${n})`;
+  btn.disabled    = n === 0;
+}
+
+function _renderSitePhotoThumb(slug, label, file) {
+  const slot = document.getElementById(`site-slot-${slug}`);
+  if (!slot) return;
+
+  const existing = document.getElementById(`site-thumb-${slug}`);
+  if (existing) {
+    const prev = existing.querySelector("img");
+    if (prev?.src?.startsWith("blob:")) URL.revokeObjectURL(prev.src);
+    existing.remove();
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const thumb     = document.createElement("div");
+  thumb.id        = `site-thumb-${slug}`;
+  thumb.style.cssText = "display:flex;align-items:center;gap:var(--space-1);margin-top:var(--space-1);";
+
+  const img = document.createElement("img");
+  img.src = objectUrl;
+  img.style.cssText = "width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);";
+
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = label;
+  labelSpan.style.cssText = "font-size:var(--font-size-xs);color:var(--color-text-secondary);";
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type      = "button";
+  removeBtn.className = "btn";
+  removeBtn.textContent = "✕";
+  removeBtn.style.cssText = "padding:2px 6px;font-size:var(--font-size-xs);";
+  removeBtn.onclick = () => {
+    URL.revokeObjectURL(objectUrl);
+    thumb.remove();
+    removeSitePhoto(slug);
+    saveProgress();
+    _updateSitePhotoCount();
+  };
+
+  thumb.appendChild(img);
+  thumb.appendChild(labelSpan);
+  thumb.appendChild(removeBtn);
+  slot.appendChild(thumb);
+}
+
+function _makeSiteSlot(slug, label) {
+  const slot = document.createElement("div");
+  slot.id = `site-slot-${slug}`;
+  slot.style.cssText = "display:inline-flex;flex-direction:column;margin:var(--space-1);";
+
+  const fileInput    = document.createElement("input");
+  fileInput.type     = "file";
+  fileInput.accept   = "image/*";
+  fileInput.style.display = "none";
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    fileInput.value = "";
+    const compressed = await compressImage(file);
+    addSitePhoto(slug, label, compressed);
+    saveProgress();
+    _renderSitePhotoThumb(slug, label, compressed);
+    _updateSitePhotoCount();
+  });
+
+  const btn       = document.createElement("button");
+  btn.type        = "button";
+  btn.className   = "btn-secondary";
+  btn.textContent = label;
+  btn.onclick     = () => fileInput.click();
+
+  slot.appendChild(btn);
+  slot.appendChild(fileInput);
+  return slot;
+}
+
+function _initSitePhotoPresets() {
+  const container = document.getElementById("site-photo-presets");
+  container.innerHTML = "";
+
+  for (const { label, slug } of SITE_PRESETS) {
+    container.appendChild(_makeSiteSlot(slug, label));
+  }
+
+  // "+ Other" — shows a text input, then opens file picker
+  const otherWrap = document.createElement("div");
+  otherWrap.id    = "site-other-wrap";
+  otherWrap.style.cssText = "display:inline-flex;flex-direction:column;gap:var(--space-1);margin:var(--space-1);";
+
+  const otherFileInput  = document.createElement("input");
+  otherFileInput.type   = "file";
+  otherFileInput.accept = "image/*";
+  otherFileInput.style.display = "none";
+
+  const otherLabelInput       = document.createElement("input");
+  otherLabelInput.type        = "text";
+  otherLabelInput.placeholder = "Label…";
+  otherLabelInput.style.cssText = "display:none;width:140px;";
+
+  let _pendingLabel = "";
+
+  const otherBtn       = document.createElement("button");
+  otherBtn.type        = "button";
+  otherBtn.className   = "btn-secondary";
+  otherBtn.textContent = "+ Other";
+  otherBtn.onclick     = () => {
+    otherLabelInput.style.display = "inline-block";
+    otherLabelInput.focus();
+  };
+
+  otherLabelInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const label = otherLabelInput.value.trim();
+      if (!label) return;
+      _pendingLabel = label;
+      otherLabelInput.value = "";
+      otherLabelInput.style.display = "none";
+      otherFileInput.click();
+    } else if (e.key === "Escape") {
+      otherLabelInput.value = "";
+      otherLabelInput.style.display = "none";
+    }
+  });
+
+  otherFileInput.addEventListener("change", async () => {
+    const file = otherFileInput.files[0];
+    if (!file || !_pendingLabel) return;
+    const label = _pendingLabel;
+    const slug  = label.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+    otherFileInput.value = "";
+    _pendingLabel = "";
+    const compressed = await compressImage(file);
+    const slot = _makeSiteSlot(slug, label);
+    container.insertBefore(slot, otherWrap);
+    addSitePhoto(slug, label, compressed);
+    saveProgress();
+    _renderSitePhotoThumb(slug, label, compressed);
+    _updateSitePhotoCount();
+  });
+
+  otherWrap.appendChild(otherBtn);
+  otherWrap.appendChild(otherLabelInput);
+  otherWrap.appendChild(otherFileInput);
+  container.appendChild(otherWrap);
 }
 
 function updatePriceDisplay() {
@@ -912,6 +1093,27 @@ function wireEvents() {
     };
     reader.readAsDataURL(file);
     fileInput.value = "";
+  });
+
+  // Site photos — download ZIP
+  document.getElementById("btn-download-site-photos").addEventListener("click", async () => {
+    const photos  = getSitePhotos();
+    const entries = Object.entries(photos);
+    if (!entries.length) return;
+    const safeAddr = (_activeJob?.address || "SITE").replace(/[^a-z0-9]/gi, "_").toUpperCase();
+    await _loadJSZip();
+    const zip = new window.JSZip();
+    for (const [, { file, label }] of entries) {
+      const name = `${safeAddr}_${label.toUpperCase().replace(/[^A-Z0-9]/g, "_")}.jpg`;
+      zip.file(name, file);
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url  = URL.createObjectURL(blob);
+    Object.assign(document.createElement("a"), {
+      href: url, download: `${safeAddr}_SITE_PHOTOS.zip`,
+    }).click();
+    URL.revokeObjectURL(url);
+    toast("Photos downloaded!", "success");
   });
 
   // Settings modal — theme, provider, key

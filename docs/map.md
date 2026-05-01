@@ -105,6 +105,7 @@ Capa única de acceso a localStorage. Ningún otro módulo lee ni escribe localS
 | `importBackup` | function | Restaura datos desde un JSON de backup |
 | `saveImageToDB` | function | Stores {file, gps, timestamp} in IndexedDB AppImagesDB at given key |
 | `getImageFromDB` | function | Returns stored record or null from IndexedDB |
+| `deleteImageFromDB` | function | Removes a single record from IndexedDB by key |
 | `clearImagesFromDB` | function | Clears entire IndexedDB images store |
 
 **Depende de:** `src/data.js` — importa `STORAGE_KEYS`.  
@@ -156,6 +157,11 @@ Estado del workspace activo: carga el job, registra selecciones, calcula total e
 | `saveProgress` | function | Persiste el estado via `storage.js` |
 | `buildCompletion` | function | Ensambla el objeto `Completion` completo listo para `reports.js` |
 | `initWeighInPhotos` | function | Initializes photo capture rows for weigh-in. Idempotent — guarded by _photoRowsInitialized flag. Sets up IndexedDB key prefix from job address, renders camera+gallery buttons for weight/fan slots per system, restores saved photos on init |
+| `addSitePhoto` | function | Stores site photo in _sitePhotos map and saves to IndexedDB with no GPS |
+| `removeSitePhoto` | function | Removes site photo from _sitePhotos, deletes from IndexedDB, updates sitePhotoMeta |
+| `getSitePhotos` | function | Returns current _sitePhotos map |
+| `getSitePhotoCount` | function | Returns count of loaded site photos |
+| `initSitePhotos` | function | Async — restores site photos from IndexedDB on job load using sitePhotoMeta |
 
 **Reglas de negocio implementadas:**
 1. AC + Heat = $30 combinados, no $60
@@ -179,7 +185,7 @@ Genera el texto exacto del reporte por job y el reporte diario completo. Sin ren
 
 | Export | Tipo | Descripción |
 |---|---|---|
-| `generateReportText` | function | Ensambla el texto de un completion siguiendo el formato §8 del data dictionary. No re-aplica reglas de negocio — los displayNames y precios ya vienen resueltos desde `workspace.js` |
+| `generateReportText` | function | Ensambla el texto de un completion siguiendo el formato §8 del data dictionary. No re-aplica reglas de negocio — los displayNames y precios ya vienen resueltos desde `workspace.js`. Site photo labels de `sitePhotoMeta` se insertan entre notas y servicios |
 | `generateDailyReport` | function | Concatena el `reportText` de todos los completions del día separados por párrafo. Si un completion no tiene `reportText`, lo genera on-the-fly |
 | `exportJSON` | function | Serializa el array de completions a JSON con indentación |
 | `exportCSV` | function | Serializa a CSV con 43 columnas: Date, Address, Subdivision, Builder, Service_Type, Service_Price, Thermostat, Tstat_Qty, Accessories, Accessories_Price, Fixes, Fixes_Price, Notes, Total, Indoor_Model, Outdoor_Model, 12 columnas weigh-in sys1, Refrigerant, Indoor_Model_2, Outdoor_Model_2, 12 columnas weigh-in sys2 |
@@ -371,7 +377,8 @@ isTwoSystems, isTemporary, refrigerant,
 outdoorModel, indoorModel, outdoorModel2, indoorModel2,
 services[], selectedThermostat, thermostatQuantity,
 accessories[], fixes[], weightInData, weightInData2,
-notes, photos[], totals{service, accessory, fix, total},
+notes, photos[], sitePhotoMeta[{ slug, label }],
+totals{service, accessory, fix, total},
 reportText
 ```
 

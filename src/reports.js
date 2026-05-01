@@ -13,6 +13,10 @@ export function generateReportText(completion) {
     parts.push(completion.notes.trim());
   }
 
+  if (completion.sitePhotoMeta?.length) {
+    for (const p of completion.sitePhotoMeta) parts.push(p.label);
+  }
+
   for (const svc of completion.services) {
     parts.push(`${svc.displayName} $${svc.price}`);
   }

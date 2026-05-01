@@ -164,6 +164,16 @@ export async function getImageFromDB(key) {
   }
 }
 
+export async function deleteImageFromDB(key) {
+  try {
+    const db = await _openDB();
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).delete(key);
+  } catch (e) {
+    console.error("Error deleting from DB", e);
+  }
+}
+
 export async function clearImagesFromDB() {
   try {
     const db = await _openDB();
