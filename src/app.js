@@ -612,7 +612,8 @@ function renderReports() {
   empty.classList.add("hidden");
   actions.classList.remove("hidden");
   list.innerHTML = all.map((c) => `
-    <li class="report-item">
+    <li class="report-item" style="position:relative;">
+      <button class="btn" data-delete="${esc(c.jobId)}" style="position:absolute;top:6px;right:6px;padding:2px 7px;font-size:var(--font-size-xs);">✕</button>
       <div class="report-addr">
         <strong>${esc(c.address)}</strong>
         <span class="chip chip-sm chip-primary">$${c.totals.total}</span>
@@ -621,7 +622,6 @@ function renderReports() {
       <div class="btn-row">
         <button class="btn btn-copy" data-copy="${esc(c.reportText || "")}">Copy</button>
         <button class="btn" data-share-toggle="${esc(c.jobId)}">📤 Share</button>
-        <button class="btn" data-delete="${esc(c.jobId)}">🗑️</button>
       </div>
       <div id="share-panel-${esc(c.jobId)}" class="hidden">
         <div class="btn-row">
@@ -1072,7 +1072,7 @@ function wireEvents() {
     const toggle = e.target.closest("[data-share-toggle]");
     const share  = e.target.closest("[data-share-method]");
     if (copy)   navigator.clipboard.writeText(copy.dataset.copy).then(() => toast("Copied!", "success"));
-    if (del)  { deleteCompletion(del.dataset.delete); renderReports(); }
+    if (del && confirm("Delete this report?")) { deleteCompletion(del.dataset.delete); renderReports(); }
     if (toggle) { const p = document.getElementById(`share-panel-${toggle.dataset.shareToggle}`); if (p) p.classList.toggle("hidden"); }
     if (share)  _shareVia(share.dataset.shareMethod, share.dataset.shareText);
   });

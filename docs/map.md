@@ -442,6 +442,7 @@ Export JSON → Dispatch
 | 8 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
 | 9 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
 | 10 | Edit completion — individual edit of a saved completion report | reports.js / app.js |
+| 11 | Settings — Prices onboarding and configuration: first-launch overlay with zero prices, manual input by section (Services/Accessories/Fixes), JSON import/export, reset to defaults. Deferred until PWA is ready to share. | settings.js / app.js |
 
 ---
 
