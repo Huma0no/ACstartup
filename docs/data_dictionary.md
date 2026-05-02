@@ -44,7 +44,8 @@ Representa una dirección de servicio asignada para el día.
   "system1": {
     "furnace": "GR9S800805C",
     "coil": "CHPTA4830C3",
-    "outdoor": "GLXS4BA4210"
+    "outdoor": "GLXS4BA4210",
+    "links": {}
   },
   "system2": null,
   "savedState": null,
@@ -81,19 +82,11 @@ El objeto `system1` es requerido. Sus campos internos son todos opcionales — p
 | `furnace` | string | Visible | Número de modelo del furnace / air handler |
 | `coil` | string | **Oculto por default** | Número de modelo del coil evaporador — visible al expandir |
 | `outdoor` | string | Visible | Número de modelo de la unidad exterior |
-| `links` | Links | — | URLs de documentación del equipo — todos opcionales, default `""` |
+| `links` | object | — | Resultado merged de SERIES_LINKS y OUTDOOR_LINKS para los modelos del job. Populado al crear el job. `{}` si no hay match en el catálogo |
 
 > Los 3 campos de modelo se exportan siempre en el JSON hacia Dispatch, independientemente de si están visibles en la UI.
 
-### Links
-
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `serviceManual` | string | URL al service manual del equipo |
-| `documentLibrary` | string | URL a la librería de documentos del fabricante |
-| `blower` | string | URL a la tabla de velocidades del blower |
-
-> Campos eliminados: `allHeaters`, `allUnits` — huérfanos sin consumidores activos.
+> `links` shape varies by brand — keys come directly from `SERIES_LINKS` / `OUTDOOR_LINKS` in `src/data.js` (e.g. `serviceManual`, `lennoxPros`, `trane`, `goodman`, `linkText`, `blowerSpeedImage`). No fixed schema.
 
 ---
 

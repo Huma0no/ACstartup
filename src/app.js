@@ -1246,10 +1246,24 @@ function wireEvents() {
       isTwoSystems,
       jobAccessories: [..._newJobAccChips],
       jobThermostat:  tstatModel ? { model: tstatModel, qty: parseInt(fd.get("tstat-qty")) || 1 } : null,
-      system1: { furnace: fd.get("furnace")  || "", coil: "", outdoor: fd.get("outdoor")  || "" },
-      system2: isTwoSystems
-        ? { furnace: fd.get("furnace2") || "", coil: "", outdoor: fd.get("outdoor2") || "" }
-        : null,
+      system1: {
+        furnace: fd.get("furnace")  || "",
+        coil:    "",
+        outdoor: fd.get("outdoor")  || "",
+        links: {
+          ...( SERIES_LINKS[getIndoorModel(fd.get("furnace"))?.series]   ?? {} ),
+          ...( OUTDOOR_LINKS[getOutdoorModel(fd.get("outdoor"))?.series] ?? {} ),
+        },
+      },
+      system2: isTwoSystems ? {
+        furnace: fd.get("furnace2") || "",
+        coil:    "",
+        outdoor: fd.get("outdoor2") || "",
+        links: {
+          ...( SERIES_LINKS[getIndoorModel(fd.get("furnace2"))?.series]   ?? {} ),
+          ...( OUTDOOR_LINKS[getOutdoorModel(fd.get("outdoor2"))?.series] ?? {} ),
+        },
+      } : null,
     });
     precacheJobs([job]);
     _collapseAddJobForm();

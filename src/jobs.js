@@ -30,6 +30,7 @@ export function createJob(data) {
       furnace: data.system1?.furnace || "",
       coil:    data.system1?.coil    || "",
       outdoor: data.system1?.outdoor || "",
+      links:   data.system1?.links   || {},
     },
     system2:        data.system2        || null,
     savedState:     null,
