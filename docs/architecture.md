@@ -50,10 +50,11 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
     ├── settings.js         # First-launch onboarding, price config, AI keys (~150 lines)
     ├── ai.js               # AI chat interface, provider switching (~200 lines)
     ├── diagrams.js         # Equipment diagram lookup, cache management (~150 lines)
-    └── utils.js            # Pure calculation functions, no DOM dependency (~80 lines)
+    ├── utils.js            # Pure calculation functions, no DOM dependency (~80 lines)
+    └── lv.js               # LV diagram viewer — job header, static sections, viewer singleton (~200 lines)
 ```
 
-**Total: 13 files.** Clean, one responsibility per file.
+**Total: 14 files.** Clean, one responsibility per file.
 
 ---
 
@@ -152,6 +153,13 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - `calculateApproxAdjust(linesetReal, factoryLength, brand)` — returns refrigerant
   adjustment excess in oz based on lineset delta and brand multiplier (0.47 Trane, 0.6 all others)
 - No imports from other modules — can be imported by any module safely
+
+### `lv.js`
+- Renders LV tab: dynamic job header, static 4-section diagram browser, brand link footer
+- Header chips: Indoor / Outdoor / Blower Data / S Manual — shown only when resource exists for active job
+- Viewer singleton: zoom +/−, 1:1 reset, pinch-to-zoom, pan when zoomed
+- Footer links: Lennox, Trane, Goodman, Daikin — sourced from SERIES_LINKS / OUTDOOR_LINKS in data.js
+- No DOMContentLoaded — called by app.js via renderLV(container)
 
 ---
 

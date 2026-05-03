@@ -347,5 +347,35 @@ Texto plano generado por `src/reports.js`. Debe coincidir exactamente con el est
 
 ---
 
+## 9. Imágenes LV
+
+Todas las imágenes en una sola carpeta: `images/lv/`
+
+| Archivo | Entrada |
+|---|---|
+| tstat-1-2stage.png | Tstat 1/2 stage |
+| tstat-heatpump.png | Tstat Heat Pump |
+| tstat-daikin.png | Tstat Daikin One |
+| cond-1-2stage.png | Condenser 1/2 stage |
+| cond-heatpump.png | Condenser Heat Pump |
+| cond-daikin.png | Condenser Daikin |
+| furnace-1-2stage.png | Furnace 1/2 stage |
+| furnace-heatpump.png | Furnace Heat Pump |
+| airhandler.png | Air Handler |
+| daikin-comm.png | Daikin Communication |
+| acc-fin180p.png | FIN180P |
+| acc-hz322.png | HZ322 |
+| acc-harmony.png | Harmony |
+| acc-floatswitch.png | Float Switch |
+| acc-rds.png | RDS |
+| acc-ebypass.png | eBypass |
+| acc-freshair.png | Fresh Air |
+| acc-aprilair.png | AprilAir |
+| acc-dehum.png | Dehum |
+| acc-ut3000.png | UT3000 |
+| acc-dapc.png | DAPC |
+
+---
+
 *Document prepared by: PM/Software Engineer*  
 *Approved by: _________________ Date: _________*
