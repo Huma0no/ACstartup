@@ -16,8 +16,9 @@ import {
 } from "./workspace.js";
 import { generateReportText, generateDailyReport, exportJSON, exportCSV } from "./reports.js";
 import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage } from "./utils.js";
-import { getLinksForJob, isAvailableOffline, downloadDiagram, precacheJobs } from "./diagrams.js";
+import { downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
+import { renderLV as _renderLV } from "./lv.js";
 import {
   SERVICES, ACCESSORIES, FIXES, THERMOSTATS, BUILDERS,
   ACCESSORY_DISPLAY, FIX_DISPLAY,
@@ -635,32 +636,11 @@ function renderReports() {
 }
 
 // ---------------------------------------------------------------------------
-// LV (Diagrams) tab
+// LV tab
 // ---------------------------------------------------------------------------
 
-async function renderLV() {
-  const container = document.getElementById("lv-container");
-  if (!_activeJob) {
-    container.innerHTML = `<p class="empty-state">Select a job to view diagrams</p>`;
-    return;
-  }
-  const links = getLinksForJob(_activeJob);
-  if (!links.length) {
-    container.innerHTML = `<p class="empty-state">No diagram links for this job</p>`;
-    return;
-  }
-  const rows = await Promise.all(links.map(async ({ label, url }) => {
-    const cached = await isAvailableOffline(url);
-    return `<div class="lv-item">
-      <span class="lv-label">${esc(label)}</span>
-      <span class="badge ${cached ? "badge-success" : "badge-secondary"}">${cached ? "Cached" : "Online only"}</span>
-      <div class="btn-row">
-        <a href="${esc(url)}" target="_blank" rel="noopener" class="btn btn-outline">Open</a>
-        <button class="btn" data-dl="${esc(url)}">↓ Cache</button>
-      </div>
-    </div>`;
-  }));
-  container.innerHTML = rows.join("");
+function renderLV() {
+  _renderLV(document.getElementById("lv-container"));
 }
 
 // ---------------------------------------------------------------------------

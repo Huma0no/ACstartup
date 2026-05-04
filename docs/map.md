@@ -31,7 +31,7 @@
 │   ├── ai.js               # ✅ Construido
 │   ├── diagrams.js         # ✅ Construido
 │   ├── utils.js            # ✅ Construido
-│   └── lv.js               # 🔲 En construcción
+│   └── lv.js               # ✅ Construido
 │
 └── docs/
     ├── requirements.md
@@ -285,7 +285,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 
 ---
 
-### `src/lv.js` 🔲
+### `src/lv.js` ✅
 Visor de diagramas LV. Renderiza header dinámico con contexto del job activo, cuerpo estático de 4 secciones con botones por categoría, footer de links por marca, y viewer singleton con zoom y pan.
 
 **Exporta:**
@@ -294,7 +294,7 @@ Visor de diagramas LV. Renderiza header dinámico con contexto del job activo, c
 |---|---|---|
 | `renderLV` | function | Recibe `container` — renderiza header + cuerpo estático + footer; construye viewer singleton la primera vez. Sin DOMContentLoaded — llamado desde `app.js` |
 
-**Depende de:** `src/storage.js` (`getActiveJobId`), `src/jobs.js` (`getJobById`), `src/data.js` (`SERIES_LINKS`, `OUTDOOR_LINKS`, `INDOOR_CATALOG`).  
+**Depende de:** `src/storage.js` (`getActiveJobId`), `src/jobs.js` (`getJobById`), `src/data.js` (`getIndoorModel`, `getOutdoorModel` — acceso a INDOOR_CATALOG).  
 **Lo usan:** `app.js`.
 
 ---
@@ -460,6 +460,7 @@ Export JSON → Dispatch
 | 11 | Settings — Prices onboarding and configuration: first-launch overlay with zero prices, manual input by section (Services/Accessories/Fixes), JSON import/export, reset to defaults. Deferred until PWA is ready to share. | settings.js / app.js |
 | 12 | Crear imágenes LV — diagramas de cableado BV por configuración de sistema. 1/2 stage comparte imagen con línea punteada para Y2. Convención de nombres en data_dictionary.md §9 | images/lv/ |
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
+| 14 | Header global dinámico con chips Outdoor/Indoor/Tstat/AccN — feature separada, afecta app.js e index.html. Outdoor = press and hold quick view desde OUTDOOR_CATALOG. Indoor = modal con blower data image. Tstat/Acc = viewer diagrama LV. Mapa jobAccessories → slug LV debe vivir en data.js | app.js / index.html / data.js |
 
 ---
 
