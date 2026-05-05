@@ -100,6 +100,8 @@ This document covers the **PWA only.**
 - [ ] All data stored locally on device (no server required for PWA)
 - [ ] Export/import full data backup (JSON file user saves manually)
 - [ ] No personal data collected
+- Export full data backup as JSON file (jobs + completions + settings). Manual trigger from Settings.
+- Import full data backup from JSON file. Merges or replaces current data. Manual trigger from Settings.
 
 ---
 

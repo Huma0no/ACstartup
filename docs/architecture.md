@@ -133,6 +133,7 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - Price storage and retrieval
 - AI provider selection and API key management
 - Theme toggle (light/dark)
+- Export / Import backup — triggers exportBackup() and importBackup() from storage.js. UI lives in Settings modal.
 
 ### `ai.js`
 - In-app chat UI

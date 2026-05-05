@@ -280,6 +280,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Reports tab | Renderiza completions. Per-card: Copy, Share (WhatsApp/SMS/Email/Copy), Delete. Global: Share All (`generateDailyReport()`), Delete All, DB export → `dashboard_import_{date}.json`, CSV export → `service_reports_{MM-DD-YY}.csv` |
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
 | Settings modal | Theme toggle (`data-mode`), proveedor IA, API key save/clear |
+| Backup | Botones Export/Import en Settings modal — llaman exportBackup() e importBackup() de storage.js |
 | Add Job | Sección inline en `#tab-jobs` (no dialog); campos: dirección, subdivision, builder, fecha, notas, 2 Systems, time-sensitive, termostato (modelo + qty), accesorios multi-select, modelos indoor/outdoor con selects por serie + links de manuales → `createJob()` → `precacheJobs([job])` |
 | Active job bar | `updateActiveJobBar()` — muestra/oculta `#active-job-bar`. Outdoor: press-hold → `_showOutdoorPopover` con datos OUTDOOR_CATALOG. Indoor: tap → `openViewer` LV. |
 | Troubleshooting | Abre/cierra `#ts-drawer`; body pendiente |
