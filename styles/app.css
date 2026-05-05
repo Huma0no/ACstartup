@@ -1677,11 +1677,9 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .price-display {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
 }
 
 .price-total {

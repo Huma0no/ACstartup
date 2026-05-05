@@ -574,8 +574,7 @@ function _initSitePhotoPresets() {
 
 function updatePriceDisplay() {
   const t = calculateTotals(getState(), getPrices());
-  document.getElementById("price-display").innerHTML =
-    `Svc <strong>$${t.service}</strong> · Acc <strong>$${t.accessory}</strong> · Fixes <strong>$${t.fix}</strong> &nbsp; Total <strong>$${t.total}</strong>`;
+  document.getElementById("price-display").textContent = `$${t.total}`;
 }
 
 function _renderNewTotalCharge(data, sys) {
