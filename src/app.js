@@ -15,7 +15,7 @@ import {
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
 import { generateReportText, generateDailyReport, exportJSON, exportCSV } from "./reports.js";
-import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage } from "./utils.js";
+import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage, calculateCFM } from "./utils.js";
 import { downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
 import { renderLV as _renderLV, openViewer as _openViewer } from "./lv.js";
@@ -150,16 +150,15 @@ function jobCardHTML(job, ci) {
     ];
     const d = outdoor ? getOutdoorModel(outdoor) : null;
     if (d) {
-      const ton    = d.btu ? (d.btu / 12000).toFixed(1) : null;
-      const cfgMax = d.btu ? Math.round((d.btu / 12000) * 400) : null;
-      const cfgMin = cfgMax ? Math.round(cfgMax * 0.85) : null;
+      const ton = d.btu ? (d.btu / 12000).toFixed(1) : null;
+      const cfm = calculateCFM(d.btu);
       chips.push(
         ton                    && `<span class="chip chip-sm chip-outline">${prefix}Ton ${ton}</span>`,
         d.freon                && `<span class="chip chip-sm chip-outline">${prefix}${esc(d.freon)}</span>`,
         d.FactoryCharge        && `<span class="chip chip-sm chip-outline">${prefix}${esc(ouncesToPoundsAndOunces(d.FactoryCharge))}</span>`,
         d.revisedCharge > 0    && `<span class="chip chip-sm chip-outline">${prefix}Over: ${d.revisedCharge} oz</span>`,
-        cfgMax                 && `<span class="chip chip-sm chip-outline">${prefix}Max CFM ${cfgMax}</span>`,
-        cfgMin                 && `<span class="chip chip-sm chip-outline">${prefix}Min CFM ${cfgMin}</span>`,
+        cfm                    && `<span class="chip chip-sm chip-outline">${prefix}Max CFM ${cfm.max}</span>`,
+        cfm                    && `<span class="chip chip-sm chip-outline">${prefix}Min CFM ${cfm.min}</span>`,
       );
     }
     return chips.filter(Boolean).join("");
@@ -841,11 +840,14 @@ function _wireHold(el, cb, ms = 500) {
 function _showOutdoorPopover(anchor, entry) {
   if (_popoverEl) { _popoverEl.remove(); _popoverEl = null; }
   const ton   = entry.btu ? (entry.btu / 12000).toFixed(1) : null;
+  const cfm   = calculateCFM(entry.btu);
   const lines = [
     ton                     && `Ton: ${ton}`,
     entry.freon             && `Ref: ${entry.freon}`,
     entry.FactoryCharge     && `Factory: ${entry.FactoryCharge} oz`,
     entry.revisedCharge > 0 && `Revised: ${entry.revisedCharge} oz`,
+    cfm                     && `Max CFM: ${cfm.max}`,
+    cfm                     && `Min CFM: ${cfm.min}`,
   ].filter(Boolean);
 
   _popoverEl = document.createElement("div");

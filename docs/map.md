@@ -331,6 +331,7 @@ Funciones utilitarias compartidas sin dependencias.
 | `ouncesToPoundsAndOunces` | function | Convierte oz a string "X lb Y oz" (o solo "Y oz" si < 16 oz) — usado en chips de carga de refrigerante en el job card |
 | `getSubcoolingDefault` | function | Returns expected subcooling range object {min, max} by brand string |
 | `calculateApproxAdjust` | function | Returns refrigerant adjustment excess in oz: (linesetReal - factoryLength) × multiplier (0.47 Trane, 0.6 others). Returns null if inputs invalid |
+| `calculateCFM` | function | `(btu: number) → { max, min } \| null` — Max CFM = round((btu/12000)×400); Min CFM = round(max×0.85). Retorna null si btu es falsy |
 | `compressImage` | function | Compresses image file to JPEG at 0.8 quality / 1600px max width. Handles HEIC via heic2any. Returns original file on failure |
 | `getGpsFromImage` | function | Extracts {lat, lon} from EXIF via exifr library. Returns null on miss or error |
 

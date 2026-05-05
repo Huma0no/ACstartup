@@ -19,6 +19,12 @@ export function calculateApproxAdjust(linesetLength, lineConfig) {
   return ((linesetLength - factoryLength) * multiplier).toFixed(2);
 }
 
+export function calculateCFM(btu) {
+  if (!btu) return null;
+  const max = Math.round((btu / 12000) * 400);
+  return { max, min: Math.round(max * 0.85) };
+}
+
 // ---------------------------------------------------------------------------
 // Image utilities — lazy CDN loaders + GPS extraction + compression
 // ---------------------------------------------------------------------------
