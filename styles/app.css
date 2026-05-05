@@ -364,6 +364,46 @@ textarea { resize: vertical; }
   color: var(--color-accent);
 }
 
+/* Active job bar */
+.active-job-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  min-height: 32px;
+}
+
+.active-job-addr {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-job-chips {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.lv-outdoor-popover {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-normal);
+  z-index: calc(var(--z-navbar) + 10);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  min-width: 120px;
+}
+
 /* Main scrollable area */
 .tab-panels {
   flex: 1;

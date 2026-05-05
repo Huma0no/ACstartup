@@ -18,7 +18,7 @@ import { generateReportText, generateDailyReport, exportJSON, exportCSV } from "
 import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage } from "./utils.js";
 import { downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
-import { renderLV as _renderLV } from "./lv.js";
+import { renderLV as _renderLV, openViewer as _openViewer } from "./lv.js";
 import {
   SERVICES, ACCESSORIES, FIXES, THERMOSTATS, BUILDERS,
   ACCESSORY_DISPLAY, FIX_DISPLAY,
@@ -226,6 +226,7 @@ function openWorkspace(job) {
   initChat(job);
   openTab("workspace");
   renderWorkspace();
+  updateActiveJobBar();
   initSitePhotos().then((stored) => {
     for (const [slug, { file, label }] of Object.entries(stored)) {
       _renderSitePhotoThumb(slug, label, file);
@@ -820,6 +821,89 @@ function buildAddJobSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Active job bar
+// ---------------------------------------------------------------------------
+
+let _popoverEl = null;
+
+function _wireHold(el, cb, ms = 500) {
+  let timer = null;
+  const start  = () => { timer = setTimeout(() => { timer = null; cb(); }, ms); };
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  el.addEventListener("touchstart",  start,  { passive: true });
+  el.addEventListener("touchend",    cancel);
+  el.addEventListener("touchcancel", cancel);
+  el.addEventListener("mousedown",   start);
+  el.addEventListener("mouseup",     cancel);
+  el.addEventListener("mouseleave",  cancel);
+}
+
+function _showOutdoorPopover(anchor, entry) {
+  if (_popoverEl) { _popoverEl.remove(); _popoverEl = null; }
+  const ton   = entry.btu ? (entry.btu / 12000).toFixed(1) : null;
+  const lines = [
+    ton                     && `Ton: ${ton}`,
+    entry.freon             && `Ref: ${entry.freon}`,
+    entry.FactoryCharge     && `Factory: ${entry.FactoryCharge} oz`,
+    entry.revisedCharge > 0 && `Revised: ${entry.revisedCharge} oz`,
+  ].filter(Boolean);
+
+  _popoverEl = document.createElement("div");
+  _popoverEl.className = "lv-outdoor-popover";
+  _popoverEl.innerHTML = lines.map((l) => `<div>${esc(l)}</div>`).join("");
+
+  const rect = anchor.getBoundingClientRect();
+  _popoverEl.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;`;
+  document.body.appendChild(_popoverEl);
+
+  const dismiss = (e) => {
+    if (!_popoverEl?.contains(e.target)) {
+      _popoverEl?.remove();
+      _popoverEl = null;
+      document.removeEventListener("click",      dismiss);
+      document.removeEventListener("touchstart", dismiss);
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener("click",      dismiss);
+    document.addEventListener("touchstart", dismiss);
+  }, 0);
+}
+
+function updateActiveJobBar() {
+  const bar     = document.getElementById("active-job-bar");
+  const addrEl  = document.getElementById("active-job-addr");
+  const chipsEl = document.getElementById("active-job-chips");
+
+  if (!_activeJob) { bar.classList.add("hidden"); return; }
+
+  bar.classList.remove("hidden");
+  addrEl.textContent = _activeJob.address;
+  chipsEl.innerHTML  = "";
+
+  const outdoorEntry = _activeJob.system1?.outdoor ? getOutdoorModel(_activeJob.system1.outdoor) : null;
+  const indoorEntry  = _activeJob.system1?.furnace ? getIndoorModel(_activeJob.system1.furnace)  : null;
+
+  if (outdoorEntry) {
+    const btn = document.createElement("button");
+    btn.type        = "button";
+    btn.className   = "chip chip-sm chip-secondary";
+    btn.textContent = "Outdoor";
+    _wireHold(btn, () => _showOutdoorPopover(btn, outdoorEntry));
+    chipsEl.appendChild(btn);
+  }
+
+  if (indoorEntry?.imagen) {
+    const btn = document.createElement("button");
+    btn.type        = "button";
+    btn.className   = "chip chip-sm chip-secondary";
+    btn.textContent = "Indoor";
+    btn.addEventListener("click", () => _openViewer("Indoor", indoorEntry.imagen));
+    chipsEl.appendChild(btn);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Event wiring
 // ---------------------------------------------------------------------------
 
@@ -1040,6 +1124,7 @@ function wireEvents() {
     clearWorkspace();
     setActiveJobId(null);
     _activeJob = null;
+    updateActiveJobBar();
     toast("Report saved!", "success");
     renderJobs();
     openTab("reports");
@@ -1274,6 +1359,7 @@ function init() {
   wireEvents();
   renderJobs();
   renderWorkspace();
+  updateActiveJobBar();
   precacheJobs(getAllJobs()); // background, no await
 }
 

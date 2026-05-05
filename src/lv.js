@@ -154,7 +154,7 @@ function setupTouchZoom(img) {
   }, { passive: true });
 }
 
-function openViewer(title, imgPath) {
+export function openViewer(title, imgPath) {
   ensureViewer();
   resetZoom();
   viewerTitle.textContent = title;
@@ -262,9 +262,6 @@ function _resolveJobChips(job) {
     else                                         img = "images/lv/cond-1-2stage.png";
     chips.push({ label: "Outdoor", img });
   }
-
-  const sManual = job.system1?.links?.serviceManual;
-  if (sManual) chips.push({ label: "S Manual", url: sManual });
 
   return chips;
 }

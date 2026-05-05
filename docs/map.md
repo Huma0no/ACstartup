@@ -277,6 +277,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
 | Settings modal | Theme toggle (`data-mode`), proveedor IA, API key save/clear |
 | Add Job | Sección inline en `#tab-jobs` (no dialog); campos: dirección, subdivision, builder, fecha, notas, 2 Systems, time-sensitive, termostato (modelo + qty), accesorios multi-select, modelos indoor/outdoor con selects por serie + links de manuales → `createJob()` → `precacheJobs([job])` |
+| Active job bar | `updateActiveJobBar()` — muestra/oculta `#active-job-bar`. Outdoor: press-hold → `_showOutdoorPopover` con datos OUTDOOR_CATALOG. Indoor: tap → `openViewer` LV. |
 | Troubleshooting | Abre/cierra `#ts-drawer`; body pendiente |
 | Photos | File input → FileReader → `addPhoto()`; geolocation no-blocking |
 
@@ -357,6 +358,7 @@ Shell de la app. Estructura de 4 tabs, 5 steps en workspace, 3 modales, drawer, 
 
 **Contiene:**
 - `<nav>` — Jobs · Workspace · Reports · LV
+- `#active-job-bar` — fila bajo la nav: dirección del job activo + chips Outdoor/Indoor. Oculta si no hay job activo.
 - `#tab-jobs` — lista de jobs agrupados por subdivisión
 - `#tab-workspace` — stepper de 5 pasos
 - `#tab-reports` — lista de completions
@@ -460,7 +462,7 @@ Export JSON → Dispatch
 | 11 | Settings — Prices onboarding and configuration: first-launch overlay with zero prices, manual input by section (Services/Accessories/Fixes), JSON import/export, reset to defaults. Deferred until PWA is ready to share. | settings.js / app.js |
 | 12 | Crear imágenes LV — diagramas de cableado BV por configuración de sistema. 1/2 stage comparte imagen con línea punteada para Y2. Convención de nombres en data_dictionary.md §9 | images/lv/ |
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
-| 14 | Header global dinámico con chips Outdoor/Indoor/Tstat/AccN — feature separada, afecta app.js e index.html. Outdoor = press and hold quick view desde OUTDOOR_CATALOG. Indoor = modal con blower data image. Tstat/Acc = viewer diagrama LV. Mapa jobAccessories → slug LV debe vivir en data.js | app.js / index.html / data.js |
+| 14 | ✅ Header global dinámico — `#active-job-bar` con dirección + chips Outdoor (press-hold → popover OUTDOOR_CATALOG: Ton/Ref/Charge) + Indoor (tap → LV viewer imagen). Tstat/Acc chips — deferred. | app.js / index.html / lv.js |
 
 ---
 
