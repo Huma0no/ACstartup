@@ -890,7 +890,7 @@ function updateActiveJobBar() {
     const btn = document.createElement("button");
     btn.type        = "button";
     btn.className   = "chip chip-sm chip-secondary";
-    btn.textContent = "Outdoor";
+    btn.textContent = _activeJob.system1.outdoor;
     _wireHold(btn, () => _showOutdoorPopover(btn, outdoorEntry));
     chipsEl.appendChild(btn);
   }
@@ -899,7 +899,7 @@ function updateActiveJobBar() {
     const btn = document.createElement("button");
     btn.type        = "button";
     btn.className   = "chip chip-sm chip-secondary";
-    btn.textContent = "Indoor";
+    btn.textContent = _activeJob.system1.furnace;
     btn.addEventListener("click", () => _openViewer("Indoor", indoorEntry.imagen));
     chipsEl.appendChild(btn);
   }
