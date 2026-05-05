@@ -112,8 +112,7 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - Auto-calculate running total
 - Attach photos with GPS metadata
 - Save completed workspace back to job record
-- Single photo store — all job photos (weigh-in + site conditions) managed through one unified interface
-- Exposes getPhotoCount() and getAllPhotos() — consumed by app.js for download button state and ZIP export
+- Single photo store — weigh-in photos and site condition photos. Exposes getPhotoCount() and getAllPhotos() for download button state and ZIP export.
 
 ### `reports.js`
 - Generate individual completion text per job (exact company format)
