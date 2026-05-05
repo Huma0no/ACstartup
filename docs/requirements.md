@@ -57,6 +57,7 @@ This document covers the **PWA only.**
 - [ ] Add notes per job (issues found, pending items, special conditions)
 - [ ] Attach photos with GPS metadata to individual job records
 - [ ] Auto-calculate total per job based on registered items
+- [ ] Export all job photos as a single ZIP — weigh-in photos and site condition photos combined. One action, one file.
 
 ### 4.3 Pricing Configuration
 - [ ] On first launch, user configures their own prices for each service type and accessory

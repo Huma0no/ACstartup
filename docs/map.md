@@ -163,6 +163,8 @@ Estado del workspace activo: carga el job, registra selecciones, calcula total e
 | `getSitePhotos` | function | Returns current _sitePhotos map |
 | `getSitePhotoCount` | function | Returns count of loaded site photos |
 | `initSitePhotos` | function | Async — restores site photos from IndexedDB on job load using sitePhotoMeta |
+| `getPhotoCount` | function | Total de fotos cargadas — weigh-in + site conditions combinadas |
+| `getAllPhotos` | function | Retorna todas las fotos para export ZIP |
 
 **Reglas de negocio implementadas:**
 1. AC + Heat = $30 combinados, no $60
