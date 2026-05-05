@@ -234,6 +234,8 @@ Configuración de la app: detección de primer inicio, onboarding de precios, pr
 
 **Nota de diseño:** `prices` en storage es un objeto sparse — solo almacena lo que el usuario cambió. `getPrices()` hace el merge en memoria sobre DEFAULT_PRICES.
 
+**UI:** Settings modal → sección Prices — `renderSettingsModal()` puebla todos los inputs via `querySelectorAll("[data-price-category]")`; event delegation en `input` del modal llama `setPrice()` inmediatamente; botón Reset llama `resetPrices()` y re-renderiza.
+
 **Depende de:** `src/data.js` (DEFAULT_PRICES), `src/storage.js` (getSettings, saveSettings).  
 **Lo usan:** `app.js`, `workspace.js` (vía getPrices()).
 
@@ -460,7 +462,7 @@ Export JSON → Dispatch
 | 8 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
 | 9 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
 | 10 | Edit completion — individual edit of a saved completion report | reports.js / app.js |
-| 11 | Settings — Prices onboarding and configuration: first-launch overlay with zero prices, manual input by section (Services/Accessories/Fixes), JSON import/export, reset to defaults. Deferred until PWA is ready to share. | settings.js / app.js |
+| 11 | ✅ Settings — Prices: sección en Settings modal con inputs por subsección (Services/Accessories/Fixes + Weight-In Finish Addon), live-save via setPrice() en cada cambio, botón "Reset to defaults" via resetPrices(). | settings.js / app.js |
 | 12 | ✅ Crear imágenes LV — diagramas de cableado BV por configuración de sistema. 1/2 stage comparte imagen con línea punteada para Y2. Convención de nombres en data_dictionary.md §9 | images/lv/ |
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
 | 14 | ✅ Header global dinámico — `#active-job-bar` con dirección + chips Outdoor (press-hold → popover OUTDOOR_CATALOG: Ton/Ref/Charge) + Indoor (tap → LV viewer imagen). Tstat/Acc chips — deferred. | app.js / index.html / lv.js |

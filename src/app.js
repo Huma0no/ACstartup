@@ -2,6 +2,7 @@
 
 import {
   initSettings, getSettings, setTheme, setAiProvider, setAiApiKey, getPrices,
+  setPrice, resetPrices,
 } from "./settings.js";
 import {
   createJob, removeJob, getJobById, getAllJobs, sortJobs, groupBySubdivision,
@@ -661,6 +662,14 @@ function renderSettingsModal() {
   ).join("");
   document.getElementById("ai-settings-key-input").value = s.aiApiKey || "";
   document.getElementById("ai-settings-status").textContent = s.aiApiKey ? "Key saved." : "";
+  const prices = getPrices();
+  document.querySelectorAll("[data-price-category]").forEach((inp) => {
+    const cat  = inp.dataset.priceCategory;
+    const name = inp.dataset.priceName;
+    inp.value = cat === "WEIGHT_IN_FINISH_ADDON"
+      ? prices.WEIGHT_IN_FINISH_ADDON
+      : (prices[cat]?.[name] ?? "");
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1265,6 +1274,17 @@ function wireEvents() {
   document.getElementById("ai-settings-more").addEventListener("click", () =>
     document.getElementById("ai-provider-ext-row").classList.toggle("hidden")
   );
+  document.getElementById("settings-modal").addEventListener("input", (e) => {
+    const inp = e.target.closest("[data-price-category]");
+    if (!inp) return;
+    const val = parseFloat(inp.value);
+    if (isNaN(val)) return;
+    setPrice(inp.dataset.priceCategory, inp.dataset.priceName || null, val);
+  });
+  document.getElementById("btn-reset-prices").addEventListener("click", () => {
+    resetPrices();
+    renderSettingsModal();
+  });
 
   // Add Job form
   document.getElementById("add-job-cancel").addEventListener("click", _collapseAddJobForm);
