@@ -1386,19 +1386,6 @@ input[type="number"]::-webkit-outer-spin-button {
   background: var(--color-bg);
 }
 
-/* Model row (heater + outdoor dropdowns) */
-.model-row {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.model-row select,
-.model-row .input-select {
-  flex: 1;
-  min-width: 0;
-}
-
 .model-selection-row {
   position: relative;
   display: flex;

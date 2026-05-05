@@ -306,23 +306,14 @@ function renderWorkspace() {
 
   // Stepper
   const STEPS = [
-    ["address","Addr"],["services","Svc"],["thermostat","Tstat"],
+    ["services","Svc"],["thermostat","Tstat"],
     ["accessories","Acc"],["fixes","Fixes"],["weight-in","W-In"],["notes","Notes"],
   ];
   document.getElementById("stepper").innerHTML = STEPS.map(([id, lbl], i) =>
     `<button class="step-dot" data-scroll="section-${id}" title="${lbl}">${i + 1}</button>`
   ).join("");
 
-  // Step 1 — Address & Equipment
-  const addr = document.getElementById("address-input");
-  addr.value    = job.address;
-  addr.readOnly = true;
-  const s1 = job.system1 || {};
-  document.getElementById("heater-model-row").textContent =
-    [s1.furnace, s1.coil].filter(Boolean).join(" · ") || "—";
-  document.getElementById("outdoor-model-row").textContent = s1.outdoor || "—";
-
-  // Step 2 — Services
+  // Step 1 — Services
   const sel = state.selectedServices;
   const SVC_BTNS = [
     SERVICES.AC, SERVICES.HEAT, SERVICES.FINISH,
@@ -383,7 +374,8 @@ function renderWorkspace() {
   document.getElementById("fixes-list").innerHTML =
     _groupsHTML + `<div class="fix-chips-row">${_standaloneHTML}</div>`;
 
-  // Step 6 — Weight-In
+  // Step 5 — Weight-In
+  const s1 = job.system1 || {};
   let wiData1 = state.weightInData || {};
   const _wiOutdoor = getOutdoorModel(s1.outdoor);
   if (_wiOutdoor) {
