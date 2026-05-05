@@ -11,8 +11,9 @@ import { saveCompletion, getCompletions, getActiveJobId, setActiveJobId, deleteC
 import {
   initWorkspace, initWeighInPhotos, getState, clearWorkspace, setOption,
   toggleService, setThermostat, toggleAccessory, toggleFix,
-  setWeightInData, setNotes, addPhoto, removePhoto,
-  addSitePhoto, removeSitePhoto, getSitePhotos, getSitePhotoCount, initSitePhotos,
+  setWeightInData, setNotes,
+  addSitePhoto, removeSitePhoto, initSitePhotos,
+  getPhotoCount, getAllPhotos,
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
 import { generateReportText, generateDailyReport, exportJSON, exportCSV } from "./reports.js";
@@ -231,7 +232,7 @@ function openWorkspace(job) {
     for (const [slug, { file, label }] of Object.entries(stored)) {
       _renderSitePhotoThumb(slug, label, file);
     }
-    _updateSitePhotoCount();
+    _updatePhotoCount();
   });
 }
 
@@ -408,21 +409,11 @@ function renderWorkspace() {
 
   // Step 7 — Notes & Photos
   document.getElementById("notes-input").value = state.notes || "";
-  renderPhotoList(state.photos);
   updatePriceDisplay();
 }
 
-function renderPhotoList(photos) {
-  document.getElementById("photo-list").innerHTML = (photos || []).map((p, i) =>
-    `<div class="photo-thumb">
-       <img src="${p.dataUrl}" alt="Photo ${i + 1}" data-lightbox="${i}">
-       <button class="btn-delete-photo" data-photo="${i}" aria-label="Remove">×</button>
-     </div>`
-  ).join("");
-}
-
-function _updateSitePhotoCount() {
-  const n   = getSitePhotoCount();
+function _updatePhotoCount() {
+  const n   = getPhotoCount();
   const btn = document.getElementById("btn-download-site-photos");
   btn.textContent = `💾 Download All Photos (${n})`;
   btn.disabled    = n === 0;
@@ -462,7 +453,7 @@ function _renderSitePhotoThumb(slug, label, file) {
     thumb.remove();
     removeSitePhoto(slug);
     saveProgress();
-    _updateSitePhotoCount();
+    _updatePhotoCount();
   };
 
   thumb.appendChild(img);
@@ -488,7 +479,7 @@ function _makeSiteSlot(slug, label) {
     addSitePhoto(slug, label, compressed);
     saveProgress();
     _renderSitePhotoThumb(slug, label, compressed);
-    _updateSitePhotoCount();
+    _updatePhotoCount();
   });
 
   const btn       = document.createElement("button");
@@ -563,7 +554,7 @@ function _initSitePhotoPresets() {
     addSitePhoto(slug, label, compressed);
     saveProgress();
     _renderSitePhotoThumb(slug, label, compressed);
-    _updateSitePhotoCount();
+    _updatePhotoCount();
   });
 
   otherWrap.appendChild(otherBtn);
@@ -988,8 +979,6 @@ function wireEvents() {
     const acc   = e.target.closest("[data-accessory]");
     const grp   = e.target.closest("[data-group-toggle]");
     const fix   = e.target.closest("[data-fix]");
-    const photo = e.target.closest("[data-photo]");
-    const lb    = e.target.closest("[data-lightbox]");
 
     if (svc) {
       toggleService(svc.dataset.service);
@@ -1028,19 +1017,6 @@ function wireEvents() {
         toggleFix(fix.dataset.fix);
       }
       saveProgress(); renderWorkspace(); return;
-    }
-    if (photo) {
-      removePhoto(parseInt(photo.dataset.photo));
-      renderPhotoList(getState().photos);
-      saveProgress(); return;
-    }
-    if (lb) {
-      const img = getState().photos[parseInt(lb.dataset.lightbox)];
-      if (img) {
-        document.getElementById("lightbox-img").src = img.dataUrl;
-        document.getElementById("lightbox").classList.remove("hidden");
-      }
-      return;
     }
   });
 
@@ -1194,48 +1170,21 @@ function wireEvents() {
     if (e.target === e.currentTarget) e.currentTarget.classList.add("hidden");
   });
 
-  // Photo upload
-  const fileInput = Object.assign(document.createElement("input"), { type: "file", accept: "image/*" });
-  fileInput.style.display = "none";
-  document.body.appendChild(fileInput);
-
-  document.getElementById("btn-add-photo").addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const photo = { dataUrl: ev.target.result, lat: null, lng: null, timestamp: new Date().toISOString() };
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          ({ coords }) => { photo.lat = coords.latitude; photo.lng = coords.longitude; },
-          () => {}
-        );
-      }
-      addPhoto(photo);
-      renderPhotoList(getState().photos);
-      saveProgress();
-    };
-    reader.readAsDataURL(file);
-    fileInput.value = "";
-  });
-
   // Site photos — download ZIP
   document.getElementById("btn-download-site-photos").addEventListener("click", async () => {
-    const photos  = getSitePhotos();
-    const entries = Object.entries(photos);
-    if (!entries.length) return;
+    const photos = getAllPhotos();
+    if (!photos.length) return;
     const safeAddr = (_activeJob?.address || "SITE").replace(/[^a-z0-9]/gi, "_").toUpperCase();
     await _loadJSZip();
     const zip = new window.JSZip();
-    for (const [, { file, label }] of entries) {
+    for (const { file, label } of photos) {
       const name = `${safeAddr}_${label.toUpperCase().replace(/[^A-Z0-9]/g, "_")}.jpg`;
       zip.file(name, file);
     }
     const blob = await zip.generateAsync({ type: "blob" });
     const url  = URL.createObjectURL(blob);
     Object.assign(document.createElement("a"), {
-      href: url, download: `${safeAddr}_SITE_PHOTOS.zip`,
+      href: url, download: `${safeAddr}_PHOTOS.zip`,
     }).click();
     URL.revokeObjectURL(url);
     toast("Photos downloaded!", "success");
