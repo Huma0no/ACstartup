@@ -23,6 +23,7 @@ let _photos = { weight: null, fan: null, weight2: null, fan2: null };
 let _sitePhotos = {};
 let _dbPrefix = "default";
 let _photoRowsInitialized = false;
+let _onWeighInPhotoChange = null;
 
 // ---------------------------------------------------------------------------
 // Init / teardown
@@ -467,6 +468,7 @@ function _clearSlot(key, objectUrl, previewContainer) {
   URL.revokeObjectURL(objectUrl);
   previewContainer.innerHTML = "";
   _photos[key] = null;
+  _onWeighInPhotoChange?.();
 }
 
 function _showPreview(key, file, gps) {
@@ -516,6 +518,7 @@ async function _handleFile(file, key) {
     console.error("Error processing photo:", e);
     _photos[key] = null;
   }
+  _onWeighInPhotoChange?.();
 }
 
 function _makeSlot(key) {
@@ -603,6 +606,8 @@ async function _restorePhotos() {
     }
   }
 }
+
+export function onWeighInPhotoChange(cb) { _onWeighInPhotoChange = cb; }
 
 export function initWeighInPhotos(address) {
   if (_photoRowsInitialized) return;

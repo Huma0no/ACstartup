@@ -12,7 +12,7 @@ import {
   initWorkspace, initWeighInPhotos, getState, clearWorkspace, setOption,
   toggleService, setThermostat, toggleAccessory, toggleFix,
   setWeightInData, setNotes,
-  addSitePhoto, removeSitePhoto, initSitePhotos,
+  addSitePhoto, removeSitePhoto, initSitePhotos, onWeighInPhotoChange,
   getPhotoCount, getAllPhotos,
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
@@ -223,6 +223,7 @@ function openWorkspace(job) {
   setActiveJobId(job.id);
   initWorkspace(job);
   initWeighInPhotos(job.address);
+  onWeighInPhotoChange(_updatePhotoCount);
   _initSitePhotoPresets();
   initChat(job);
   openTab("workspace");
