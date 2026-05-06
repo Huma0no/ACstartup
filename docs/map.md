@@ -471,10 +471,10 @@ Export JSON → Dispatch
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
 | 14 | ✅ Header global dinámico — `#active-job-bar` con dirección + chips Outdoor (press-hold → popover OUTDOOR_CATALOG: Ton/Ref/Charge) + Indoor (tap → LV viewer imagen). Tstat/Acc chips — deferred. | app.js / index.html / lv.js |
 | 15 | `.photo-options` en app.css — clase huérfana, eliminar en próximo refactor | styles/app.css |
-| 16 | Import Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
-| 17 | Export Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
-| 18 | Export Completions CSV | reports.js / app.js |
-| 19 | Export Completions JSON | reports.js / app.js |
+| 16 | ⏳ espera Dispatch — Import Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
+| 17 | ⏳ espera Dispatch — Export Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
+| 18 | ⏳ espera Dispatch — Export Completions CSV | reports.js / app.js |
+| 19 | ⏳ espera Dispatch — Export Completions JSON | reports.js / app.js |
 
 ---
 
