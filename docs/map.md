@@ -280,7 +280,8 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Reports tab | Renderiza completions. Per-card: Copy, Share (WhatsApp/SMS/Email/Copy), Delete. Global: Share All (`generateDailyReport()`), Delete All, DB export → `dashboard_import_{date}.json`, CSV export → `service_reports_{MM-DD-YY}.csv` |
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
 | Settings modal | Theme toggle (`data-mode`), proveedor IA, API key save/clear |
-| Backup | Botones Export/Import en Settings modal — llaman exportBackup() e importBackup() de storage.js |
+| Import/Export Jobs | Tab Jobs — botón discreto. Import agrega sin duplicar por dirección. Export serializa jobs a JSON |
+| Export Completions | Tab Reports — CSV para hojas de cálculo, JSON para Dispatch |
 | Add Job | Sección inline en `#tab-jobs` (no dialog); campos: dirección, subdivision, builder, fecha, notas, 2 Systems, time-sensitive, termostato (modelo + qty), accesorios multi-select, modelos indoor/outdoor con selects por serie + links de manuales → `createJob()` → `precacheJobs([job])` |
 | Active job bar | `updateActiveJobBar()` — muestra/oculta `#active-job-bar`. Outdoor: press-hold → `_showOutdoorPopover` con datos OUTDOOR_CATALOG. Indoor: tap → `openViewer` LV. |
 | Troubleshooting | Abre/cierra `#ts-drawer`; body pendiente |
@@ -470,6 +471,10 @@ Export JSON → Dispatch
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
 | 14 | ✅ Header global dinámico — `#active-job-bar` con dirección + chips Outdoor (press-hold → popover OUTDOOR_CATALOG: Ton/Ref/Charge) + Indoor (tap → LV viewer imagen). Tstat/Acc chips — deferred. | app.js / index.html / lv.js |
 | 15 | `.photo-options` en app.css — clase huérfana, eliminar en próximo refactor | styles/app.css |
+| 16 | Import Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
+| 17 | Export Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
+| 18 | Export Completions CSV | reports.js / app.js |
+| 19 | Export Completions JSON | reports.js / app.js |
 
 ---
 

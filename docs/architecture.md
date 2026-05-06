@@ -104,6 +104,8 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - Flag jobs as time-sensitive (URGENCY / MUST / VISIT AM / VISIT PM)
 - Flag jobs as Pending / Dar Seguimiento
 - Render job list UI
+- Import Jobs: validates JSON array, deduplicates by normalized address, adds new jobs only
+- Export Jobs: serializes current jobs array to JSON file
 
 ### `workspace.js`
 - Load active job
@@ -120,6 +122,8 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - Send daily report via email (mailto)
 - Filter/view completions by subdivision
 - Export completions as JSON for Dispatch
+- Export Completions CSV: all completion fields including weigh-in data, 30+ columns
+- Export Completions JSON: completions array for Dispatch import
 
 ### `importer.js`
 - **PDF import:** OCR extracts raw text → AI structures fields → user reviews → confirmed jobs saved
@@ -133,7 +137,6 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - Price storage and retrieval
 - AI provider selection and API key management
 - Theme toggle (light/dark)
-- Export / Import backup — triggers exportBackup() and importBackup() from storage.js. UI lives in Settings modal.
 
 ### `ai.js`
 - In-app chat UI

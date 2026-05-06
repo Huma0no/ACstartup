@@ -100,8 +100,10 @@ This document covers the **PWA only.**
 - [ ] All data stored locally on device (no server required for PWA)
 - [ ] Export/import full data backup (JSON file user saves manually)
 - [ ] No personal data collected
-- Export full data backup as JSON file (jobs + completions + settings). Manual trigger from Settings.
-- Import full data backup from JSON file. Merges or replaces current data. Manual trigger from Settings.
+- Import Jobs: JSON array desde Dispatch o otra instancia de la PWA. Agrega jobs sin duplicar por dirección. Botón discreto en Tab Jobs.
+- Export Jobs: JSON array de jobs del día desde localStorage. Botón discreto en Tab Jobs.
+- Export Completions CSV: todos los campos de completion incluyendo weigh-in data. Para uso en hojas de cálculo. Tab Reports.
+- Export Completions JSON: array de completions para importar en Dispatch. Tab Reports.
 
 ---
 
