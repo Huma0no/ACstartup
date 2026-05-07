@@ -144,33 +144,6 @@ function jobCardHTML(job, ci) {
     job.isTwoSystems && `<span class="chip chip-sm chip-secondary">2 Systems</span>`,
   ].filter(Boolean).join("");
 
-  // Expand-only: model + tech chips for one system
-  const _sysRow = (furnace, outdoor, prefix = "") => {
-    const chips = [
-      furnace && `<span class="chip chip-sm chip-primary">${esc(prefix + furnace)}</span>`,
-      outdoor && `<span class="chip chip-sm chip-secondary">${esc(prefix + outdoor)}</span>`,
-    ];
-    const d = outdoor ? getOutdoorModel(outdoor) : null;
-    if (d) {
-      const ton = d.btu ? (d.btu / 12000).toFixed(1) : null;
-      const cfm = calculateCFM(d.btu);
-      chips.push(
-        ton                    && `<span class="chip chip-sm chip-outline">${prefix}Ton ${ton}</span>`,
-        d.freon                && `<span class="chip chip-sm chip-outline">${prefix}${esc(d.freon)}</span>`,
-        d.FactoryCharge        && `<span class="chip chip-sm chip-outline">${prefix}${esc(ouncesToPoundsAndOunces(d.FactoryCharge))}</span>`,
-        d.revisedCharge > 0    && `<span class="chip chip-sm chip-outline">${prefix}Over: ${d.revisedCharge} oz</span>`,
-        cfm                    && `<span class="chip chip-sm chip-outline">${prefix}Max CFM ${cfm.max}</span>`,
-        cfm                    && `<span class="chip chip-sm chip-outline">${prefix}Min CFM ${cfm.min}</span>`,
-      );
-    }
-    return chips.filter(Boolean).join("");
-  };
-
-  const expandChips = [
-    _sysRow(s1.furnace, s1.outdoor),
-    job.isTwoSystems && s2 ? _sysRow(s2.furnace, s2.outdoor, "2: ") : "",
-  ].filter(Boolean).join("");
-
   const _equipCard = (furnace, outdoor, label) => {
     if (!furnace && !outdoor) return "";
     const dOut = outdoor ? getOutdoorModel(outdoor) : null;
@@ -201,16 +174,22 @@ function jobCardHTML(job, ci) {
       </div>
       <div class="equip-row">
         <div class="equip-cell">
+          <div class="equip-cell-label">Refrigerant</div>
+          <div class="equip-cell-value">${dOut?.freon || "—"}</div>
+        </div>
+        <div class="equip-cell">
+          <div class="equip-cell-label">Subcooling</div>
+          <div class="equip-cell-value equip-cell-amber">${sc}</div>
+        </div>
+      </div>
+      <div class="equip-row">
+        <div class="equip-cell">
           <div class="equip-cell-label">CFM Max</div>
           <div class="equip-cell-value">${cfm ? cfm.max : "—"}</div>
         </div>
         <div class="equip-cell">
           <div class="equip-cell-label">CFM Min</div>
           <div class="equip-cell-value">${cfm ? cfm.min : "—"}</div>
-        </div>
-        <div class="equip-cell">
-          <div class="equip-cell-label">Subcooling</div>
-          <div class="equip-cell-value equip-cell-amber">${sc}</div>
         </div>
       </div>
       <div class="equip-lv-row">
@@ -240,7 +219,6 @@ function jobCardHTML(job, ci) {
         ${badge}${ts}
       </div>
     </div>
-    ${expandChips ? `<div class="job-chip-row">${expandChips}</div>` : ""}
     ${equipCards ? `<div class="equip-grid">${equipCards}</div>` : ""}
     <button class="btn-start-job" data-start="${esc(job.id)}">
       ${inProg ? "Resume" : "Start"}
