@@ -265,25 +265,25 @@ textarea { resize: vertical; }
 }
 
 :root[data-theme="c"][data-mode="dark"] {
-  --color-bg:             #1C1C1E;
-  --color-surface:        #2C2C2E;
-  --color-surface-raised: #3A3A3C;
-  --color-border:         #48484A;
-  --color-border-strong:  #636366;
-  --color-text-primary:   #EBEBF5;
-  --color-text-secondary: #8E8E93;
+  --color-bg:             #0A0A0F;
+  --color-surface:        #0D0D18;
+  --color-surface-raised: #111118;
+  --color-border:         #1A1A2E;
+  --color-border-strong:  #242430;
+  --color-text-primary:   #E2E8F0;
+  --color-text-secondary: #475569;
   --color-text-disabled:  #48484A;
-  --color-accent:         #64D2FF;
-  --color-accent-soft:    #003D57;
-  --color-accent-text:    #001F2D;
-  --color-success:        #32D74B;
+  --color-accent:         #2DD4BF;
+  --color-accent-soft:    #0D2820;
+  --color-accent-text:    #001A1A;
+  --color-success:        #2DD4BF;
   --color-success-soft:   #0D2E13;
   --color-warning:        #FF9F0A;
   --color-warning-soft:   #2E1A00;
   --color-danger:         #FF453A;
   --color-danger-soft:    #2E0A09;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.7);
 }
 
 
