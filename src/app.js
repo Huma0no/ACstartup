@@ -171,19 +171,58 @@ function jobCardHTML(job, ci) {
     job.isTwoSystems && s2 ? _sysRow(s2.furnace, s2.outdoor, "2: ") : "",
   ].filter(Boolean).join("");
 
-  const _equipCard = (furnace, label) => {
-    if (!furnace) return "";
-    const d = getIndoorModel(furnace);
-    if (!d?.imagen) return "";
+  const _equipCard = (furnace, outdoor, label) => {
+    if (!furnace && !outdoor) return "";
+    const dOut = outdoor ? getOutdoorModel(outdoor) : null;
+    const cfm  = dOut ? calculateCFM(dOut.btu) : null;
+    const sc   = dOut?.oemSubcoolingGoal != null ? `${dOut.oemSubcoolingGoal} °F` : "—";
+    const rev  = dOut?.revisedCharge > 0 ? `${dOut.revisedCharge} oz` : "—";
     return `<div class="equip-card">
       <div class="equip-heading">${esc(label)}</div>
-      <div class="equip-model">${esc(furnace)}</div>
-      <div class="equip-image"><img src="${esc(d.imagen)}" alt="${esc(furnace)}" loading="lazy" data-lightbox-src="${esc(d.imagen)}"></div>
+      <div class="equip-row">
+        <div class="equip-cell">
+          <div class="equip-cell-label">Indoor</div>
+          <div class="equip-cell-value">${furnace ? esc(furnace) : "—"}</div>
+        </div>
+        <div class="equip-cell">
+          <div class="equip-cell-label">Outdoor</div>
+          <div class="equip-cell-value">${outdoor ? esc(outdoor) : "—"}</div>
+        </div>
+      </div>
+      <div class="equip-row">
+        <div class="equip-cell">
+          <div class="equip-cell-label">Factory</div>
+          <div class="equip-cell-value">${dOut?.FactoryCharge ? `${dOut.FactoryCharge} oz` : "—"}</div>
+        </div>
+        <div class="equip-cell">
+          <div class="equip-cell-label">Revised</div>
+          <div class="equip-cell-value equip-cell-signal">${rev}</div>
+        </div>
+      </div>
+      <div class="equip-row">
+        <div class="equip-cell">
+          <div class="equip-cell-label">CFM Max</div>
+          <div class="equip-cell-value">${cfm ? cfm.max : "—"}</div>
+        </div>
+        <div class="equip-cell">
+          <div class="equip-cell-label">CFM Min</div>
+          <div class="equip-cell-value">${cfm ? cfm.min : "—"}</div>
+        </div>
+        <div class="equip-cell">
+          <div class="equip-cell-label">Subcooling</div>
+          <div class="equip-cell-value equip-cell-amber">${sc}</div>
+        </div>
+      </div>
+      <div class="equip-lv-row">
+        <button class="btn-lv" data-type="indoor" data-model="${esc(furnace || "")}">Indoor LV</button>
+        <button class="btn-lv" data-type="outdoor" data-model="${esc(outdoor || "")}">Outdoor LV</button>
+        <button class="btn-blower" data-model="${esc(furnace || "")}">Blower Data</button>
+      </div>
     </div>`;
   };
   const equipCards = [
-    _equipCard(s1.furnace, "System 1"),
-    job.isTwoSystems && s2 ? _equipCard(s2.furnace, "System 2") : "",
+    _equipCard(s1.furnace, s1.outdoor, "System 1"),
+    job.isTwoSystems && s2 ? _equipCard(s2.furnace, s2.outdoor, "System 2") : "",
   ].filter(Boolean).join("");
 
   return `
