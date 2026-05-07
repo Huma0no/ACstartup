@@ -127,8 +127,8 @@ function renderJobs() {
 
 function jobCardHTML(job, ci) {
   const inProg = !!job.savedState;
-  const badge  = inProg ? `<span class="badge badge-warning">⚠ In Progress</span>` : "";
-  const ts     = job.timeSensitive ? `<span class="badge badge-danger">⚡ Urgent</span>` : "";
+  const badge  = inProg ? `<span class="badge badge-warning">In Progress</span>` : "";
+  const ts     = job.timeSensitive ? `<span class="badge badge-danger">Urgent</span>` : "";
   const s1     = job.system1 || {};
   const s2     = job.system2;
 
@@ -136,12 +136,12 @@ function jobCardHTML(job, ci) {
   const techChips = [
     job.jobThermostat?.model && (() => {
       const qty = job.jobThermostat.qty || 1;
-      return `<span class="chip chip-sm chip-primary">🌡 ${esc(qty > 1 ? `${qty}× ${job.jobThermostat.model}` : job.jobThermostat.model)}</span>`;
+      return `<span class="chip chip-sm chip-primary">${esc(qty > 1 ? `${qty}× ${job.jobThermostat.model}` : job.jobThermostat.model)}</span>`;
     })(),
     ...(job.jobAccessories || []).map((a) =>
-      `<span class="chip chip-sm chip-accessory">📦 ${esc(ACCESSORY_DISPLAY[a] || a.toLowerCase())}</span>`
+      `<span class="chip chip-sm chip-accessory">${esc(ACCESSORY_DISPLAY[a] || a.toLowerCase())}</span>`
     ),
-    job.isTwoSystems && `<span class="chip chip-sm chip-secondary">2️⃣ Systems</span>`,
+    job.isTwoSystems && `<span class="chip chip-sm chip-secondary">2 Systems</span>`,
   ].filter(Boolean).join("");
 
   // Expand-only: model + tech chips for one system
@@ -196,20 +196,20 @@ function jobCardHTML(job, ci) {
       <div class="job-top-spacer"></div>
       ${techChips ? `<div class="job-top-tech">${techChips}</div>` : ""}
       <div class="job-top-meta">
-        <span class="chip chip-sm chip-secondary">🏗 ${esc(job.builder)}</span>
-        <span class="chip chip-sm chip-secondary">🏘 ${esc(job.subdivision)}</span>
+        <span class="chip chip-sm chip-secondary">${esc(job.builder)}</span>
+        <span class="chip chip-sm chip-secondary">${esc(job.subdivision)}</span>
         ${badge}${ts}
       </div>
     </div>
     ${expandChips ? `<div class="job-chip-row">${expandChips}</div>` : ""}
     ${equipCards ? `<div class="equip-grid">${equipCards}</div>` : ""}
     <button class="btn-start-job" data-start="${esc(job.id)}">
-      ${inProg ? "▶ Resume" : "▶ Start"}
+      ${inProg ? "Resume" : "Start"}
     </button>
   </div>
   <div class="job-actions"><div class="job-buttons">
-    <button class="btn btn-edit" data-edit="${esc(job.id)}">✏ Edit</button>
-    <button class="btn btn-maps" data-maps="${esc(job.address)}">📍 Maps</button>
+    <button class="btn btn-edit" data-edit="${esc(job.id)}">Edit</button>
+    <button class="btn btn-maps" data-maps="${esc(job.address)}">Maps</button>
   </div></div>
 </li>`;
 }
