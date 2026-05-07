@@ -351,6 +351,8 @@ Design system completo. Todos los estilos de la app.
 
 **Contiene:**
 - CSS variables por tema: `[data-theme="a/b/c"][data-mode="light/dark"]`
+- Paleta Signal from Elsewhere en `:root`: `--void`, `--signal`, `--plasma`, `--chrome`, `--heat`, `--static`, `--white-cold`, `--slate`, `--dark-cell`, `--dark-border`, `--signal-dim`
+- Tokens de estado semántico en `:root`: `--state-done-color/border/bg`, `--state-pending-color`, `--state-warn-color`, `--state-na-color/bg/border`
 - Componentes: chips, steps, badges, botones, cards, modales, drawer, FAB
 - Colores de subdivisión: 8 colores asignados por orden de importación
 - Clases weight-in: `.wi-grid` (3 col), `.wi-field`, `.wi-field input/select` — renombradas de `.weight-in-*` para coincidir con el HTML

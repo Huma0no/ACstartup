@@ -115,13 +115,28 @@ textarea { resize: vertical; }
   --z-drawer:  9000;
   --z-overlay: 10000;
 
-  /* Badge colors — fixed across all themes */
-  --badge-done-bg:      #D1FAE5;
-  --badge-done-text:    #065F46;
-  --badge-pending-bg:   #FEF3C7;
-  --badge-pending-text: #92400E;
-  --badge-urgent-bg:    #FEE2E2;
-  --badge-urgent-text:  #991B1B;
+  /* ── Signal from Elsewhere palette ──────────────────────────── */
+  --void:        #0A0A0F; /* bg primary — dark views              */
+  --signal:      #2DD4BF; /* primary action, done state, CTA      */
+  --plasma:      #C084FC; /* secondary accent, accessories state  */
+  --chrome:      #94A3B8; /* neutral surfaces, section keys       */
+  --heat:        #FB923C; /* warning, subcooling goal, pending    */
+  --static:      #6366F1; /* N/A state, tertiary accent           */
+  --white-cold:  #E2E8F0; /* primary text on dark backgrounds     */
+  --slate:       #475569; /* secondary text, labels on dark       */
+  --dark-cell:   #0D0D18; /* card / cell bg inside dark views     */
+  --dark-border: #1A1A2E; /* borders between dark elements        */
+  --signal-dim:  #0F6E56; /* done border, subdued teal            */
+
+  /* ── Semantic state tokens ──────────────────────────────────── */
+  --state-done-color:    #2DD4BF; /* = --signal                   */
+  --state-done-border:   #2DD4BF;
+  --state-done-bg:       #0D3B30;
+  --state-pending-color: #E2E8F0; /* = --white-cold (sunlight-safe) */
+  --state-warn-color:    #FB923C; /* = --heat                     */
+  --state-na-color:      #6366F1; /* = --static                   */
+  --state-na-bg:         #13131F;
+  --state-na-border:     #2A2A5C;
 }
 
 
@@ -876,9 +891,9 @@ input[type="number"]::-webkit-outer-spin-button {
   line-height: 1.2;
 }
 
-.badge-done    { background: var(--badge-done-bg);    color: var(--badge-done-text); }
-.badge-pending { background: var(--badge-pending-bg); color: var(--badge-pending-text); }
-.badge-urgent  { background: var(--badge-urgent-bg);  color: var(--badge-urgent-text); }
+.badge-done    { background: var(--state-done-bg);    color: var(--state-done-color); }
+.badge-pending { background: transparent;              color: var(--state-pending-color); border: 1px solid var(--state-pending-color); }
+.badge-urgent  { background: var(--state-na-bg);       color: var(--state-na-color);    border: 1px solid var(--state-na-border); }
 
 .badge-success { background: var(--color-success-soft); color: var(--color-success); }
 .badge-warning { background: var(--color-warning-soft); color: var(--color-warning); }
@@ -2291,7 +2306,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .ts-critical { background: var(--color-danger-soft); color: var(--color-danger); }
 .ts-high     { background: var(--color-warning-soft); color: var(--color-warning); }
-.ts-medium   { background: var(--badge-pending-bg);   color: var(--badge-pending-text); }
+.ts-medium   { background: var(--state-na-bg);        color: var(--state-pending-color); }
 .ts-low      { background: var(--color-success-soft); color: var(--color-success); }
 
 /* Step list */
