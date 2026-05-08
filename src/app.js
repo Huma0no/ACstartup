@@ -982,7 +982,11 @@ function wireEvents() {
       document.getElementById("lightbox").classList.remove("hidden");
       return;
     }
-    if (item && !e.target.closest("button")) item.classList.toggle("expanded");
+    if (item && !e.target.closest("button")) {
+      const alreadyOpen = item.classList.contains("expanded");
+      document.querySelectorAll(".job-item.expanded").forEach(el => el.classList.remove("expanded"));
+      if (!alreadyOpen) item.classList.add("expanded");
+    }
   });
 
   // Workspace — click delegation
