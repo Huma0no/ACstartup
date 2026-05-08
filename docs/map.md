@@ -273,8 +273,8 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 |---|---|
 | Init | SW registration, `initSettings()`, aplica tema al DOM, restaura job activo interrumpido |
 | Tab navigation | Activa/oculta panels por `data-tab`; dispara `renderReports()` y `renderLV()` al entrar |
-| Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse; delete; start/resume → workspace |
-| Job card | Visible siempre: dirección, chips de builder/subdivisión, chips de termostato y accesorios pre-seleccionados. Al expandir: chips de outdoor (ton, refrigerante, carga, CFM) y equip-grid con imagen del indoor model (`getIndoorModel().imagen`); click en imagen abre `#lightbox` |
+| Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse (accordion — solo un job-item expandido a la vez; click en expandido lo colapsa); delete; start/resume → workspace |
+| Job card | Visible siempre: dirección, chips de builder/subdivisión, chips de termostato y accesorios pre-seleccionados. Sin emojis — texto limpio en chips, badges y botones. Al expandir: equip-grid con data-grid por sistema — filas Indoor/Outdoor · Factory/Revised · Refrigerant/Subcooling · CFM Max/Min, y botones Indoor LV · Outdoor LV · Blower Data. `_equipCard(furnace, outdoor, label)` — recibe ambos modelos; subcooling desde `oemSubcoolingGoal` si existe en catalog, sino "—". Sin expandChips row — `_sysRow` eliminado. |
 | Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes (grupos expandibles "Fixed Leaks" y "Extended LV Wire" con badge contador de seleccionados; sub-chips multi-select; chips standalone más pequeños con wrap), weight-in (Line Config como `<select>`; auto-fill de `factoryChargeOz` desde `outdoor.FactoryCharge` y `approxAdjustOz` según revisedCharge/FactoryCharge al cargar; subcooling auto-calc: `subcoolingValue = condenserSatTemp − liquidLineTemp`, `subcoolingDeviation = abs(subcoolingValue − oemSubcoolingGoal)`), notas, fotos |
 | Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → `removeJob(id)` → limpia workspace → navega a Reports |
 | Reports tab | Renderiza completions. Per-card: Copy, Share (WhatsApp/SMS/Email/Copy), Delete. Global: Share All (`generateDailyReport()`), Delete All, DB export → `dashboard_import_{date}.json`, CSV export → `service_reports_{MM-DD-YY}.csv` |
@@ -351,6 +351,9 @@ Design system completo. Todos los estilos de la app.
 
 **Contiene:**
 - CSS variables por tema: `[data-theme="a/b/c"][data-mode="light/dark"]`
+- Paleta Signal from Elsewhere en `:root`: `--void`, `--signal`, `--plasma`, `--chrome`, `--heat`, `--static`, `--white-cold`, `--slate`, `--dark-cell`, `--dark-border`, `--signal-dim`
+- Tokens de estado semántico en `:root`: `--state-done-color/border/bg`, `--state-pending-color`, `--state-warn-color`, `--state-na-color/bg/border`
+- Theme C dark remapeado a Signal from Elsewhere: `--color-bg: #0A0A0F`, `--color-accent: #2DD4BF` (Signal teal), `--color-success: #2DD4BF`
 - Componentes: chips, steps, badges, botones, cards, modales, drawer, FAB
 - Colores de subdivisión: 8 colores asignados por orden de importación
 - Clases weight-in: `.wi-grid` (3 col), `.wi-field`, `.wi-field input/select` — renombradas de `.weight-in-*` para coincidir con el HTML

@@ -115,13 +115,28 @@ textarea { resize: vertical; }
   --z-drawer:  9000;
   --z-overlay: 10000;
 
-  /* Badge colors — fixed across all themes */
-  --badge-done-bg:      #D1FAE5;
-  --badge-done-text:    #065F46;
-  --badge-pending-bg:   #FEF3C7;
-  --badge-pending-text: #92400E;
-  --badge-urgent-bg:    #FEE2E2;
-  --badge-urgent-text:  #991B1B;
+  /* ── Signal from Elsewhere palette ──────────────────────────── */
+  --void:        #0A0A0F; /* bg primary — dark views              */
+  --signal:      #2DD4BF; /* primary action, done state, CTA      */
+  --plasma:      #C084FC; /* secondary accent, accessories state  */
+  --chrome:      #94A3B8; /* neutral surfaces, section keys       */
+  --heat:        #FB923C; /* warning, subcooling goal, pending    */
+  --static:      #6366F1; /* N/A state, tertiary accent           */
+  --white-cold:  #E2E8F0; /* primary text on dark backgrounds     */
+  --slate:       #475569; /* secondary text, labels on dark       */
+  --dark-cell:   #0D0D18; /* card / cell bg inside dark views     */
+  --dark-border: #1A1A2E; /* borders between dark elements        */
+  --signal-dim:  #0F6E56; /* done border, subdued teal            */
+
+  /* ── Semantic state tokens ──────────────────────────────────── */
+  --state-done-color:    #2DD4BF; /* = --signal                   */
+  --state-done-border:   #2DD4BF;
+  --state-done-bg:       #0D3B30;
+  --state-pending-color: #E2E8F0; /* = --white-cold (sunlight-safe) */
+  --state-warn-color:    #FB923C; /* = --heat                     */
+  --state-na-color:      #6366F1; /* = --static                   */
+  --state-na-bg:         #13131F;
+  --state-na-border:     #2A2A5C;
 }
 
 
@@ -250,25 +265,25 @@ textarea { resize: vertical; }
 }
 
 :root[data-theme="c"][data-mode="dark"] {
-  --color-bg:             #1C1C1E;
-  --color-surface:        #2C2C2E;
-  --color-surface-raised: #3A3A3C;
-  --color-border:         #48484A;
-  --color-border-strong:  #636366;
-  --color-text-primary:   #EBEBF5;
-  --color-text-secondary: #8E8E93;
+  --color-bg:             #0A0A0F;
+  --color-surface:        #0D0D18;
+  --color-surface-raised: #111118;
+  --color-border:         #1A1A2E;
+  --color-border-strong:  #242430;
+  --color-text-primary:   #E2E8F0;
+  --color-text-secondary: #475569;
   --color-text-disabled:  #48484A;
-  --color-accent:         #64D2FF;
-  --color-accent-soft:    #003D57;
-  --color-accent-text:    #001F2D;
-  --color-success:        #32D74B;
+  --color-accent:         #2DD4BF;
+  --color-accent-soft:    #0D2820;
+  --color-accent-text:    #001A1A;
+  --color-success:        #2DD4BF;
   --color-success-soft:   #0D2E13;
   --color-warning:        #FF9F0A;
   --color-warning-soft:   #2E1A00;
   --color-danger:         #FF453A;
   --color-danger-soft:    #2E0A09;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.7);
 }
 
 
@@ -876,9 +891,9 @@ input[type="number"]::-webkit-outer-spin-button {
   line-height: 1.2;
 }
 
-.badge-done    { background: var(--badge-done-bg);    color: var(--badge-done-text); }
-.badge-pending { background: var(--badge-pending-bg); color: var(--badge-pending-text); }
-.badge-urgent  { background: var(--badge-urgent-bg);  color: var(--badge-urgent-text); }
+.badge-done    { background: var(--state-done-bg);    color: var(--state-done-color); }
+.badge-pending { background: transparent;              color: var(--state-pending-color); border: 1px solid var(--state-pending-color); }
+.badge-urgent  { background: var(--state-na-bg);       color: var(--state-na-color);    border: 1px solid var(--state-na-border); }
 
 .badge-success { background: var(--color-success-soft); color: var(--color-success); }
 .badge-warning { background: var(--color-warning-soft); color: var(--color-warning); }
@@ -1201,6 +1216,55 @@ input[type="number"]::-webkit-outer-spin-button {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.equip-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.equip-row:has(.equip-cell:nth-child(3)) {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.equip-cell {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.equip-cell-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-mono);
+}
+.equip-cell-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-top: 2px;
+  font-family: var(--font-mono);
+}
+.equip-cell-signal { color: var(--color-accent); }
+.equip-cell-amber  { color: var(--color-warning); }
+.equip-lv-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.btn-lv, .btn-blower {
+  flex: 1;
+  padding: var(--space-2) var(--space-2);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  text-align: center;
 }
 
 .equip-heading {
@@ -2291,7 +2355,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .ts-critical { background: var(--color-danger-soft); color: var(--color-danger); }
 .ts-high     { background: var(--color-warning-soft); color: var(--color-warning); }
-.ts-medium   { background: var(--badge-pending-bg);   color: var(--badge-pending-text); }
+.ts-medium   { background: var(--state-na-bg);        color: var(--state-pending-color); }
 .ts-low      { background: var(--color-success-soft); color: var(--color-success); }
 
 /* Step list */
