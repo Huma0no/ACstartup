@@ -120,9 +120,29 @@ function renderJobs() {
     return;
   }
 
-  list.innerHTML = groupBySubdivision(jobs)
-    .flatMap(({ colorIndex, jobs: gj }) => gj.map((j) => jobCardHTML(j, colorIndex)))
-    .join("");
+  const cards = groupBySubdivision(jobs)
+    .flatMap(({ colorIndex, jobs: gj }) => gj.map((j) => ({ job: j, html: jobCardHTML(j, colorIndex) })));
+
+  const inProgIdx = cards.findIndex(({ job }) => !!job.savedState);
+
+  let html = "";
+  cards.forEach(({ html: cardHtml }, i) => {
+    html += cardHtml;
+    if (i === inProgIdx) {
+      const pendingRows = cards
+        .filter((_, pi) => pi !== inProgIdx)
+        .map(({ job: pj }) =>
+          `<div class="pending-item">
+            ${pj.timeSensitive ? `<span class="pending-urgent-dot"></span>` : ""}
+            <span class="pending-addr">${esc(pj.address)}</span>
+            <span class="pending-meta">${esc(pj.subdivision)} · ${esc(pj.builder)}</span>
+          </div>`
+        ).join("");
+      if (pendingRows) html += `<li class="pending-section"><span class="pending-label">Pending</span>${pendingRows}</li>`;
+    }
+  });
+
+  list.innerHTML = html;
 }
 
 function jobCardHTML(job, ci) {

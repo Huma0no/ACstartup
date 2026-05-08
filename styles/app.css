@@ -1141,6 +1141,53 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--color-success);
 }
 
+/* Pending jobs list — injected after expanded in-progress job */
+.pending-section {
+  list-style: none;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pending-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.pending-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pending-addr {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.pending-meta {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.pending-urgent-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  flex-shrink: 0;
+}
+
 /* Start / Resume job button */
 .btn-start-job {
   display: flex;
