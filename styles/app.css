@@ -251,11 +251,11 @@ textarea { resize: vertical; }
   --color-text-primary:   #212121;
   --color-text-secondary: #546E7A;
   --color-text-disabled:  #B0BEC5;
-  --color-accent:         #00ACC1;
-  --color-accent-soft:    #E0F7FA;
+  --color-accent:         #0D9488;
+  --color-accent-soft:    #CCFBF1;
   --color-accent-text:    #FFFFFF;
-  --color-success:        #2E7D32;
-  --color-success-soft:   #E8F5E9;
+  --color-success:        #0D9488;
+  --color-success-soft:   #CCFBF1;
   --color-warning:        #E65100;
   --color-warning-soft:   #FBE9E7;
   --color-danger:         #C62828;

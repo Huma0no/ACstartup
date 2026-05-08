@@ -361,6 +361,49 @@ Design system completo. Todos los estilos de la app.
 
 **Depende de:** `index.html` — lee `data-theme` y `data-mode` del elemento raíz.
 
+#### Theme C — token inventory
+
+**Dark** — already remapped to Signal from Elsewhere (complete):
+
+| Token | Value | Signal alias |
+|---|---|---|
+| `--color-bg` | `#0A0A0F` | `--void` |
+| `--color-surface` | `#0D0D18` | `--dark-cell` |
+| `--color-border` | `#1A1A2E` | `--dark-border` |
+| `--color-text-primary` | `#E2E8F0` | `--white-cold` |
+| `--color-text-secondary` | `#475569` | `--slate` |
+| `--color-accent` | `#2DD4BF` | `--signal` |
+| `--color-success` | `#2DD4BF` | `--signal` |
+| `--color-warning` | `#FF9F0A` | `--heat` (close) |
+| `--color-danger` | `#FF453A` | — (no alias) |
+
+**Light** — generic blue-gray industrial palette, NOT yet mapped to Signal from Elsewhere:
+
+| Token | Current value | Status | Suggested remap |
+|---|---|---|---|
+| `--color-bg` | `#ECEFF1` | ok | keep |
+| `--color-surface` | `#FFFFFF` | ok | keep |
+| `--color-surface-raised` | `#F5F5F5` | ok | keep |
+| `--color-border` | `#B0BEC5` | ok | keep |
+| `--color-border-strong` | `#78909C` | ok | keep |
+| `--color-text-primary` | `#212121` | ok | keep |
+| `--color-text-secondary` | `#546E7A` | ok | keep |
+| `--color-text-disabled` | `#B0BEC5` | ok | keep |
+| `--color-accent` | ~~`#00ACC1`~~ → `#0D9488` | **remapped** | signal teal, readable on white |
+| `--color-accent-soft` | ~~`#E0F7FA`~~ → `#CCFBF1` | **remapped** | teal-50, matches signal family |
+| `--color-accent-text` | `#FFFFFF` | ok | keep |
+| `--color-success` | ~~`#2E7D32`~~ → `#0D9488` | **remapped** | unified with accent |
+| `--color-success-soft` | ~~`#E8F5E9`~~ → `#CCFBF1` | **remapped** | matches accent-soft |
+| `--color-warning` | `#E65100` | ok | keep |
+| `--color-warning-soft` | `#FBE9E7` | ok | keep |
+| `--color-danger` | `#C62828` | ok | keep |
+| `--color-danger-soft` | `#FFEBEE` | ok | keep |
+
+**Priority remaps for light mode field readability:**
+1. `--color-accent` and `--color-success` → unified to signal-family teal `#0D9488`, readable on `#FFFFFF`
+2. `--color-accent-soft` / `--color-success-soft` → `#CCFBF1` (teal-50) to match
+3. All others legible as-is for outdoor/field use
+
 ---
 
 ### `index.html` ✅
