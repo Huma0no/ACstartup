@@ -221,7 +221,7 @@ function jobCardHTML(job, ci) {
     </div>
     ${equipCards ? `<div class="equip-grid">${equipCards}</div>` : ""}
     <button class="btn-start-job" data-start="${esc(job.id)}">
-      ${inProg ? "Resume" : "Start"}
+      ${inProg ? "Continue →" : "Start →"}
     </button>
   </div>
   <div class="job-actions"><div class="job-buttons">
