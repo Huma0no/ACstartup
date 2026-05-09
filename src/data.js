@@ -61,7 +61,7 @@ export const ACCESSORIES = {
   LP_KIT_GOODMAN:    "LP Kit Goodman",
   WEIGHT_IN_DATA:    "Weight-In-Data",
   OUT_OF_TOWN:       "Out of town fee",
-  OTRO:              "Otro",
+  OTRO:              "Other",
 };
 
 // Accessories whose price doubles when isTwoSystems = true
@@ -99,7 +99,7 @@ export const FIXES = {
   LEAKS_ECOIL:   "Leaks Ecoil",
   LEAKS_CUNIT:   "Leaks Cunit",
   LEAKS_WALL:    "Leaks Wall",
-  OTRO:          "Otro",
+  OTRO:          "Other",
 };
 
 // Fix with free-form price

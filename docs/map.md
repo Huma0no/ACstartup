@@ -56,10 +56,10 @@ Fuente de verdad de todos los datos estáticos. Ningún otro módulo define prec
 | `STORAGE_KEYS` | object | 7 claves de localStorage |
 | `SERVICES` | object | Tipos de servicio |
 | `STANDALONE_SERVICES` | array | Servicios mutuamente excluyentes con AC/Heat |
-| `ACCESSORIES` | object | Accesorios y sus claves — `EXTENDED_WIRE` eliminado (movido a FIXES como sub-opciones) |
+| `ACCESSORIES` | object | Accesorios y sus claves — `EXTENDED_WIRE` eliminado (movido a FIXES como sub-opciones). `ACCESSORIES.OTRO` persiste como `"Other"` (antes `"Otro"`) — localStorage con valor `"Otro"` no coincidirá; verificar antes de merge a main. |
 | `TWO_SYSTEMS_ACCESSORIES` | array | Accesorios que duplican precio con 2 Systems |
 | `CUSTOM_PRICE_ACCESSORIES` | array | Accesorios con precio libre |
-| `FIXES` | object | Fixes y sus claves — incluye `EXTENDED_WIRE_FURNACE` y `EXTENDED_WIRE_CUNIT` como entradas independientes para sub-chips del grupo "Extended LV Wire"; `EXTENDED_WIRE` se conserva solo por backward-compat con completions guardados |
+| `FIXES` | object | Fixes y sus claves — incluye `EXTENDED_WIRE_FURNACE` y `EXTENDED_WIRE_CUNIT` como entradas independientes para sub-chips del grupo "Extended LV Wire"; `EXTENDED_WIRE` se conserva solo por backward-compat con completions guardados. `FIXES.OTRO` persiste como `"Other"` (antes `"Otro"`) — localStorage con valor `"Otro"` no coincidirá; verificar antes de merge a main. |
 | `CUSTOM_PRICE_FIXES` | array | Fixes con precio libre |
 | `THERMOSTATS` | array | T-6, T-10, Ecobee, Daikin One, TH2110 |
 | `BUILDERS` | array | Lennar, MHI, Highland, CastleRock, First America, Chesmar |
