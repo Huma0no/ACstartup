@@ -20,6 +20,7 @@
     <header class="app-header">
       <span class="app-title">Field Ops</span>
       <div class="header-actions">
+        <button type="button" id="btn-add-job" class="btn-primary">+ Job</button>
         <button
           type="button"
           id="btn-open-quick-calc"
@@ -39,6 +40,10 @@
           aria-label="Settings"
         ></button>
       </div>
+      <div class="active-job-row">
+        <span id="active-job-addr" class="active-job-addr"></span>
+        <div id="active-job-chips" class="active-job-chips"></div>
+      </div>
     </header>
 
     <nav class="tabs-nav" role="tablist" aria-label="Main navigation">
@@ -54,19 +59,9 @@
       <button type="button" role="tab" class="tab-btn" data-tab="lv">LV</button>
     </nav>
 
-    <div id="active-job-bar" class="active-job-bar hidden">
-      <span id="active-job-addr" class="active-job-addr"></span>
-      <div id="active-job-chips" class="active-job-chips"></div>
-    </div>
-
     <main class="tab-panels">
       <!-- Tab: Jobs -->
       <section id="tab-jobs" class="tab-panel active" role="tabpanel">
-        <div class="panel-toolbar">
-          <button type="button" id="btn-add-job" class="btn-primary">
-            + Job
-          </button>
-        </div>
         <!-- ⚠️ TEST DATA — eliminar después de QA visual -->
         <ul id="jobs-list" class="jobs-list" aria-label="Job list">
           <!-- Job 1 — Sunset Ridge (subdivision-1) · estado normal -->

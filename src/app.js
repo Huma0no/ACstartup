@@ -902,35 +902,33 @@ function _showOutdoorPopover(anchor, entry) {
 }
 
 function updateActiveJobBar() {
-  const bar     = document.getElementById("active-job-bar");
+  const header  = document.querySelector(".app-header");
   const addrEl  = document.getElementById("active-job-addr");
   const chipsEl = document.getElementById("active-job-chips");
 
-  if (!_activeJob) { bar.classList.add("hidden"); return; }
+  if (!_activeJob) {
+    header.classList.remove("has-active-job");
+    addrEl.textContent = "";
+    chipsEl.innerHTML  = "";
+    return;
+  }
 
-  bar.classList.remove("hidden");
+  header.classList.add("has-active-job");
   addrEl.textContent = _activeJob.address;
   chipsEl.innerHTML  = "";
 
-  const outdoorEntry = _activeJob.system1?.outdoor ? getOutdoorModel(_activeJob.system1.outdoor) : null;
-  const indoorEntry  = _activeJob.system1?.furnace ? getIndoorModel(_activeJob.system1.furnace)  : null;
-
-  if (outdoorEntry) {
-    const btn = document.createElement("button");
-    btn.type        = "button";
-    btn.className   = "chip chip-sm chip-secondary";
-    btn.textContent = _activeJob.system1.outdoor;
-    _wireHold(btn, () => _showOutdoorPopover(btn, outdoorEntry));
-    chipsEl.appendChild(btn);
+  if (_activeJob.subdivision) {
+    const chip = document.createElement("span");
+    chip.className   = "chip chip-sm chip-secondary";
+    chip.textContent = _activeJob.subdivision;
+    chipsEl.appendChild(chip);
   }
 
-  if (indoorEntry?.imagen) {
-    const btn = document.createElement("button");
-    btn.type        = "button";
-    btn.className   = "chip chip-sm chip-secondary";
-    btn.textContent = _activeJob.system1.furnace;
-    btn.addEventListener("click", () => _openViewer("Indoor", indoorEntry.imagen));
-    chipsEl.appendChild(btn);
+  if (_activeJob.builder) {
+    const chip = document.createElement("span");
+    chip.className   = "chip chip-sm chip-secondary";
+    chip.textContent = _activeJob.builder;
+    chipsEl.appendChild(chip);
   }
 }
 

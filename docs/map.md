@@ -283,7 +283,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Import/Export Jobs | Tab Jobs — botón discreto. Import agrega sin duplicar por dirección. Export serializa jobs a JSON |
 | Export Completions | Tab Reports — CSV para hojas de cálculo, JSON para Dispatch |
 | Add Job | Sección inline en `#tab-jobs` (no dialog); campos: dirección, subdivision, builder, fecha, notas, 2 Systems, time-sensitive, termostato (modelo + qty), accesorios multi-select, modelos indoor/outdoor con selects por serie + links de manuales → `createJob()` → `precacheJobs([job])` |
-| Active job bar | `updateActiveJobBar()` — muestra/oculta `#active-job-bar`. Outdoor: press-hold → `_showOutdoorPopover` con datos OUTDOOR_CATALOG. Indoor: tap → `openViewer` LV. |
+| Active job bar | `updateActiveJobBar()` — dos estados: sin job activo → elimina clase `has-active-job` de `.app-header`, limpia addr/chips; con job activo → agrega `has-active-job`, muestra dirección en `#active-job-addr` + chips de subdivisión y builder en `#active-job-chips`. |
 | Troubleshooting | Abre/cierra `#ts-drawer`; body pendiente |
 | Photos | File input → FileReader → `addPhoto()`; geolocation no-blocking |
 
@@ -411,7 +411,8 @@ Shell de la app. Estructura de 4 tabs, 5 steps en workspace, 3 modales, drawer, 
 
 **Contiene:**
 - `<nav>` — Jobs · Workspace · Reports · LV
-- `#active-job-bar` — fila bajo la nav: dirección del job activo + chips Outdoor/Indoor. Oculta si no hay job activo.
+- `#btn-add-job` — en `.header-actions`, antes de los tres icon buttons
+- `.active-job-row` — segunda fila dentro de `<header>`, oculta por default. Visible cuando `.app-header.has-active-job` está presente: muestra dirección del job activo (`#active-job-addr`) + chips de subdivisión y builder (`#active-job-chips`).
 - `#tab-jobs` — lista de jobs agrupados por subdivisión
 - `#tab-workspace` — stepper de 5 pasos
 - `#tab-reports` — lista de completions
@@ -515,7 +516,7 @@ Export JSON → Dispatch
 | 11 | ✅ Settings — Prices: sección en Settings modal con inputs por subsección (Services/Accessories/Fixes + Weight-In Finish Addon), live-save via setPrice() en cada cambio, botón "Reset to defaults" via resetPrices(). | settings.js / app.js |
 | 12 | ✅ Crear imágenes LV — diagramas de cableado BV por configuración de sistema. 1/2 stage comparte imagen con línea punteada para Y2. Convención de nombres en data_dictionary.md §9 | images/lv/ |
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
-| 14 | ✅ Header global dinámico — `#active-job-bar` con dirección + chips Outdoor (press-hold → popover OUTDOOR_CATALOG: Ton/Ref/Charge) + Indoor (tap → LV viewer imagen). Tstat/Acc chips — deferred. | app.js / index.html / lv.js |
+| 14 | ✅ Header global dinámico — `.app-header` dos estados: compact (sin job) / expanded (con job, clase `has-active-job`). Segunda fila `.active-job-row` muestra dirección + chips subdivisión/builder. `#btn-add-job` movido a `.header-actions`. | app.js / index.html / styles/app.css |
 | 15 | `.photo-options` en app.css — clase huérfana, eliminar en próximo refactor | styles/app.css |
 | 16 | ⏳ espera Dispatch — Import Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
 | 17 | ⏳ espera Dispatch — Export Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
