@@ -62,4 +62,25 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
+## 5. Behavior Summary + Diff Policy
+
+**Every proposed change must lead with a Behavior Summary.**
+
+The Behavior Summary states:
+- What the change does
+- What happens in edge cases
+- What it does not touch
+
+**Diff requirements by change type:**
+
+| Change type | Requirement |
+|---|---|
+| Additive only (new CSS block, new function that touches nothing existing) | Behavior Summary + confirmation. No diff required. |
+| Changes to existing code | Behavior Summary first. Diff available on request. |
+| Structural or multi-file changes | Full diff mandatory. |
+
+Do not apply any change until the user explicitly confirms.
+
+---
+
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
