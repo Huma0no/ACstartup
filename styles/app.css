@@ -1407,6 +1407,17 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--color-text-primary);
 }
 
+.step-header .acc-summary {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: var(--space-2);
+}
+
 /* Step body */
 .step-body {
   padding: var(--space-4);

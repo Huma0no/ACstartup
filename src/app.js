@@ -443,6 +443,38 @@ function renderWorkspace() {
   // Step 7 — Notes & Photos
   document.getElementById("notes-input").value = state.notes || "";
   updatePriceDisplay();
+  updateAccordionSummaries();
+}
+
+function updateAccordionSummaries() {
+  const state = getState();
+  if (!state) return;
+
+  const setText = (selector, text) => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = text || "—";
+  };
+
+  const svcParts = [...state.selectedServices, state.selectedThermostat].filter(Boolean);
+  setText("#section-service .acc-summary", svcParts.join(" · ") || "—");
+
+  const accParts = [
+    ...state.selectedAccessories.map((n) => ACCESSORY_DISPLAY[n] || n.toLowerCase()),
+    ...state.customAccessories.map((a) => ACCESSORY_DISPLAY[a.name] || a.name.toLowerCase()),
+  ];
+  setText("#section-accessories .acc-summary", accParts.join(" · ") || "—");
+
+  const fixParts = [
+    ...state.selectedFixes.map((n) => FIX_DISPLAY[n] || n.toLowerCase()),
+    ...state.customFixes.map((f) => FIX_DISPLAY[f.name] || f.name.toLowerCase()),
+  ];
+  setText("#section-fixes .acc-summary", fixParts.join(" · ") || "—");
+
+  const hasWiData = Object.values(state.weightInData || {}).some(Boolean);
+  setText("#section-weight-in .acc-summary", hasWiData ? "data entered" : "—");
+
+  const notes = state.notes || "";
+  setText("#section-notes .acc-summary", notes ? (notes.length > 30 ? notes.slice(0, 30) + "…" : notes) : "—");
 }
 
 function _updatePhotoCount() {
