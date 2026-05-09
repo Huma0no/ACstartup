@@ -275,7 +275,7 @@ Punto de entrada. Inicializa todos los módulos en orden, maneja navegación ent
 | Tab navigation | Activa/oculta panels por `data-tab`; dispara `renderReports()` y `renderLV()` al entrar |
 | Jobs tab | Renderiza lista agrupada por subdivisión con color auto-asignado; search por dirección; toggle expand/collapse (accordion — solo un job-item expandido a la vez; click en expandido lo colapsa); delete; start/resume → workspace |
 | Job card | Visible siempre: dirección (row 1, trunca con ellipsis), chips técnicos row 2 col izq + builder/subdivisión row 2 col der. **Chip filter en colapsado:** termostato siempre (qty prefix solo si ≥ 3, e.g. "3× T-6"); zone boards (Harmony, HZ322, UT3000) si presentes; LP Kit (Lennox 1stg/2stg, Goodman) si presentes; 2 Systems si aplica. Todos los demás accesorios omitidos en el colapsado. `.job-top-meta` (builder + subdivisión) en fila con wrap, right-justified. Al expandir: equip-grid con data-grid por sistema — filas Indoor/Outdoor · Factory/Revised · Refrigerant/Subcooling · CFM Max/Min, y botones Indoor LV · Outdoor LV · Blower Data. `_equipCard(furnace, outdoor, label)` — recibe ambos modelos; subcooling desde `oemSubcoolingGoal` si existe en catalog, sino "—". |
-| Workspace | Renderiza los 7 steps con chips de estado; event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes (grupos expandibles "Fixed Leaks" y "Extended LV Wire" con badge contador de seleccionados; sub-chips multi-select; chips standalone más pequeños con wrap), weight-in (Line Config como `<select>`; auto-fill de `factoryChargeOz` desde `outdoor.FactoryCharge` y `approxAdjustOz` según revisedCharge/FactoryCharge al cargar; subcooling auto-calc: `subcoolingValue = condenserSatTemp − liquidLineTemp`, `subcoolingDeviation = abs(subcoolingValue − oemSubcoolingGoal)`), notas, fotos |
+| Workspace | 5 secciones accordion en `#workspace-form`: **Service** (`#section-service` — services + thermostat combinados), **Accessories** (`#section-accessories`), **Fixes** (`#section-fixes`), **Weigh-In** (`#section-weight-in`), **Notes** (`#section-notes`). Click en `.step-header` abre la sección y cierra las demás (un solo `.acc-open` a la vez). `.acc-done` / `.acc-na` disponibles para estado futuro. Event delegation desde `#workspace-form` para servicios, tstat, accesorios, fixes (grupos expandibles "Fixed Leaks" y "Extended LV Wire" con badge contador de seleccionados; sub-chips multi-select; chips standalone más pequeños con wrap), weight-in (Line Config como `<select>`; auto-fill de `factoryChargeOz` desde `outdoor.FactoryCharge` y `approxAdjustOz` según revisedCharge/FactoryCharge al cargar; subcooling auto-calc: `subcoolingValue = condenserSatTemp − liquidLineTemp`, `subcoolingDeviation = abs(subcoolingValue − oemSubcoolingGoal)`), notas, fotos |
 | Generate Report | `buildCompletion()` → `generateReportText()` → `saveCompletion()` → `removeJob(id)` → limpia workspace → navega a Reports |
 | Reports tab | Renderiza completions. Per-card: Copy, Share (WhatsApp/SMS/Email/Copy), Delete. Global: Share All (`generateDailyReport()`), Delete All, DB export → `dashboard_import_{date}.json`, CSV export → `service_reports_{MM-DD-YY}.csv` |
 | LV tab | `getLinksForJob()` + `isAvailableOffline()` por cada link; botón Cache → `downloadDiagram()` |
@@ -407,14 +407,14 @@ Design system completo. Todos los estilos de la app.
 ---
 
 ### `index.html` ✅
-Shell de la app. Estructura de 4 tabs, 5 steps en workspace, 3 modales, drawer, FAB.
+Shell de la app. Estructura de 4 tabs, accordion de 5 secciones en workspace, 3 modales, drawer, FAB.
 
 **Contiene:**
 - `<nav>` — Jobs · Workspace · Reports · LV
 - `#btn-add-job` — en `.header-actions`, antes de los tres icon buttons
 - `.active-job-row` — segunda fila dentro de `<header>`, oculta por default. Visible cuando `.app-header.has-active-job` está presente: muestra dirección del job activo (`#active-job-addr`) + chips de subdivisión y builder (`#active-job-chips`).
 - `#tab-jobs` — lista de jobs agrupados por subdivisión
-- `#tab-workspace` — stepper de 5 pasos
+- `#tab-workspace` — accordion de 5 secciones: `#section-service`, `#section-accessories`, `#section-fixes`, `#section-weight-in`, `#section-notes`
 - `#tab-reports` — lista de completions
 - `#tab-lv` — visor de diagramas
 - `<aside#ts-drawer>` — troubleshooting

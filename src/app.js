@@ -347,15 +347,6 @@ function renderWorkspace() {
   document.getElementById("workspace-form").classList.toggle("hidden", !on);
   if (!on) return;
 
-  // Stepper
-  const STEPS = [
-    ["services","Svc"],["thermostat","Tstat"],
-    ["accessories","Acc"],["fixes","Fixes"],["weight-in","W-In"],["notes","Notes"],
-  ];
-  document.getElementById("stepper").innerHTML = STEPS.map(([id, lbl], i) =>
-    `<button class="step-dot" data-scroll="section-${id}" title="${lbl}">${i + 1}</button>`
-  ).join("");
-
   // Step 1 — Services
   const sel = state.selectedServices;
   const SVC_BTNS = [
@@ -971,10 +962,15 @@ function wireEvents() {
     document.getElementById("ts-overlay").classList.remove("visible");
   });
 
-  // Stepper scroll
-  document.getElementById("stepper").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-scroll]");
-    if (btn) document.getElementById(btn.dataset.scroll)?.scrollIntoView({ behavior: "smooth" });
+  // Accordion
+  document.getElementById("workspace-form").addEventListener("click", (e) => {
+    const header = e.target.closest(".step-header");
+    if (!header) return;
+    const section = header.closest(".step-section");
+    const isOpen  = section.classList.contains("acc-open");
+    document.querySelectorAll("#workspace-form .step-section.acc-open")
+      .forEach((s) => s.classList.remove("acc-open"));
+    if (!isOpen) section.classList.add("acc-open");
   });
 
   // Jobs — list delegation
