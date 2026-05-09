@@ -76,6 +76,12 @@ export const TWO_SYSTEMS_ACCESSORIES = [
   ACCESSORIES.WEIGHT_IN_DATA,
 ];
 
+// Accessories that auto-activate when their trigger is selected (and auto-deactivate when trigger is removed)
+export const ACCESSORY_COMPANIONS = {
+  [ACCESSORIES.HZ322]:  [ACCESSORIES.BYPASS],
+  [ACCESSORIES.UT3000]: [ACCESSORIES.DAPC, ACCESSORIES.E_BYPASS, ACCESSORIES.ECOIL_WIRE],
+};
+
 // Accessories with free-form price (no default, user enters amount)
 export const CUSTOM_PRICE_ACCESSORIES = [
   ACCESSORIES.OUT_OF_TOWN,

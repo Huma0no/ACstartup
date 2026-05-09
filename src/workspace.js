@@ -3,7 +3,7 @@
 
 import {
   SERVICES, ACCESSORIES, FIXES,
-  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES,
+  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, ACCESSORY_COMPANIONS,
   CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
   DEFAULT_PRICES, ACCESSORY_DISPLAY, FIX_DISPLAY,
 } from "./data.js";
@@ -133,10 +133,19 @@ export function toggleAccessory(name, customPrice = null) {
     return;
   }
 
+  const companions = ACCESSORY_COMPANIONS[name];
   if (s.selectedAccessories.includes(name)) {
     s.selectedAccessories = s.selectedAccessories.filter((n) => n !== name);
+    if (companions) {
+      s.selectedAccessories = s.selectedAccessories.filter((n) => !companions.includes(n));
+    }
   } else {
     s.selectedAccessories.push(name);
+    if (companions) {
+      companions.forEach((c) => {
+        if (!s.selectedAccessories.includes(c)) s.selectedAccessories.push(c);
+      });
+    }
   }
 }
 
