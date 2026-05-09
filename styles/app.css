@@ -1016,8 +1016,10 @@ input[type="number"]::-webkit-outer-spin-button {
   grid-column: 2 / 3;
   grid-row: 2 / 3;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: var(--space-1);
 }
 
