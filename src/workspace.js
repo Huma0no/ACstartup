@@ -3,7 +3,7 @@
 
 import {
   SERVICES, ACCESSORIES, FIXES,
-  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, ACCESSORY_COMPANIONS,
+  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, ACCESSORY_COMPANIONS, ZONE_BOARDS,
   CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
   DEFAULT_PRICES, ACCESSORY_DISPLAY, FIX_DISPLAY,
 } from "./data.js";
@@ -140,6 +140,16 @@ export function toggleAccessory(name, customPrice = null) {
       s.selectedAccessories = s.selectedAccessories.filter((n) => !companions.includes(n));
     }
   } else {
+    if (ZONE_BOARDS.includes(name)) {
+      ZONE_BOARDS.forEach((board) => {
+        if (board === name) return;
+        s.selectedAccessories = s.selectedAccessories.filter((n) => n !== board);
+        const boardCompanions = ACCESSORY_COMPANIONS[board];
+        if (boardCompanions) {
+          s.selectedAccessories = s.selectedAccessories.filter((n) => !boardCompanions.includes(n));
+        }
+      });
+    }
     s.selectedAccessories.push(name);
     if (companions) {
       companions.forEach((c) => {

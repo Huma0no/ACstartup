@@ -82,6 +82,13 @@ export const ACCESSORY_COMPANIONS = {
   [ACCESSORIES.UT3000]: [ACCESSORIES.DAPC, ACCESSORIES.E_BYPASS, ACCESSORIES.ECOIL_WIRE],
 };
 
+// Zone boards are mutually exclusive — activating one deselects the others and their companions
+export const ZONE_BOARDS = [
+  ACCESSORIES.HZ322,
+  ACCESSORIES.HARMONY,
+  ACCESSORIES.UT3000,
+];
+
 // Accessories with free-form price (no default, user enters amount)
 export const CUSTOM_PRICE_ACCESSORIES = [
   ACCESSORIES.OUT_OF_TOWN,

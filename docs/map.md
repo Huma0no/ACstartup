@@ -59,6 +59,7 @@ Fuente de verdad de todos los datos estáticos. Ningún otro módulo define prec
 | `ACCESSORIES` | object | Accesorios y sus claves — `EXTENDED_WIRE` eliminado (movido a FIXES como sub-opciones). `ACCESSORIES.OTRO` persiste como `"Other"` (antes `"Otro"`) — localStorage con valor `"Otro"` no coincidirá; verificar antes de merge a main. |
 | `TWO_SYSTEMS_ACCESSORIES` | array | Accesorios que duplican precio con 2 Systems |
 | `ACCESSORY_COMPANIONS` | object | Mapa de trigger → companions: `HZ322 → [Bypass]`, `UT3000 → [DAPC, eBypass, Ecoil Wire]`. Cuando el trigger se activa, cada companion no seleccionado se agrega automáticamente; cuando el trigger se desactiva, todos sus companions se eliminan independientemente de su estado. Companions toggleados directamente solo afectan ese ítem — sin cascade inverso. |
+| `ZONE_BOARDS` | array | `[HZ322, Harmony, UT3000]` — mutuamente excluyentes. Al activar uno, todos los demás y sus companions (vía `ACCESSORY_COMPANIONS`) se eliminan antes de agregar el nuevo. La desactivación solo afecta el ítem seleccionado y sus companions. |
 | `CUSTOM_PRICE_ACCESSORIES` | array | Accesorios con precio libre |
 | `FIXES` | object | Fixes y sus claves — incluye `EXTENDED_WIRE_FURNACE` y `EXTENDED_WIRE_CUNIT` como entradas independientes para sub-chips del grupo "Extended LV Wire"; `EXTENDED_WIRE` se conserva solo por backward-compat con completions guardados. `FIXES.OTRO` persiste como `"Other"` (antes `"Otro"`) — localStorage con valor `"Otro"` no coincidirá; verificar antes de merge a main. |
 | `CUSTOM_PRICE_FIXES` | array | Fixes con precio libre |
@@ -148,7 +149,7 @@ Estado del workspace activo: carga el job, registra selecciones, calcula total e
 | `clearWorkspace` | function | Limpia estado en memoria y en storage |
 | `toggleService` | function | Activa/desactiva un servicio; aplica reglas de exclusividad |
 | `setThermostat` | function | Setea termostato y cantidad |
-| `toggleAccessory` | function | Activa/desactiva accesorio de catálogo o precio libre. Si el accesorio es un trigger en `ACCESSORY_COMPANIONS`, activa sus companions al seleccionar y los elimina todos al deseleccionar. Companions toggleados directamente no propagan. |
+| `toggleAccessory` | function | Activa/desactiva accesorio de catálogo o precio libre. Si el accesorio es un trigger en `ACCESSORY_COMPANIONS`, activa sus companions al seleccionar y los elimina todos al deseleccionar. Si el accesorio es un zone board (`ZONE_BOARDS`), al activarlo primero barre todos los demás zone boards y sus companions. Companions y non-zone accessories toggleados directamente no propagan. |
 | `toggleFix` | function | Activa/desactiva fix de catálogo o precio libre |
 | `setOption` | function | Setea `isTwoSystems` o `isTemporary` |
 | `setSystem2Models` | function | Guarda modelos del Sistema 2 descubiertos en campo |
