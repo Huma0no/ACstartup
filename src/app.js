@@ -455,26 +455,39 @@ function updateAccordionSummaries() {
     if (el) el.textContent = text || "—";
   };
 
+  const setDone = (id, done) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle("acc-done", done);
+    const icon = el.querySelector(".acc-state-icon");
+    if (icon) icon.textContent = done ? "✓" : "○";
+  };
+
   const svcParts = [...state.selectedServices, state.selectedThermostat].filter(Boolean);
   setText("#section-service .acc-summary", svcParts.join(" · ") || "—");
+  setDone("section-service", svcParts.length > 0);
 
   const accParts = [
     ...state.selectedAccessories.map((n) => ACCESSORY_DISPLAY[n] || n.toLowerCase()),
     ...state.customAccessories.map((a) => ACCESSORY_DISPLAY[a.name] || a.name.toLowerCase()),
   ];
   setText("#section-accessories .acc-summary", accParts.join(" · ") || "—");
+  setDone("section-accessories", accParts.length > 0);
 
   const fixParts = [
     ...state.selectedFixes.map((n) => FIX_DISPLAY[n] || n.toLowerCase()),
     ...state.customFixes.map((f) => FIX_DISPLAY[f.name] || f.name.toLowerCase()),
   ];
   setText("#section-fixes .acc-summary", fixParts.join(" · ") || "—");
+  setDone("section-fixes", fixParts.length > 0);
 
   const hasWiData = Object.values(state.weightInData || {}).some(Boolean);
   setText("#section-weight-in .acc-summary", hasWiData ? "data entered" : "—");
+  setDone("section-weight-in", hasWiData);
 
   const notes = state.notes || "";
   setText("#section-notes .acc-summary", notes ? (notes.length > 30 ? notes.slice(0, 30) + "…" : notes) : "—");
+  setDone("section-notes", notes.length > 0);
 }
 
 function _updatePhotoCount() {
