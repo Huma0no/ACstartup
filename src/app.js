@@ -406,7 +406,7 @@ function renderWorkspace() {
       return `<button class="chip chip-sm${active ? " chip-accessory" : ""}" data-fix="${esc(n)}"${custom}>${esc(disp)}</button>`;
     }).join("");
   document.getElementById("fixes-list").innerHTML =
-    _groupsHTML + `<div class="fix-chips-row">${_standaloneHTML}</div>`;
+    `<div class="fix-chips-row">${_standaloneHTML}</div>` + _groupsHTML;
 
   // Step 5 — Weight-In
   const s1 = job.system1 || {};
