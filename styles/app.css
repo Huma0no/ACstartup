@@ -964,6 +964,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .job-item.expanded {
   box-shadow: var(--shadow-md);
+  scroll-margin-top: calc(var(--header-h) + 36px + var(--nav-h) + 8px);
 }
 
 /* Job face (main content) */

@@ -959,6 +959,33 @@ function updateActiveJobBar() {
   }
 }
 
+function updateJobCardHeader(job) {
+  const header  = document.querySelector(".app-header");
+  const addrEl  = document.getElementById("active-job-addr");
+  const chipsEl = document.getElementById("active-job-chips");
+  if (!job) {
+    header.classList.remove("has-active-job");
+    addrEl.textContent = "";
+    chipsEl.innerHTML  = "";
+    return;
+  }
+  header.classList.add("has-active-job");
+  addrEl.textContent = job.address;
+  chipsEl.innerHTML  = "";
+  if (job.subdivision) {
+    const c = document.createElement("span");
+    c.className = "chip chip-sm chip-secondary";
+    c.textContent = job.subdivision;
+    chipsEl.appendChild(c);
+  }
+  if (job.builder) {
+    const c = document.createElement("span");
+    c.className = "chip chip-sm chip-secondary";
+    c.textContent = job.builder;
+    chipsEl.appendChild(c);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Event wiring
 // ---------------------------------------------------------------------------
@@ -1035,7 +1062,13 @@ function wireEvents() {
     if (item && !e.target.closest("button")) {
       const alreadyOpen = item.classList.contains("expanded");
       document.querySelectorAll(".job-item.expanded").forEach(el => el.classList.remove("expanded"));
-      if (!alreadyOpen) item.classList.add("expanded");
+      if (!alreadyOpen) {
+        item.classList.add("expanded");
+        if (!_activeJob) updateJobCardHeader(getJobById(item.dataset.id));
+        item.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        if (!_activeJob) updateJobCardHeader(null);
+      }
     }
   });
 
