@@ -525,7 +525,7 @@ Export JSON → Dispatch
 | 17 | ⏳ espera Dispatch — Export Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
 | 18 | ⏳ espera Dispatch — Export Completions CSV | reports.js / app.js |
 | 19 | ⏳ espera Dispatch — Export Completions JSON | reports.js / app.js |
-| 20 | `job.savedState` write path not migrated to `src/` — `saveJobState()` exists only in legacy `jobs.js` (root) and `dispatch.html`. In the `src/` module system `saveProgress()` persists state to localStorage via `storage.js` but never writes back to `job.savedState`, so `inProg` is always `false` for jobs managed entirely in `src/`. The "Continue →" button label will never activate until this is migrated. | src/workspace.js / src/jobs.js |
+| 20 | ✅ `job.savedState` write path migrated to `src/` — `saveProgress(job)` now deep-clones `_state` onto `job.savedState` and calls `updateJob(job)`. All 13 call sites in `app.js` pass `_activeJob`. `inProg` is now `true` after first workspace interaction; "Continue →" activates on next `renderJobs()`. | src/workspace.js / src/jobs.js |
 
 ---
 

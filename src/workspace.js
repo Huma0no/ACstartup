@@ -12,6 +12,7 @@ import {
   saveImageToDB, getImageFromDB, deleteImageFromDB, clearImagesFromDB,
 } from "./storage.js";
 import { compressImage, getGpsFromImage } from "./utils.js";
+import { updateJob } from "./jobs.js";
 
 // ---------------------------------------------------------------------------
 // Module state
@@ -338,8 +339,12 @@ export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
 // Save mid-job progress
 // ---------------------------------------------------------------------------
 
-export function saveProgress() {
+export function saveProgress(job = null) {
   saveWorkspaceState(_state);
+  if (job) {
+    job.savedState = JSON.parse(JSON.stringify(_state));
+    updateJob(job);
+  }
 }
 
 // ---------------------------------------------------------------------------

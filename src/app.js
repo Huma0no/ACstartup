@@ -530,7 +530,7 @@ function _renderSitePhotoThumb(slug, label, file) {
     URL.revokeObjectURL(objectUrl);
     thumb.remove();
     removeSitePhoto(slug);
-    saveProgress();
+    saveProgress(_activeJob);
     _updatePhotoCount();
   };
 
@@ -555,7 +555,7 @@ function _makeSiteSlot(slug, label) {
     fileInput.value = "";
     const compressed = await compressImage(file);
     addSitePhoto(slug, label, compressed);
-    saveProgress();
+    saveProgress(_activeJob);
     _renderSitePhotoThumb(slug, label, compressed);
     _updatePhotoCount();
   });
@@ -630,7 +630,7 @@ function _initSitePhotoPresets() {
     const slot = _makeSiteSlot(slug, label);
     container.insertBefore(slot, otherWrap);
     addSitePhoto(slug, label, compressed);
-    saveProgress();
+    saveProgress(_activeJob);
     _renderSitePhotoThumb(slug, label, compressed);
     _updatePhotoCount();
   });
@@ -1100,16 +1100,16 @@ function wireEvents() {
 
     if (svc) {
       toggleService(svc.dataset.service);
-      saveProgress(); renderWorkspace(); return;
+      saveProgress(_activeJob); renderWorkspace(); return;
     }
     if (tst) {
       const n = tst.dataset.tstat;
       setThermostat(state.selectedThermostat === n ? null : n, state.thermostatQuantity);
-      saveProgress(); renderWorkspace(); return;
+      saveProgress(_activeJob); renderWorkspace(); return;
     }
     if (qty) {
       setThermostat(state.selectedThermostat, Math.max(1, state.thermostatQuantity + parseInt(qty.dataset.qty)));
-      saveProgress(); renderWorkspace(); return;
+      saveProgress(_activeJob); renderWorkspace(); return;
     }
     if (acc) {
       if ("custom" in acc.dataset) {
@@ -1119,7 +1119,7 @@ function wireEvents() {
       } else {
         toggleAccessory(acc.dataset.accessory);
       }
-      saveProgress(); renderWorkspace(); return;
+      saveProgress(_activeJob); renderWorkspace(); return;
     }
     if (grp) {
       const groupEl = document.getElementById(`fix-group-${grp.dataset.groupToggle}`);
@@ -1134,7 +1134,7 @@ function wireEvents() {
       } else {
         toggleFix(fix.dataset.fix);
       }
-      saveProgress(); renderWorkspace(); return;
+      saveProgress(_activeJob); renderWorkspace(); return;
     }
   });
 
@@ -1142,8 +1142,8 @@ function wireEvents() {
   wsForm.addEventListener("change", (e) => {
     const state = getState();
     if (!state) return;
-    if (e.target.id === "ws-two-systems") { setOption("isTwoSystems", e.target.checked); saveProgress(); renderWorkspace(); return; }
-    if (e.target.id === "ws-temporarily") { setOption("isTemporary",  e.target.checked); saveProgress(); return; }
+    if (e.target.id === "ws-two-systems") { setOption("isTwoSystems", e.target.checked); saveProgress(_activeJob); renderWorkspace(); return; }
+    if (e.target.id === "ws-temporarily") { setOption("isTemporary",  e.target.checked); saveProgress(_activeJob); return; }
     if (e.target.dataset.wi === "factoryLineConfig") {
       const data = {};
       wsForm.querySelectorAll("[data-wi]").forEach((inp) => { data[inp.getAttribute("data-wi")] = inp.value; });
@@ -1160,7 +1160,7 @@ function wireEvents() {
       }
       setWeightInData(data, 1);
       _renderNewTotalCharge(data, 1);
-      updatePriceDisplay(); saveProgress();
+      updatePriceDisplay(); saveProgress(_activeJob);
     }
   });
 
@@ -1169,7 +1169,7 @@ function wireEvents() {
     const state = getState();
     if (!state) return;
     if (e.target.id === "notes-input") {
-      setNotes(e.target.value); saveProgress(); return;
+      setNotes(e.target.value); saveProgress(_activeJob); return;
     }
     if (e.target.dataset.wi || e.target.dataset.wi2) {
       const sys  = e.target.dataset.wi ? 1 : 2;
@@ -1206,7 +1206,7 @@ function wireEvents() {
       }
       setWeightInData(data, sys);
       _renderNewTotalCharge(data, sys);
-      updatePriceDisplay(); saveProgress();
+      updatePriceDisplay(); saveProgress(_activeJob);
     }
   });
 
