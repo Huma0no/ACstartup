@@ -100,6 +100,7 @@ function openTab(name) {
     p.classList.toggle("active", on);
     p.classList.toggle("hidden", !on);
   });
+  if (name === "jobs")    renderJobs();
   if (name === "reports") renderReports();
   if (name === "lv")      renderLV();
 }
