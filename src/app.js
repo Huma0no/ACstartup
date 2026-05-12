@@ -681,12 +681,18 @@ function renderReports() {
   }
   empty.classList.add("hidden");
   actions.classList.remove("hidden");
-  list.innerHTML = all.map((c) => `
+  list.innerHTML = all.map((c) => {
+    const bd = [
+      c.totals.service   ? `Svc $${c.totals.service}`   : "",
+      c.totals.accessory ? `Acc $${c.totals.accessory}` : "",
+      c.totals.fix       ? `Fix $${c.totals.fix}`       : "",
+    ].filter(Boolean).join(" | ");
+    return `
     <li class="report-item" style="position:relative;">
       <button class="btn" data-delete="${esc(c.jobId)}" style="position:absolute;top:6px;right:6px;padding:2px 7px;font-size:var(--font-size-xs);">✕</button>
       <div class="report-addr">
         <strong>${esc(c.address)}</strong>
-        <span class="chip chip-sm chip-primary">$${c.totals.total}</span>
+        <span class="chip chip-sm chip-primary">$${c.totals.total}</span>${bd ? `<span class="report-breakdown">${bd}</span>` : ""}
       </div>
       <p class="report-text">${esc(c.reportText || "")}</p>
       <div class="btn-row">
@@ -701,7 +707,8 @@ function renderReports() {
           <button class="btn" data-share-method="copy"     data-share-text="${esc(c.reportText || "")}">📋 Copy</button>
         </div>
       </div>
-    </li>`).join("");
+    </li>`;
+  }).join("");
 }
 
 // ---------------------------------------------------------------------------

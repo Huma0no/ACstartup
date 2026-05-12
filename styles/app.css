@@ -1981,6 +1981,12 @@ input[type="number"]::-webkit-outer-spin-button {
   gap: var(--space-2);
 }
 
+.report-breakdown {
+  display: inline;
+  margin-left: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
 
 /* ───────────────────────────────────────────────────────────────
    16. LV TAB
