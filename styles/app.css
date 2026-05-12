@@ -1988,6 +1988,139 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--color-text-secondary);
 }
 
+/* Edit report modal */
+.em-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.em-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  width: min(480px, 100%);
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-md);
+}
+.em-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+.em-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.em-footer {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.em-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.em-section-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+.em-checkboxes, .em-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.em-check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.em-tstat-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.em-tstat-select { flex: 1; }
+.em-tqty         { width: 56px; text-align: center; }
+.em-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+.em-name  { flex: 2; min-width: 0; }
+.em-price { width: 64px; text-align: right; }
+.em-remove { padding: 2px 6px; font-size: var(--font-size-xs); }
+.em-add-btn { width: 100%; margin-top: var(--space-1); }
+.em-input,
+.em-textarea,
+.em-name,
+.em-price {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  box-sizing: border-box;
+}
+.em-textarea {
+  width: 100%;
+  resize: vertical;
+}
+.em-details {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.em-summary {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  padding: var(--space-1) 0;
+}
+.em-wi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+.em-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.em-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
 /* ───────────────────────────────────────────────────────────────
    16. LV TAB
    ─────────────────────────────────────────────────────────────── */

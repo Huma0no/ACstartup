@@ -515,7 +515,7 @@ Export JSON → Dispatch
 | 7 | `_renderNewTotalCharge` lives in app.js but belongs in workspace.js — migrate in next refactor session | app.js → workspace.js |
 | 8 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
 | 9 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
-| 10 | Edit completion — individual edit of a saved completion report | reports.js / app.js |
+| 10 | ✅ Edit completion — `openEditModal(completion)` en `app.js`: overlay full-screen, pre-popula Notes/Service/Thermostat/Accessories/Fixes/Weigh-In desde el objeto completion, Apply regenera `reportText` via `generateReportText()` y persiste con `saveCompletion()`. **Nota:** lógica de construcción de service items duplica `_buildServiceItems` de `workspace.js` — candidato para extracción en refactor futuro. | app.js |
 | 11 | ✅ Settings — Prices: sección en Settings modal con inputs por subsección (Services/Accessories/Fixes + Weight-In Finish Addon), live-save via setPrice() en cada cambio, botón "Reset to defaults" via resetPrices(). | settings.js / app.js |
 | 12 | ✅ Crear imágenes LV — diagramas de cableado BV por configuración de sistema. 1/2 stage comparte imagen con línea punteada para Y2. Convención de nombres en data_dictionary.md §9 | images/lv/ |
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |

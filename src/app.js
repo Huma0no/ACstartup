@@ -688,7 +688,7 @@ function renderReports() {
       c.totals.fix       ? `Fix $${c.totals.fix}`       : "",
     ].filter(Boolean).join(" | ");
     return `
-    <li class="report-item" style="position:relative;">
+    <li class="report-item" data-jobid="${esc(c.jobId)}" style="position:relative;">
       <button class="btn" data-delete="${esc(c.jobId)}" style="position:absolute;top:6px;right:6px;padding:2px 7px;font-size:var(--font-size-xs);">✕</button>
       <div class="report-addr">
         <strong>${esc(c.address)}</strong>
@@ -697,6 +697,7 @@ function renderReports() {
       <p class="report-text">${esc(c.reportText || "")}</p>
       <div class="btn-row">
         <button class="btn btn-copy" data-copy="${esc(c.reportText || "")}">Copy</button>
+        <button class="btn" data-edit-report="${esc(c.jobId)}">Edit</button>
         <button class="btn" data-share-toggle="${esc(c.jobId)}">📤 Share</button>
       </div>
       <div id="share-panel-${esc(c.jobId)}" class="hidden">
@@ -1259,10 +1260,12 @@ function wireEvents() {
   document.getElementById("reports-list").addEventListener("click", (e) => {
     const copy   = e.target.closest("[data-copy]");
     const del    = e.target.closest("[data-delete]");
+    const edit   = e.target.closest("[data-edit-report]");
     const toggle = e.target.closest("[data-share-toggle]");
     const share  = e.target.closest("[data-share-method]");
     if (copy)   navigator.clipboard.writeText(copy.dataset.copy).then(() => toast("Copied!", "success"));
     if (del && confirm("Delete this report?")) { deleteCompletion(del.dataset.delete); renderReports(); }
+    if (edit)   { const c = getCompletions().find(c => c.jobId === edit.dataset.editReport); if (c) openEditModal(c); }
     if (toggle) { const p = document.getElementById(`share-panel-${toggle.dataset.shareToggle}`); if (p) p.classList.toggle("hidden"); }
     if (share)  _shareVia(share.dataset.shareMethod, share.dataset.shareText);
   });
@@ -1443,6 +1446,230 @@ function wireEvents() {
     _collapseAddJobForm();
     renderJobs();
     toast(`Job added: ${job.address}`, "success");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Edit report modal
+// ---------------------------------------------------------------------------
+
+function openEditModal(completion) {
+  document.getElementById("_edit-report-modal")?.remove();
+
+  const c = completion;
+  const svc0    = c.services?.[0];
+  const svcName = svc0?.name ?? "";
+  const svcDn   = svc0?.displayName ?? "";
+  const isCanceled = svcName === SERVICES.CANCEL;
+
+  const iniAC       = !isCanceled && (svcName === SERVICES.AC || svcName === SERVICES.AC_HEAT || (svcName === SERVICES.FINISH && svcDn.includes("AC")));
+  const iniHeat     = !isCanceled && (svcName === SERVICES.HEAT || svcName === SERVICES.AC_HEAT || (svcName === SERVICES.FINISH && svcDn.includes("Heat")));
+  const iniFinish   = !isCanceled && svcName === SERVICES.FINISH;
+  const iniPrestart = !isCanceled && svcName === SERVICES.PRESTART;
+  const iniDriveRun = !isCanceled && svcName === SERVICES.DRIVE_RUN;
+  const iniCancel   = isCanceled;
+
+  const wid  = c.weightInData  || {};
+  const wid2 = c.weightInData2 || {};
+
+  const makeItemRow = (item) => `
+    <div class="em-row">
+      <input type="text"   class="em-name"  value="${esc(item.name)}" placeholder="Name" />
+      <input type="number" class="em-price" value="${item.price ?? 0}" min="0" step="any" />
+      <button type="button" class="btn em-remove">✕</button>
+    </div>`;
+
+  const wiSection = (data, sys) => `
+    <details class="em-details"${Object.values(data).some(Boolean) ? " open" : ""}>
+      <summary class="em-summary">System ${sys} Weigh-In</summary>
+      <div class="em-wi-grid">
+        ${WI_FIELDS.map(([key, lbl]) => `
+          <div class="em-field">
+            <label class="em-label">${lbl}</label>
+            ${key === "factoryLineConfig"
+              ? `<select class="em-input" data-wi="${sys}" data-key="${key}">
+                  ${LINE_CONFIG_OPTIONS.map(o => `<option value="${esc(o)}"${(data[key] ?? "") === o ? " selected" : ""}>${esc(o)}</option>`).join("")}
+                </select>`
+              : `<input type="text" class="em-input" data-wi="${sys}" data-key="${key}" value="${esc(String(data[key] ?? ""))}" />`}
+          </div>`).join("")}
+      </div>
+    </details>`;
+
+  const svcCheckboxes = [
+    ["AC",        SERVICES.AC,        iniAC],
+    ["Heat",      SERVICES.HEAT,      iniHeat],
+    ["Finish",    SERVICES.FINISH,    iniFinish],
+    ["Prestart",  SERVICES.PRESTART,  iniPrestart],
+    ["Drive Run", SERVICES.DRIVE_RUN, iniDriveRun],
+    ["Cancel",    SERVICES.CANCEL,    iniCancel],
+  ];
+
+  const overlay = document.createElement("div");
+  overlay.id = "_edit-report-modal";
+  overlay.className = "em-overlay";
+  overlay.innerHTML = `
+    <div class="em-card">
+      <div class="em-header">
+        <span>${esc(c.address)}</span>
+        <button type="button" id="_em-close" class="btn">✕</button>
+      </div>
+      <div class="em-body">
+        <div class="em-section">
+          <div class="em-section-title">Notes</div>
+          <textarea id="_em-notes" class="em-textarea" rows="3">${esc(c.notes || "")}</textarea>
+        </div>
+        <div class="em-section">
+          <div class="em-section-title">Service</div>
+          <div class="em-checkboxes">
+            ${svcCheckboxes.map(([label, val, checked]) =>
+              `<label class="em-check-label"><input type="checkbox" name="_emsvc" value="${esc(val)}"${checked ? " checked" : ""}> ${label}</label>`
+            ).join("")}
+          </div>
+          <div class="em-flags">
+            <label class="em-check-label"><input type="checkbox" id="_em2sys"${c.isTwoSystems ? " checked" : ""}> 2 Systems</label>
+            <label class="em-check-label"><input type="checkbox" id="_emtemp"${c.isTemporary ? " checked" : ""}> Temporarily</label>
+          </div>
+        </div>
+        <div class="em-section">
+          <div class="em-section-title">Thermostat</div>
+          <div class="em-tstat-row">
+            <select id="_em-tstat" class="em-input em-tstat-select">
+              <option value="">None</option>
+              ${THERMOSTATS.map(n => `<option value="${esc(n)}"${c.selectedThermostat?.name === n ? " selected" : ""}>${esc(n)}</option>`).join("")}
+            </select>
+            <input type="number" id="_em-tqty" class="em-input em-tqty" value="${c.thermostatQuantity || 1}" min="1" max="99" />
+            <span class="em-label">qty</span>
+          </div>
+        </div>
+        <div class="em-section">
+          <div class="em-section-title">Accessories</div>
+          <div id="_em-acclist">${(c.accessories || []).map(makeItemRow).join("")}</div>
+          <button type="button" id="_em-addacc" class="btn em-add-btn">+ Add Accessory</button>
+        </div>
+        <div class="em-section">
+          <div class="em-section-title">Fixes</div>
+          <div id="_em-fixlist">${(c.fixes || []).map(makeItemRow).join("")}</div>
+          <button type="button" id="_em-addfix" class="btn em-add-btn">+ Add Fix</button>
+        </div>
+        ${wiSection(wid, 1)}
+        ${c.isTwoSystems ? wiSection(wid2, 2) : ""}
+      </div>
+      <div class="em-footer">
+        <button type="button" id="_em-apply" class="btn btn-primary">Apply</button>
+        <button type="button" id="_em-cancel" class="btn">Cancel</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector("#_em-close").addEventListener("click", close);
+  overlay.querySelector("#_em-cancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+    if (e.target.classList.contains("em-remove")) e.target.closest(".em-row")?.remove();
+  });
+  overlay.querySelector("#_em-addacc").addEventListener("click", () =>
+    overlay.querySelector("#_em-acclist").insertAdjacentHTML("beforeend", makeItemRow({ name: "", price: 0 }))
+  );
+  overlay.querySelector("#_em-addfix").addEventListener("click", () =>
+    overlay.querySelector("#_em-fixlist").insertAdjacentHTML("beforeend", makeItemRow({ name: "", price: 0 }))
+  );
+
+  overlay.querySelector("#_em-apply").addEventListener("click", () => {
+    const prices      = getPrices();
+    const newNotes    = overlay.querySelector("#_em-notes").value.trim();
+    const selSvcs     = Array.from(overlay.querySelectorAll('[name="_emsvc"]:checked')).map(el => el.value);
+    const new2sys     = overlay.querySelector("#_em2sys").checked;
+    const newTemp     = overlay.querySelector("#_emtemp").checked;
+    const tstatVal    = overlay.querySelector("#_em-tstat").value;
+    const newTstat    = tstatVal ? { name: tstatVal } : null;
+    const newTstatQty = parseInt(overlay.querySelector("#_em-tqty").value) || 1;
+
+    const collectItems = (listId) =>
+      Array.from(overlay.querySelectorAll(`#${listId} .em-row`)).map(row => {
+        const name  = row.querySelector(".em-name").value.trim();
+        const price = parseFloat(row.querySelector(".em-price").value) || 0;
+        return name ? { name, displayName: name.toLowerCase(), price } : null;
+      }).filter(Boolean);
+
+    const newAccs  = collectItems("_em-acclist");
+    const newFixes = collectItems("_em-fixlist");
+
+    const newWid = {}, newWid2 = {};
+    overlay.querySelectorAll("[data-wi='1']").forEach(el => { newWid[el.dataset.key]  = el.value.trim(); });
+    overlay.querySelectorAll("[data-wi='2']").forEach(el => { newWid2[el.dataset.key] = el.value.trim(); });
+    const updatedWid2 = overlay.querySelector("[data-wi='2']") ? newWid2 : (c.weightInData2 || {});
+
+    // Service items — mirrors _buildServiceItems in workspace.js
+    const hasAC       = selSvcs.includes(SERVICES.AC);
+    const hasHeat     = selSvcs.includes(SERVICES.HEAT);
+    const hasFinish   = selSvcs.includes(SERVICES.FINISH);
+    const hasPrestart = selSvcs.includes(SERVICES.PRESTART);
+    const hasDriveRun = selSvcs.includes(SERVICES.DRIVE_RUN);
+    const hasCancel   = selSvcs.includes(SERVICES.CANCEL);
+
+    const svcItems = [];
+    if (hasCancel) {
+      svcItems.push({ name: SERVICES.CANCEL, displayName: "service canceled", price: 0 });
+    } else {
+      let name, dn, price = 0;
+      if (hasFinish) {
+        name  = SERVICES.FINISH;
+        const combo = hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
+        dn    = combo ? `Finish/ ${combo} started` : "Finish";
+        price = prices.SERVICE[SERVICES.FINISH] ?? 0;
+      } else if (hasAC && hasHeat) {
+        name  = SERVICES.AC_HEAT;
+        dn    = "AC & Heat started";
+        price = prices.SERVICE[SERVICES.AC_HEAT] ?? 0;
+      } else if (hasAC) {
+        name  = SERVICES.AC;
+        dn    = newTemp ? "AC (Temporarily) started" : "AC started";
+        price = prices.SERVICE[SERVICES.AC] ?? 0;
+      } else if (hasHeat) {
+        name  = SERVICES.HEAT;
+        dn    = newTemp ? "Heat (Temporarily) started" : "Heat started";
+        price = prices.SERVICE[SERVICES.HEAT] ?? 0;
+      } else if (hasPrestart) {
+        name  = SERVICES.PRESTART;
+        dn    = "System Prestarted";
+        price = prices.SERVICE[SERVICES.PRESTART] ?? 0;
+      } else if (hasDriveRun) {
+        name  = SERVICES.DRIVE_RUN;
+        dn    = "Drive Run";
+        price = prices.SERVICE[SERVICES.DRIVE_RUN] ?? 0;
+      }
+      if (name) {
+        if (new2sys) { price *= 2; dn += " (2 Systems)"; }
+        if (newTstat) { const ql = newTstatQty === 1 ? "tstat" : "tstats"; dn += ` ${newTstatQty} ${newTstat.name} ${ql}`; }
+        svcItems.push({ name, displayName: dn, price });
+      }
+    }
+
+    const svcTotal = svcItems.reduce((s, i) => s + i.price, 0);
+    const accTotal = newAccs.reduce((s, i)  => s + i.price, 0);
+    const fixTotal = newFixes.reduce((s, i) => s + i.price, 0);
+
+    const updated = {
+      ...c,
+      notes:              newNotes,
+      isTwoSystems:       new2sys,
+      isTemporary:        newTemp,
+      selectedThermostat: newTstat,
+      thermostatQuantity: newTstatQty,
+      services:           svcItems,
+      accessories:        newAccs,
+      fixes:              newFixes,
+      weightInData:       newWid,
+      weightInData2:      updatedWid2,
+      totals:             { service: svcTotal, accessory: accTotal, fix: fixTotal, total: svcTotal + accTotal + fixTotal },
+    };
+    updated.reportText = generateReportText(updated);
+
+    saveCompletion(updated);
+    renderReports();
+    close();
   });
 }
 
