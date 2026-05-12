@@ -520,7 +520,7 @@ Export JSON → Dispatch
 | 12 | ✅ Crear imágenes LV — diagramas de cableado BV por configuración de sistema. 1/2 stage comparte imagen con línea punteada para Y2. Convención de nombres en data_dictionary.md §9 | images/lv/ |
 | 13 | LV Interactivo — SVG dinámico compuesto con zoom semántico y transparencia por componente. Producto separado, planificar independientemente. lv.js construido para ser reemplazable sin tocar ningún otro módulo | Futuro |
 | 14 | ✅ Header global dinámico — `.app-header` dos estados: compact (sin job) / expanded (con job, clase `has-active-job`). Segunda fila `.active-job-row` muestra dirección + chips subdivisión/builder. `#btn-add-job` movido a `.header-actions`. | app.js / index.html / styles/app.css |
-| 15 | `.photo-options` en app.css — clase huérfana, eliminar en próximo refactor | styles/app.css |
+| 15 | ✅ `.photo-options` en app.css — clase huérfana eliminada | styles/app.css |
 | 16 | ⏳ espera Dispatch — Import Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
 | 17 | ⏳ espera Dispatch — Export Jobs — botón discreto en Tab Jobs | jobs.js / app.js |
 | 18 | ⏳ espera Dispatch — Export Completions CSV | reports.js / app.js |
