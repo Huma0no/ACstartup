@@ -17,7 +17,7 @@ import {
   calculateTotals, saveProgress, buildCompletion,
 } from "./workspace.js";
 import { generateReportText, generateDailyReport, exportJSON, exportCSV } from "./reports.js";
-import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage, calculateCFM } from "./utils.js";
+import { ouncesToPoundsAndOunces, calculateApproxAdjust, compressImage, calculateCFM, getSubcoolingDefault } from "./utils.js";
 import { downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
 import { renderLV as _renderLV, openViewer as _openViewer } from "./lv.js";
@@ -335,7 +335,10 @@ function wiGridHTML(data, attr) {
     } else {
       field = `<input type="text" inputmode="decimal" ${attr}="${key}" value="${esc(data?.[key] ?? "")}">`;
     }
-    return `<label class="wi-field"><span>${lbl}</span>${field}</label>`;
+    const warn = key === "subcoolingValue"
+      ? `<span class="sc-warning" data-sc-warn></span>`
+      : "";
+    return `<label class="wi-field"><span>${lbl}</span>${field}</label>${warn}`;
   }).join("")}</div>`;
 }
 
@@ -425,6 +428,10 @@ function renderWorkspace() {
       }
       setWeightInData(wiData1, 1);
     }
+  }
+  if (_wiOutdoor && !wiData1.oemSubcoolingGoal) {
+    wiData1 = { ...wiData1, oemSubcoolingGoal: String(getSubcoolingDefault(s1.outdoor)) };
+    setWeightInData(wiData1, 1);
   }
   const _wiLc = wiData1.factoryLineConfig || "";
   const _wiBc = _wiOutdoor ? (_wiLc.includes("revisedCharge") ? _wiOutdoor.revisedCharge : _wiOutdoor.FactoryCharge) : 0;
@@ -1191,6 +1198,20 @@ function wireEvents() {
         data.subcoolingDeviation = String(Math.abs(scVal - oemGoal));
         const devInput = wsForm.querySelector(`[${attr}="subcoolingDeviation"]`);
         if (devInput) devInput.value = data.subcoolingDeviation;
+      }
+      const warnContainer = document.getElementById(sys === 1 ? "wi-fields-sys1" : "wi-fields-sys2");
+      const warnEl = warnContainer?.querySelector("[data-sc-warn]");
+      if (warnEl) {
+        warnEl.classList.remove("sc-warn-danger", "sc-warn-caution");
+        if (!isNaN(scVal) && scVal < 0) {
+          warnEl.textContent = "negative reading";
+          warnEl.classList.add("sc-warn-danger");
+        } else if (!isNaN(scVal) && !isNaN(oemGoal) && Math.abs(scVal - oemGoal) > 3) {
+          warnEl.textContent = `±${Math.abs(scVal - oemGoal).toFixed(1)}°F from goal`;
+          warnEl.classList.add("sc-warn-caution");
+        } else {
+          warnEl.textContent = "";
+        }
       }
       // Recalc approxAdjustOz when linesetLength changes
       if (sys === 1 && e.target.dataset.wi === "linesetLength") {

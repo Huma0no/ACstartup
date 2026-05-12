@@ -3020,3 +3020,7 @@ dialog.modal[open] {
 .chip-remove:hover { opacity: 1; }
 
 .add-job-section { border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-3); }
+
+.sc-warning      { font-size: var(--font-size-xs); padding: 2px 6px; border-radius: var(--radius-sm); display: none; }
+.sc-warn-danger  { display: inline-block; background: var(--color-danger-soft);  color: var(--color-danger); }
+.sc-warn-caution { display: inline-block; background: var(--color-warning-soft); color: var(--color-warning); }

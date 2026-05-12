@@ -511,7 +511,7 @@ Export JSON → Dispatch
 | 3 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
 | 4 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
 | 5 | ✅ Imágenes indoor ML180UH — 6 archivos renombrados a uppercase vía `git mv -f` para coincidir con el catálogo. Falla en Netlify (Linux, case-sensitive) resuelta. | data.js / images/ |
-| 6 | SC out-of-range warnings — show discrete alert when subcooling is negative or outside expected range | app.js |
+| 6 | ✅ SC out-of-range warnings — inline warning span after subcoolingValue field; `getSubcoolingDefault()` wired up to auto-fill `oemSubcoolingGoal` on workspace load (8°F Goodman GL*, 10°F all others). Per-model precision via catalog data deferred (Option A). | app.js / utils.js / styles/app.css |
 | 7 | `_renderNewTotalCharge` lives in app.js but belongs in workspace.js — migrate in next refactor session | app.js → workspace.js |
 | 8 | factoryLineConfig change handler lives in app.js — move to workspace.js in next refactor session | app.js → workspace.js |
 | 9 | Photos Phase 2 pending — GPS device fallback, GPS injection at ZIP time, ZIP export/download | workspace.js / utils.js |
