@@ -1472,12 +1472,25 @@ function openEditModal(completion) {
   const wid  = c.weightInData  || {};
   const wid2 = c.weightInData2 || {};
 
-  const makeItemRow = (item) => `
+  const makeItemRow = (item, type) => {
+    const catalog = (type === "acc"
+      ? Object.values(ACCESSORIES).filter(v => v !== ACCESSORIES.OTRO)
+      : Object.values(FIXES).filter(v => v !== FIXES.OTRO));
+    const inCatalog = catalog.includes(item.name);
+    const selVal    = inCatalog ? item.name : "__other__";
+    const otherVal  = inCatalog ? "" : item.name;
+    return `
     <div class="em-row">
-      <input type="text"   class="em-name"  value="${esc(item.name)}" placeholder="Name" />
+      <select class="em-sel em-input" style="flex:1;min-width:0;width:auto">
+        <option value="__other__"${selVal === "__other__" ? " selected" : ""}>Other...</option>
+        ${catalog.map(v => `<option value="${esc(v)}"${item.name === v ? " selected" : ""}>${esc(v)}</option>`).join("")}
+      </select>
+      <input type="text" class="em-other" value="${esc(otherVal)}" placeholder="Custom name"
+        style="flex:1;min-width:0;width:auto${inCatalog ? ";display:none" : ""}" />
       <input type="number" class="em-price" value="${item.price ?? 0}" min="0" step="any" />
       <button type="button" class="btn em-remove">✕</button>
     </div>`;
+  };
 
   const wiSection = (data, sys) => `
     <details class="em-details"${Object.values(data).some(Boolean) ? " open" : ""}>
@@ -1543,12 +1556,12 @@ function openEditModal(completion) {
         </div>
         <div class="em-section">
           <div class="em-section-title">Accessories</div>
-          <div id="_em-acclist">${(c.accessories || []).map(makeItemRow).join("")}</div>
+          <div id="_em-acclist">${(c.accessories || []).map(a => makeItemRow(a, "acc")).join("")}</div>
           <button type="button" id="_em-addacc" class="btn em-add-btn">+ Add Accessory</button>
         </div>
         <div class="em-section">
           <div class="em-section-title">Fixes</div>
-          <div id="_em-fixlist">${(c.fixes || []).map(makeItemRow).join("")}</div>
+          <div id="_em-fixlist">${(c.fixes || []).map(f => makeItemRow(f, "fix")).join("")}</div>
           <button type="button" id="_em-addfix" class="btn em-add-btn">+ Add Fix</button>
         </div>
         ${wiSection(wid, 1)}
@@ -1569,11 +1582,17 @@ function openEditModal(completion) {
     if (e.target === overlay) close();
     if (e.target.classList.contains("em-remove")) e.target.closest(".em-row")?.remove();
   });
+  overlay.addEventListener("change", (e) => {
+    if (e.target.classList.contains("em-sel")) {
+      const other = e.target.closest(".em-row")?.querySelector(".em-other");
+      if (other) other.style.display = e.target.value === "__other__" ? "" : "none";
+    }
+  });
   overlay.querySelector("#_em-addacc").addEventListener("click", () =>
-    overlay.querySelector("#_em-acclist").insertAdjacentHTML("beforeend", makeItemRow({ name: "", price: 0 }))
+    overlay.querySelector("#_em-acclist").insertAdjacentHTML("beforeend", makeItemRow({ name: "", price: 0 }, "acc"))
   );
   overlay.querySelector("#_em-addfix").addEventListener("click", () =>
-    overlay.querySelector("#_em-fixlist").insertAdjacentHTML("beforeend", makeItemRow({ name: "", price: 0 }))
+    overlay.querySelector("#_em-fixlist").insertAdjacentHTML("beforeend", makeItemRow({ name: "", price: 0 }, "fix"))
   );
 
   overlay.querySelector("#_em-apply").addEventListener("click", () => {
@@ -1588,7 +1607,10 @@ function openEditModal(completion) {
 
     const collectItems = (listId) =>
       Array.from(overlay.querySelectorAll(`#${listId} .em-row`)).map(row => {
-        const name  = row.querySelector(".em-name").value.trim();
+        const sel   = row.querySelector(".em-sel");
+        const name  = sel.value === "__other__"
+          ? row.querySelector(".em-other").value.trim()
+          : sel.value;
         const price = parseFloat(row.querySelector(".em-price").value) || 0;
         return name ? { name, displayName: name.toLowerCase(), price } : null;
       }).filter(Boolean);
