@@ -688,8 +688,8 @@ function renderReports() {
       c.totals.fix       ? `Fix $${c.totals.fix}`       : "",
     ].filter(Boolean).join(" | ");
     return `
-    <li class="report-item" data-jobid="${esc(c.jobId)}" style="position:relative;">
-      <button class="btn" data-delete="${esc(c.jobId)}" style="position:absolute;top:6px;right:6px;padding:2px 7px;font-size:var(--font-size-xs);">✕</button>
+    <li class="report-card" data-jobid="${esc(c.jobId)}">
+      <button class="btn report-delete-btn" data-delete="${esc(c.jobId)}">✕</button>
       <div class="report-addr">
         <strong>${esc(c.address)}</strong>
         <span class="chip chip-sm chip-primary">$${c.totals.total}</span>${bd ? `<span class="report-breakdown">${bd}</span>` : ""}
@@ -1268,6 +1268,14 @@ function wireEvents() {
     if (edit)   { const c = getCompletions().find(c => c.jobId === edit.dataset.editReport); if (c) openEditModal(c); }
     if (toggle) { const p = document.getElementById(`share-panel-${toggle.dataset.shareToggle}`); if (p) p.classList.toggle("hidden"); }
     if (share)  _shareVia(share.dataset.shareMethod, share.dataset.shareText);
+    if (!copy && !del && !edit && !toggle && !share) {
+      const card = e.target.closest(".report-card");
+      if (!card) return;
+      const wasSelected = card.classList.contains("report-selected");
+      document.querySelectorAll("#reports-list .report-card.report-selected")
+        .forEach(c => c.classList.remove("report-selected"));
+      if (!wasSelected) card.classList.add("report-selected");
+    }
   });
 
   // Reports — global actions

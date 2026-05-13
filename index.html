@@ -279,21 +279,23 @@
 
       <!-- Tab: Reports -->
       <section id="tab-reports" class="tab-panel hidden" role="tabpanel">
+        <div class="reports-header">
+          <button type="button" id="btn-export-json" class="btn">DB</button>
+          <button type="button" id="btn-export-csv" class="btn">CSV</button>
+        </div>
         <ul id="reports-list" class="reports-list"></ul>
         <p id="reports-empty" class="empty-state hidden">No reports yet</p>
         <div id="reports-global-actions" class="hidden">
           <div class="btn-row">
-            <button type="button" id="btn-share-all" class="btn-secondary">📤 Share All</button>
-            <button type="button" id="btn-delete-all" class="btn-secondary">🗑️ Delete All</button>
-            <button type="button" id="btn-export-json" class="btn-secondary">💾 DB</button>
-            <button type="button" id="btn-export-csv" class="btn-secondary">📊 CSV</button>
+            <button type="button" id="btn-delete-all" class="btn">Delete All</button>
+            <button type="button" id="btn-share-all" class="btn">Share All</button>
           </div>
           <div id="share-all-panel" class="hidden">
             <div class="btn-row">
-              <button type="button" class="btn" data-share-all-method="whatsapp">📱 WhatsApp</button>
-              <button type="button" class="btn" data-share-all-method="sms">💬 SMS</button>
-              <button type="button" class="btn" data-share-all-method="email">📧 Email</button>
-              <button type="button" class="btn" data-share-all-method="copy">📋 Copy</button>
+              <button type="button" class="btn" data-share-all-method="whatsapp">WhatsApp</button>
+              <button type="button" class="btn" data-share-all-method="sms">SMS</button>
+              <button type="button" class="btn" data-share-all-method="email">Email</button>
+              <button type="button" class="btn" data-share-all-method="copy">Copy</button>
             </div>
           </div>
         </div>
