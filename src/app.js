@@ -485,12 +485,16 @@ function renderWorkspace() {
     SERVICES.DRIVE_RUN,
     SERVICES.CANCEL,
   ];
-  document.getElementById("service-type-buttons").innerHTML = SVC_BTNS.map(
-    (n) =>
-      `<button class="chip chip-sm${
-        sel.includes(n) ? " chip-primary" : ""
-      }" data-service="${esc(n)}">${esc(n)}</button>`
-  ).join("");
+  document.getElementById("service-type-buttons").innerHTML =
+    `<div class="ws-btn-grid">` +
+    SVC_BTNS.map(
+      (n) =>
+        `<button class="ws-btn${
+          sel.includes(n) ? " ws-btn-active" : ""
+        }" data-service="${esc(n)}">${esc(n)}</button>`
+    ).join("") +
+    `<button class="ws-btn">Other</button>` +
+    `</div>`;
   document.getElementById("ac-heat-options").innerHTML = `
     <label class="toggle-row"><span>2 Systems</span>
       <input type="checkbox" id="ws-two-systems"${
@@ -504,39 +508,69 @@ function renderWorkspace() {
   // Step 3 — Thermostat
   const tsel = state.selectedThermostat;
   document.getElementById("thermostat-buttons").innerHTML =
+    `<div class="ws-btn-grid">` +
     THERMOSTATS.map(
       (n) =>
-        `<button class="chip chip-sm${
-          tsel === n ? " chip-primary" : ""
+        `<button class="ws-btn${
+          tsel === n ? " ws-btn-active" : ""
         }" data-tstat="${esc(n)}">${esc(n)}</button>`
     ).join("") +
+    `<button class="ws-btn">Other</button>` +
+    `</div>` +
     (tsel
-      ? `<span class="qty-ctrl">
-      <button data-qty="-1">−</button>
-      <span>${state.thermostatQuantity}</span>
-      <button data-qty="+1">+</button>
-    </span>`
+      ? `<div class="ws-qty-row">` +
+        ["1", "2", "3", "4+"].map((q) => {
+          const isActive =
+            q === "4+"
+              ? state.thermostatQuantity >= 4
+              : state.thermostatQuantity === parseInt(q);
+          return `<button class="ws-qty-btn${
+            isActive ? " ws-qty-active" : ""
+          }" data-qty-select="${q}">${q}</button>`;
+        }).join("") +
+        `</div>`
       : "");
 
   // Step 4 — Accessories
-  document.getElementById("accessory-buttons").innerHTML = Object.values(
-    ACCESSORIES
-  )
-    .map((n) => {
-      const active =
-        state.selectedAccessories.includes(n) ||
-        state.customAccessories.some((a) => a.name === n);
-      const isTwoSys =
-        state.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(n);
-      const disp =
-        (ACCESSORY_DISPLAY[n] || n.toLowerCase()) +
-        (isTwoSys ? " (2 sys)" : "");
-      const custom = CUSTOM_PRICE_ACCESSORIES.includes(n) ? " data-custom" : "";
-      return `<button class="chip chip-sm${
-        active ? " chip-accessory" : ""
-      }" data-accessory="${esc(n)}"${custom}>${esc(disp)}</button>`;
-    })
-    .join("");
+  const _accBtn = (n, extraClass = "") => {
+    const active =
+      state.selectedAccessories.includes(n) ||
+      state.customAccessories.some((a) => a.name === n);
+    const isTwoSys = state.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(n);
+    const disp =
+      (ACCESSORY_DISPLAY[n] || n.toLowerCase()) + (isTwoSys ? " (2 sys)" : "");
+    const custom = CUSTOM_PRICE_ACCESSORIES.includes(n) ? " data-custom" : "";
+    return `<button class="ws-btn${extraClass}${
+      active ? " ws-btn-active" : ""
+    }" data-accessory="${esc(n)}"${custom}>${esc(disp)}</button>`;
+  };
+  document.getElementById("accessory-buttons").innerHTML =
+    `<div class="ws-zone-grid">` +
+    _accBtn(ACCESSORIES.UT3000,   " ws-zone-ut3000") +
+    _accBtn(ACCESSORIES.DAPC,     " ws-zone-dapc") +
+    _accBtn(ACCESSORIES.E_BYPASS, " ws-zone-ebypass") +
+    _accBtn(ACCESSORIES.HARMONY,  " ws-zone-harmony") +
+    _accBtn(ACCESSORIES.HZ322,    " ws-zone-hz322") +
+    _accBtn(ACCESSORIES.BYPASS,   " ws-zone-bypass") +
+    `</div>` +
+    `<div class="ws-btn-grid">` +
+    [
+      ACCESSORIES.FIN180P,
+      ACCESSORIES.FIN6_MD,
+      ACCESSORIES.DEHUM,
+      ACCESSORIES.APRIL_AIR,
+      ACCESSORIES.FA_INTAKE,
+      ACCESSORIES.FLOAT_SWITCH,
+      ACCESSORIES.WEIGHT_IN_DATA,
+      ACCESSORIES.TRANE_HARNESS,
+      ACCESSORIES.ECOIL_WIRE,
+      ACCESSORIES.RDS,
+      ACCESSORIES.LP_KIT_LENNOX_1STG,
+      ACCESSORIES.LP_KIT_LENNOX_2STG,
+      ACCESSORIES.LP_KIT_GOODMAN,
+      ACCESSORIES.OTRO,
+    ].map((n) => _accBtn(n)).join("") +
+    `</div>`;
 
   // Step 5 — Fixes
   const _groupedKeys = new Set(
@@ -556,8 +590,8 @@ function renderWorkspace() {
       })
       .join("");
     return `<div class="fix-group">
-      <button class="chip chip-sm${
-        count > 0 ? " chip-primary" : ""
+      <button class="ws-btn${
+        count > 0 ? " ws-btn-active" : ""
       }" data-group-toggle="${esc(group.id)}">${esc(
       group.label
     )}${badge}</button>
@@ -574,13 +608,13 @@ function renderWorkspace() {
         state.customFixes.some((f) => f.name === n);
       const disp = FIX_DISPLAY[n] || n.toLowerCase();
       const custom = CUSTOM_PRICE_FIXES.includes(n) ? " data-custom" : "";
-      return `<button class="chip chip-sm${
-        active ? " chip-accessory" : ""
+      return `<button class="ws-btn${
+        active ? " ws-btn-active" : ""
       }" data-fix="${esc(n)}"${custom}>${esc(disp)}</button>`;
     })
     .join("");
   document.getElementById("fixes-list").innerHTML =
-    `<div class="fix-chips-row">${_standaloneHTML}</div>` + _groupsHTML;
+    `<div class="ws-btn-grid">${_standaloneHTML}</div>` + _groupsHTML;
 
   // Step 5 — Weight-In
   const s1 = job.system1 || {};
@@ -1437,6 +1471,7 @@ function wireEvents() {
     const svc = e.target.closest("[data-service]");
     const tst = e.target.closest("[data-tstat]");
     const qty = e.target.closest("[data-qty]");
+    const qtySelect = e.target.closest("[data-qty-select]");
     const acc = e.target.closest("[data-accessory]");
     const grp = e.target.closest("[data-group-toggle]");
     const fix = e.target.closest("[data-fix]");
@@ -1462,6 +1497,13 @@ function wireEvents() {
         state.selectedThermostat,
         Math.max(1, state.thermostatQuantity + parseInt(qty.dataset.qty))
       );
+      saveProgress(_activeJob);
+      renderWorkspace();
+      return;
+    }
+    if (qtySelect) {
+      const v = qtySelect.dataset.qtySelect;
+      setThermostat(state.selectedThermostat, v === "4+" ? 4 : parseInt(v));
       saveProgress(_activeJob);
       renderWorkspace();
       return;
