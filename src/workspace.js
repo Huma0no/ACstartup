@@ -266,7 +266,7 @@ export async function initSitePhotos() {
 
 export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
   const { selectedServices, selectedAccessories, customAccessories,
-          selectedFixes, customFixes, isTwoSystems, weightInData, weightInData2 } = state;
+          selectedFixes, customFixes, isTwoSystems } = state;
 
   // Rule 6: Cancel → everything is $0
   if (selectedServices.includes(SERVICES.CANCEL)) {
@@ -300,11 +300,6 @@ export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
   if (isTwoSystems) service *= 2;
 
   // --- Accessories ---
-  const hasWeightInData =
-    (weightInData  && Object.values(weightInData).some(Boolean)) ||
-    (isTwoSystems && weightInData2 && Object.values(weightInData2).some(Boolean));
-  const weightManuallySelected = selectedAccessories.includes(ACCESSORIES.WEIGHT_IN_DATA);
-
   let accessory = 0;
   for (const name of selectedAccessories) {
     let price = prices.ACCESSORY[name] ?? 0;
@@ -314,14 +309,6 @@ export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
     }
     // Rule 2: selected accessories double with 2 Systems
     if (isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
-    accessory += price;
-  }
-
-  // Auto-charge Weight-In if data entered but not manually selected
-  if (hasWeightInData && !weightManuallySelected) {
-    let price = prices.ACCESSORY[ACCESSORIES.WEIGHT_IN_DATA];
-    if (hasFinish) price += prices.WEIGHT_IN_FINISH_ADDON;
-    if (isTwoSystems) price *= 2;
     accessory += price;
   }
 
@@ -444,17 +431,6 @@ function _buildAccessoryItems(s, prices) {
     if (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
     const displayName = (ACCESSORY_DISPLAY[name] || name.toLowerCase()) + (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name) ? " (2 sys)" : "");
     items.push({ name, displayName, price });
-  }
-
-  const hasWeightInData =
-    (s.weightInData  && Object.values(s.weightInData).some(Boolean)) ||
-    (s.isTwoSystems && s.weightInData2 && Object.values(s.weightInData2).some(Boolean));
-
-  if (hasWeightInData && !s.selectedAccessories.includes(ACCESSORIES.WEIGHT_IN_DATA)) {
-    let price = prices.ACCESSORY[ACCESSORIES.WEIGHT_IN_DATA];
-    if (hasFinish)        price += prices.WEIGHT_IN_FINISH_ADDON;
-    if (s.isTwoSystems)  price *= 2;
-    items.push({ name: ACCESSORIES.WEIGHT_IN_DATA, displayName: ACCESSORY_DISPLAY[ACCESSORIES.WEIGHT_IN_DATA], price });
   }
 
   for (const acc of s.customAccessories) {

@@ -173,7 +173,7 @@ Estado del workspace activo: carga el job, registra selecciones, calcula total e
 2. 2 Systems duplica precio de servicio y accesorios marcados
 3. Prestart es mutuamente excluyente con AC/Heat/Finish
 4. Finish reemplaza el precio de AC/Heat — base $20
-5. Weight-In + Finish = $10 + $10 addon
+5. Weight-In + Finish = $10 + $10 addon — only when Weigh-In chip is manually selected
 6. Cancel anula todo cobro
 7. Temporarily modifica solo el texto del reporte
 8. Precios del usuario sobreescriben defaults vía parámetro `prices`
@@ -495,7 +495,7 @@ Export JSON → Dispatch
 | 2 | 2 Systems duplica precio de servicio y accesorios marcados | workspace.js |
 | 3 | Prestart es mutuamente excluyente con AC y Heat | workspace.js |
 | 4 | Finish + AC/Heat = $20 base | workspace.js |
-| 5 | Weight-In + Finish = $10 + $10 addon | workspace.js |
+| 5 | Weight-In + Finish = $10 + $10 addon — charged only when chip is manually selected | workspace.js |
 | 6 | Cancel anula todo cobro | workspace.js |
 | 7 | Temporarily modifica solo el texto del reporte | reports.js |
 | 8 | Precios del usuario sobreescriben defaults de data.js | settings.js |
