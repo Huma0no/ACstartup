@@ -171,7 +171,7 @@ export function openViewer(title, imgPath) {
     viewerImg.style.display = "none";
     const uc = document.createElement("div");
     uc.className = "lv-under-construction";
-    uc.innerHTML = `<div class="lv-uc-icon">🚧</div><div class="lv-uc-text">Under Construction</div><div class="lv-uc-sub">${title}</div>`;
+    uc.innerHTML = `<div class="lv-uc-text">Under Construction</div><div class="lv-uc-sub">${title}</div>`;
     viewerBody.appendChild(uc);
   };
 

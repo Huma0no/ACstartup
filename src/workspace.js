@@ -456,8 +456,8 @@ function _buildFixItems(s, prices) {
 // ---------------------------------------------------------------------------
 
 const _SLOT_LABELS = {
-  weight: "📁 Scale", fan: "📁 Fan Speed",
-  weight2: "📁 Scale", fan2: "📁 Fan Speed",
+  weight: "Scale", fan: "Fan Speed",
+  weight2: "Scale", fan2: "Fan Speed",
 };
 
 function _dbKey(key) {
@@ -498,7 +498,7 @@ function _showPreview(key, file, gps) {
 
   if (gps) {
     const chip = document.createElement("span");
-    chip.textContent = "📍 EXIF";
+    chip.textContent = "EXIF";
     chip.style.cssText = "font-size:var(--font-size-xs);color:var(--color-text-secondary);";
     wrap.appendChild(chip);
   }
