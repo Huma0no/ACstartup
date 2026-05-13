@@ -1874,12 +1874,18 @@ input[type="number"]::-webkit-outer-spin-button {
   justify-content: flex-end;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
 }
 
 #btn-delete-all {
-  color: var(--color-danger);
+  background: var(--color-danger);
+  color: #fff;
   border-color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-3);
+}
+
+#reports-global-actions {
+  padding: 0 var(--space-4) var(--space-4);
 }
 
 #reports-global-actions .btn-row {
