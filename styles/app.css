@@ -954,8 +954,6 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: var(--tr-fast);
-  text-align: center;
-  width: 100%;
 }
 .ws-btn.ws-btn-active {
   background: var(--color-accent-soft);
@@ -1002,21 +1000,11 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 #accessory-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-}
-#accessory-buttons .ws-btn-grid {
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  grid-column: 1 / -1;
-}
-.ws-btn-grid .ws-btn {
-  flex: 1 1 auto;
-  min-width: 100px;
+  display: block;
 }
 #service-type-buttons,
 #thermostat-buttons {
+  display: grid;
   grid-template-columns: repeat(2, 1fr);
 }
 
@@ -1801,13 +1789,6 @@ input[type="number"]::-webkit-outer-spin-button {
   min-height: 52px;
 }
 
-/* Button sizes for main sections */
-#service-type-buttons .btn,
-#thermostat-buttons .btn {
-  min-height: 60px;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-}
 
 #ac-heat-options .btn {
   min-height: 48px;
