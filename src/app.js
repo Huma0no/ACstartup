@@ -553,10 +553,6 @@ function renderWorkspace() {
       ACCESSORIES.DAPC,
       ACCESSORIES.E_BYPASS,
       ACCESSORIES.BYPASS,
-    ].map((n) => _accBtn(n)).join("") +
-    `</div>` +
-    `<div class="ws-btn-grid">` +
-    [
       ACCESSORIES.FIN180P,
       ACCESSORIES.DEHUM,
       ACCESSORIES.FLOAT_SWITCH,
