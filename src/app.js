@@ -486,15 +486,13 @@ function renderWorkspace() {
     SERVICES.CANCEL,
   ];
   document.getElementById("service-type-buttons").innerHTML =
-    `<div class="ws-btn-grid">` +
     SVC_BTNS.map(
       (n) =>
         `<button class="ws-btn${
           sel.includes(n) ? " ws-btn-active" : ""
         }" data-service="${esc(n)}">${esc(n)}</button>`
     ).join("") +
-    `<button class="ws-btn">Other</button>` +
-    `</div>`;
+    `<button class="ws-btn">Other</button>`;
   document.getElementById("ac-heat-options").innerHTML = `
     <label class="toggle-row"><span>2 Systems</span>
       <input type="checkbox" id="ws-two-systems"${
@@ -508,7 +506,6 @@ function renderWorkspace() {
   // Step 3 — Thermostat
   const tsel = state.selectedThermostat;
   document.getElementById("thermostat-buttons").innerHTML =
-    `<div class="ws-btn-grid">` +
     THERMOSTATS.map(
       (n) =>
         `<button class="ws-btn${
@@ -516,7 +513,6 @@ function renderWorkspace() {
         }" data-tstat="${esc(n)}">${esc(n)}</button>`
     ).join("") +
     `<button class="ws-btn">Other</button>` +
-    `</div>` +
     (tsel
       ? `<div class="ws-qty-row">` +
         ["1", "2", "3", "4+"].map((q) => {
