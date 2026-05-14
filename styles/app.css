@@ -967,6 +967,7 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-bottom: var(--space-3);
 }
 .ws-qty-row {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-2);
@@ -1789,7 +1790,6 @@ input[type="number"]::-webkit-outer-spin-button {
   width: 100%;
   min-height: 52px;
 }
-
 
 #ac-heat-options .btn {
   min-height: 48px;
