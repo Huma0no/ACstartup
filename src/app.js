@@ -532,7 +532,7 @@ function renderWorkspace() {
       : "");
 
   // Step 4 — Accessories
-  const _accBtn = (n, extraClass = "") => {
+  const _accBtn = (n) => {
     const active =
       state.selectedAccessories.includes(n) ||
       state.customAccessories.some((a) => a.name === n);
@@ -540,30 +540,32 @@ function renderWorkspace() {
     const disp =
       (ACCESSORY_DISPLAY[n] || n.toLowerCase()) + (isTwoSys ? " (2 sys)" : "");
     const custom = CUSTOM_PRICE_ACCESSORIES.includes(n) ? " data-custom" : "";
-    return `<button class="ws-btn${extraClass}${
+    return `<button class="ws-btn${
       active ? " ws-btn-active" : ""
     }" data-accessory="${esc(n)}"${custom}>${esc(disp)}</button>`;
   };
   document.getElementById("accessory-buttons").innerHTML =
     `<div class="ws-zone-grid">` +
-    _accBtn(ACCESSORIES.UT3000,   " ws-zone-ut3000") +
-    _accBtn(ACCESSORIES.DAPC,     " ws-zone-dapc") +
-    _accBtn(ACCESSORIES.E_BYPASS, " ws-zone-ebypass") +
-    _accBtn(ACCESSORIES.HARMONY,  " ws-zone-harmony") +
-    _accBtn(ACCESSORIES.HZ322,    " ws-zone-hz322") +
-    _accBtn(ACCESSORIES.BYPASS,   " ws-zone-bypass") +
+    [
+      ACCESSORIES.UT3000,
+      ACCESSORIES.HZ322,
+      ACCESSORIES.HARMONY,
+      ACCESSORIES.DAPC,
+      ACCESSORIES.E_BYPASS,
+      ACCESSORIES.BYPASS,
+    ].map((n) => _accBtn(n)).join("") +
     `</div>` +
     `<div class="ws-btn-grid">` +
     [
       ACCESSORIES.FIN180P,
-      ACCESSORIES.FIN6_MD,
       ACCESSORIES.DEHUM,
-      ACCESSORIES.APRIL_AIR,
-      ACCESSORIES.FA_INTAKE,
       ACCESSORIES.FLOAT_SWITCH,
       ACCESSORIES.WEIGHT_IN_DATA,
-      ACCESSORIES.TRANE_HARNESS,
       ACCESSORIES.ECOIL_WIRE,
+      ACCESSORIES.APRIL_AIR,
+      ACCESSORIES.FA_INTAKE,
+      ACCESSORIES.FIN6_MD,
+      ACCESSORIES.TRANE_HARNESS,
       ACCESSORIES.RDS,
       ACCESSORIES.LP_KIT_LENNOX_1STG,
       ACCESSORIES.LP_KIT_LENNOX_2STG,
