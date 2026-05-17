@@ -259,7 +259,7 @@ function jobCardHTML(job, ci) {
       .map(
         (a) =>
           `<span class="chip chip-sm chip-accessory">${esc(
-            ACCESSORY_DISPLAY[a] || a.toLowerCase()
+            ACCESSORY_DISPLAY[a]?.label || a.toLowerCase()
           )}</span>`
       ),
     job.isTwoSystems &&
@@ -541,7 +541,7 @@ function renderWorkspace() {
       state.customAccessories.some((a) => a.name === n);
     const isTwoSys = state.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(n);
     const disp =
-      (ACCESSORY_DISPLAY[n] || n.toLowerCase()) + (isTwoSys ? " (2 sys)" : "");
+      (ACCESSORY_DISPLAY[n]?.label || n.toLowerCase()) + (isTwoSys ? " (2 sys)" : "");
     const custom = CUSTOM_PRICE_ACCESSORIES.includes(n) ? " data-custom" : "";
     return `<button class="ws-btn${
       active ? " ws-btn-active" : ""
@@ -607,7 +607,7 @@ function renderWorkspace() {
       const active =
         state.selectedFixes.includes(n) ||
         state.customFixes.some((f) => f.name === n);
-      const disp = FIX_DISPLAY[n] || n.toLowerCase();
+      const disp = FIX_DISPLAY[n]?.label || n.toLowerCase();
       const custom = CUSTOM_PRICE_FIXES.includes(n) ? " data-custom" : "";
       return `<button class="ws-btn${
         active ? " ws-btn-active" : ""
@@ -704,19 +704,19 @@ function updateAccordionSummaries() {
 
   const accParts = [
     ...state.selectedAccessories.map(
-      (n) => ACCESSORY_DISPLAY[n] || n.toLowerCase()
+      (n) => ACCESSORY_DISPLAY[n]?.label || n.toLowerCase()
     ),
     ...state.customAccessories.map(
-      (a) => ACCESSORY_DISPLAY[a.name] || a.name.toLowerCase()
+      (a) => ACCESSORY_DISPLAY[a.name]?.label || a.name.toLowerCase()
     ),
   ];
   setText("#section-accessories .acc-summary", accParts.join(" · ") || "—");
   setDone("section-accessories", accParts.length > 0);
 
   const fixParts = [
-    ...state.selectedFixes.map((n) => FIX_DISPLAY[n] || n.toLowerCase()),
+    ...state.selectedFixes.map((n) => FIX_DISPLAY[n]?.label || n.toLowerCase()),
     ...state.customFixes.map(
-      (f) => FIX_DISPLAY[f.name] || f.name.toLowerCase()
+      (f) => FIX_DISPLAY[f.name]?.label || f.name.toLowerCase()
     ),
   ];
   setText("#section-fixes .acc-summary", fixParts.join(" · ") || "—");
@@ -1092,7 +1092,7 @@ function _showEquipLinks(model, getFn, linksMap, container) {
 function _renderNewJobAccChips() {
   document.getElementById("new-job-acc-chips").innerHTML = _newJobAccChips
     .map((name) => {
-      const disp = ACCESSORY_DISPLAY[name] || name.toLowerCase();
+      const disp = ACCESSORY_DISPLAY[name]?.label || name.toLowerCase();
       return `<span class="chip chip-sm chip-secondary">${esc(
         disp
       )}<button type="button" class="chip-remove" data-remove-acc="${esc(
@@ -1125,7 +1125,7 @@ function buildAddJobSection() {
     .map(
       (a) =>
         `<option value="${esc(a)}">${esc(
-          ACCESSORY_DISPLAY[a] || a.toLowerCase()
+          ACCESSORY_DISPLAY[a]?.label || a.toLowerCase()
         )}</option>`
     )
     .join("");

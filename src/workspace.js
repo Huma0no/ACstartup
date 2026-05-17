@@ -429,7 +429,7 @@ function _buildAccessoryItems(s, prices) {
     let price = prices.ACCESSORY[name] ?? 0;
     if (name === ACCESSORIES.WEIGHT_IN_DATA && hasFinish) price += prices.WEIGHT_IN_FINISH_ADDON;
     if (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
-    const displayName = (ACCESSORY_DISPLAY[name] || name.toLowerCase()) + (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name) ? " (2 sys)" : "");
+    const displayName = (ACCESSORY_DISPLAY[name]?.report || name.toLowerCase()) + (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name) ? " (2 sys)" : "");
     items.push({ name, displayName, price });
   }
 
@@ -443,7 +443,7 @@ function _buildAccessoryItems(s, prices) {
 function _buildFixItems(s, prices) {
   const items = [];
   for (const name of s.selectedFixes) {
-    items.push({ name, displayName: FIX_DISPLAY[name] || name.toLowerCase(), price: prices.FIX[name] ?? 0 });
+    items.push({ name, displayName: FIX_DISPLAY[name]?.report || name.toLowerCase(), price: prices.FIX[name] ?? 0 });
   }
   for (const fix of s.customFixes) {
     items.push({ name: fix.name, displayName: fix.name.toLowerCase(), price: fix.price });
