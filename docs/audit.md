@@ -115,6 +115,8 @@ Tres formatos distintos para el campo `freon`:
 
 Todos los demás módulos están en `src/`. Este archivo carga desde raíz. Puede ser intencional o un residuo. Verificar si existe, qué exporta, y si sus responsabilidades deberían estar en otro módulo.
 
+**Nota adicional — botones de header:** Los tres botones del header (`btn-open-quick-calc`, `btn-settings`, `btn-open-troubleshoot`) están todos cableados en `wireEvents()`. Quick Calc y Settings abren sus modales correctamente. El botón Troubleshoot (`btn-open-troubleshoot`) ejecuta su handler — añade la clase `"open"` a `ts-drawer` y `"visible"` a `ts-overlay` — pero el drawer no se hace visible en pantalla. **Estado: bug conocido, nunca funcionó en esta implementación. Movido al backlog (ver 3E en development_plan.md).**
+
 ---
 
 ## ℹ️ Observaciones — Sin acción inmediata

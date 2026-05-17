@@ -124,6 +124,10 @@ No bloquean pero afectan experiencia en campo.
 - [ ] **PDF Import** — implementar UI usando src/importer.js existente.
       Flujo: seleccionar PDF → OCR → IA parsea campos → usuario revisa →
       confirmar importación.
+- [ ] **Troubleshoot drawer** — investigar por qué `ts-drawer` no se hace
+      visible cuando se presiona `btn-open-troubleshoot`. El handler se ejecuta
+      (añade clase `"open"` al drawer y `"visible"` al overlay) pero el drawer
+      no aparece. Implementar o simplificar.
 
 ---
 
