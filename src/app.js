@@ -275,8 +275,9 @@ function jobCardHTML(job, ci) {
     const cfm  = dOut ? calculateCFM(dOut.btu) : null;
     const sc   =
       dOut?.oemSubcoolingGoal != null ? `${dOut.oemSubcoolingGoal} °F` : "—";
-    const showRevised = dOut?.freon === "R-454B" || dOut?.freon === "R-32";
-    const rev  = dOut?.revisedCharge > 0 ? `${dOut.revisedCharge} oz` : "—";
+    const rev  = dOut?.freon === "R-454B"
+      ? (dOut.revisedCharge != null ? `${dOut.revisedCharge} oz` : "—")
+      : "N/A";
     const esp  = dIn?.pESP != null && dIn.pESP !== 9.9
       ? `ESP ~${dIn.pESP}" wc`
       : null;
@@ -309,10 +310,10 @@ function jobCardHTML(job, ci) {
             dOut?.FactoryCharge ? `${dOut.FactoryCharge} oz` : "—"
           }</div>
         </div>
-        ${showRevised ? `<div class="equip-cell">
+        <div class="equip-cell">
           <div class="equip-cell-label">Revised</div>
           <div class="equip-cell-value equip-cell-signal">${rev}</div>
-        </div>` : ""}
+        </div>
       </div>
       <div class="equip-row">
         <div class="equip-cell">
