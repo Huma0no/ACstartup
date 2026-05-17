@@ -385,72 +385,72 @@ export const OUTDOOR_CATALOG = {
   "EL17XP1-60":  { uType: "Heat Pump",  btu: 60000, freon: "R-410A", series: "EL17XP1", FactoryCharge: 158 },
 
   // --- Lennox ML14KC1 (R-454B) ---
-  "ML14KC1-018": { uType: "Condenser",  btu: 18000, freon: "454B",   series: "ML14KC1", FactoryCharge: 78,  revisedCharge: 92  },
-  "ML14KC1-024": { uType: "Condenser",  btu: 24000, freon: "454B",   series: "ML14KC1", FactoryCharge: 78,  revisedCharge: 87  },
-  "ML14KC1-030": { uType: "Condenser",  btu: 30000, freon: "454B",   series: "ML14KC1", FactoryCharge: 90,  revisedCharge: 99  },
-  "ML14KC1-036": { uType: "Condenser",  btu: 36000, freon: "454B",   series: "ML14KC1", FactoryCharge: 109, revisedCharge: 118 },
-  "ML14KC1-041": { uType: "Condenser",  btu: 41000, freon: "454B",   series: "ML14KC1", FactoryCharge: 119, revisedCharge: 128 },
-  "ML14KC1-042": { uType: "Condenser",  btu: 42000, freon: "454B",   series: "ML14KC1", FactoryCharge: 114, revisedCharge: 123 },
-  "ML14KC1-047": { uType: "Condenser",  btu: 47000, freon: "454B",   series: "ML14KC1", FactoryCharge: 125, revisedCharge: 134 },
-  "ML14KC1-048": { uType: "Condenser",  btu: 48000, freon: "454B",   series: "ML14KC1", FactoryCharge: 142, revisedCharge: 151 },
-  "ML14KC1-059": { uType: "Condenser",  btu: 59000, freon: "454B",   series: "ML14KC1", FactoryCharge: 152, revisedCharge: 161 },
-  "ML14KC1-060": { uType: "Condenser",  btu: 60000, freon: "454B",   series: "ML14KC1", FactoryCharge: 142, revisedCharge: 151 },
+  "ML14KC1-018": { uType: "Condenser",  btu: 18000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 78,  revisedCharge: 92  },
+  "ML14KC1-024": { uType: "Condenser",  btu: 24000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 78,  revisedCharge: 87  },
+  "ML14KC1-030": { uType: "Condenser",  btu: 30000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 90,  revisedCharge: 99  },
+  "ML14KC1-036": { uType: "Condenser",  btu: 36000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 109, revisedCharge: 118 },
+  "ML14KC1-041": { uType: "Condenser",  btu: 41000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 119, revisedCharge: 128 },
+  "ML14KC1-042": { uType: "Condenser",  btu: 42000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 114, revisedCharge: 123 },
+  "ML14KC1-047": { uType: "Condenser",  btu: 47000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 125, revisedCharge: 134 },
+  "ML14KC1-048": { uType: "Condenser",  btu: 48000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 142, revisedCharge: 151 },
+  "ML14KC1-059": { uType: "Condenser",  btu: 59000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 152, revisedCharge: 161 },
+  "ML14KC1-060": { uType: "Condenser",  btu: 60000, freon: "R-454B",   series: "ML14KC1", FactoryCharge: 142, revisedCharge: 151 },
 
   // --- Lennox ML17KC2 (R-454B) ---
-  "ML17KC2-024": { uType: "Condenser",  btu: 24000, freon: "454B",   series: "ML17KC2", FactoryCharge: 100 },
-  "ML17KC2-036": { uType: "Condenser",  btu: 36000, freon: "454B",   series: "ML17KC2", FactoryCharge: 104 },
-  "ML17KC2-048": { uType: "Condenser",  btu: 48000, freon: "454B",   series: "ML17KC2", FactoryCharge: 126 },
-  "ML17KC2-060": { uType: "Condenser",  btu: 60000, freon: "454B",   series: "ML17KC2", FactoryCharge: 149 },
+  "ML17KC2-024": { uType: "Condenser",  btu: 24000, freon: "R-454B",   series: "ML17KC2", FactoryCharge: 100 },
+  "ML17KC2-036": { uType: "Condenser",  btu: 36000, freon: "R-454B",   series: "ML17KC2", FactoryCharge: 104 },
+  "ML17KC2-048": { uType: "Condenser",  btu: 48000, freon: "R-454B",   series: "ML17KC2", FactoryCharge: 126 },
+  "ML17KC2-060": { uType: "Condenser",  btu: 60000, freon: "R-454B",   series: "ML17KC2", FactoryCharge: 149 },
 
   // --- Trane 4TTR (R-410A) ---
-  "4TTR6024N1000AA": { uType: "Condenser", btu: 24000, freon: "410A", series: "4TTR", FactoryCharge: 148 },
-  "4TTR5042A1000AA": { uType: "Condenser", btu: 42000, freon: "410A", series: "4TTR", FactoryCharge: 130 },
-  "4TTR5048A1000AA": { uType: "Condenser", btu: 48000, freon: "410A", series: "4TTR", FactoryCharge: 114 },
-  "4TTR5060A1000AA": { uType: "Condenser", btu: 60000, freon: "410A", series: "4TTR", FactoryCharge: 152 },
+  "4TTR6024N1000AA": { uType: "Condenser", btu: 24000, freon: "R-410A", series: "4TTR", FactoryCharge: 148 },
+  "4TTR5042A1000AA": { uType: "Condenser", btu: 42000, freon: "R-410A", series: "4TTR", FactoryCharge: 130 },
+  "4TTR5048A1000AA": { uType: "Condenser", btu: 48000, freon: "R-410A", series: "4TTR", FactoryCharge: 114 },
+  "4TTR5060A1000AA": { uType: "Condenser", btu: 60000, freon: "R-410A", series: "4TTR", FactoryCharge: 152 },
 
   // --- Trane 5TTR (R-454B) ---
-  "5TTR5018": { uType: "Condenser", btu: 18000, freon: "454B", series: "5TTR", FactoryCharge: 60,  revisedCharge: 0   },
-  "5TTR5024": { uType: "Condenser", btu: 24000, freon: "454B", series: "5TTR", FactoryCharge: 58,  revisedCharge: 83  }, // verified
-  "5TTR5030": { uType: "Condenser", btu: 30000, freon: "454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: 0   },
-  "5TTR5036": { uType: "Condenser", btu: 36000, freon: "454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: 80  }, // verified 07/16/25
-  "5TTR5042": { uType: "Condenser", btu: 42000, freon: "454B", series: "5TTR", FactoryCharge: 81,  revisedCharge: 0   },
-  "5TTR5048": { uType: "Condenser", btu: 48000, freon: "454B", series: "5TTR", FactoryCharge: 106, revisedCharge: 130 }, // verified 07/16/25
-  "5TTR5060": { uType: "Condenser", btu: 60000, freon: "454B", series: "5TTR", FactoryCharge: 95,  revisedCharge: 119 }, // verified 07/16/25
+  "5TTR5018": { uType: "Condenser", btu: 18000, freon: "R-454B", series: "5TTR", FactoryCharge: 60,  revisedCharge: null },
+  "5TTR5024": { uType: "Condenser", btu: 24000, freon: "R-454B", series: "5TTR", FactoryCharge: 58,  revisedCharge: 83  }, // verified
+  "5TTR5030": { uType: "Condenser", btu: 30000, freon: "R-454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: null },
+  "5TTR5036": { uType: "Condenser", btu: 36000, freon: "R-454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: 80  }, // verified 07/16/25
+  "5TTR5042": { uType: "Condenser", btu: 42000, freon: "R-454B", series: "5TTR", FactoryCharge: 81,  revisedCharge: null },
+  "5TTR5048": { uType: "Condenser", btu: 48000, freon: "R-454B", series: "5TTR", FactoryCharge: 106, revisedCharge: 130 }, // verified 07/16/25
+  "5TTR5060": { uType: "Condenser", btu: 60000, freon: "R-454B", series: "5TTR", FactoryCharge: 95,  revisedCharge: 119 }, // verified 07/16/25
 
   // --- Goodman GLXS4BA (R-32) ---
-  GLXS4BA1810AA: { uType: "Condenser", btu: 18000, freon: "R32", series: "GLXS4BA", FactoryCharge: 53  },
-  GLXS4BA2410AA: { uType: "Condenser", btu: 24000, freon: "R32", series: "GLXS4BA", FactoryCharge: 53  },
-  GLXS4BA3010AA: { uType: "Condenser", btu: 30000, freon: "R32", series: "GLXS4BA", FactoryCharge: 63  },
-  GLXS4BA3610AA: { uType: "Condenser", btu: 36000, freon: "R32", series: "GLXS4BA", FactoryCharge: 69  },
-  GLXS4BA4210AA: { uType: "Condenser", btu: 42000, freon: "R32", series: "GLXS4BA", FactoryCharge: 83  },
-  GLXS4BA4810AA: { uType: "Condenser", btu: 48000, freon: "R32", series: "GLXS4BA", FactoryCharge: 91  },
-  GLXS4BA6010AA: { uType: "Condenser", btu: 60000, freon: "R32", series: "GLXS4BA", FactoryCharge: 94  },
+  GLXS4BA1810AA: { uType: "Condenser", btu: 18000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 53  },
+  GLXS4BA2410AA: { uType: "Condenser", btu: 24000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 53  },
+  GLXS4BA3010AA: { uType: "Condenser", btu: 30000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 63  },
+  GLXS4BA3610AA: { uType: "Condenser", btu: 36000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 69  },
+  GLXS4BA4210AA: { uType: "Condenser", btu: 42000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 83  },
+  GLXS4BA4810AA: { uType: "Condenser", btu: 48000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 91  },
+  GLXS4BA6010AA: { uType: "Condenser", btu: 60000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 94  },
 
   // --- Goodman GLXS5BA (R-32) ---
-  GLXS5BA1810AA: { uType: "Condenser", btu: 18000, freon: "R32", series: "GLXS5BA", FactoryCharge: 54  },
-  GLXS5BA2410AA: { uType: "Condenser", btu: 24000, freon: "R32", series: "GLXS5BA", FactoryCharge: 65  },
-  GLXS5BA3010AA: { uType: "Condenser", btu: 30000, freon: "R32", series: "GLXS5BA", FactoryCharge: 87  },
-  GLXS5BA3610AA: { uType: "Condenser", btu: 36000, freon: "R32", series: "GLXS5BA", FactoryCharge: 88  },
-  GLXS5BA4210AA: { uType: "Condenser", btu: 42000, freon: "R32", series: "GLXS5BA", FactoryCharge: 141 },
-  GLXS5BA4810AA: { uType: "Condenser", btu: 48000, freon: "R32", series: "GLXS5BA", FactoryCharge: 138 },
-  GLXS5BA6010AA: { uType: "Condenser", btu: 60000, freon: "R32", series: "GLXS5BA", FactoryCharge: 167 },
+  GLXS5BA1810AA: { uType: "Condenser", btu: 18000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 54  },
+  GLXS5BA2410AA: { uType: "Condenser", btu: 24000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 65  },
+  GLXS5BA3010AA: { uType: "Condenser", btu: 30000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 87  },
+  GLXS5BA3610AA: { uType: "Condenser", btu: 36000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 88  },
+  GLXS5BA4210AA: { uType: "Condenser", btu: 42000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 141 },
+  GLXS5BA4810AA: { uType: "Condenser", btu: 48000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 138 },
+  GLXS5BA6010AA: { uType: "Condenser", btu: 60000, freon: "R-32", series: "GLXS5BA", FactoryCharge: 167 },
 
   // --- Goodman GLZS4BA Heat Pump (R-32) ---
-  GLZS4BA1810AA: { uType: "Heat Pump", btu: 18000, freon: "R32", series: "GLZS4BA", FactoryCharge: 70  },
-  GLZS4BA2410AA: { uType: "Heat Pump", btu: 24000, freon: "R32", series: "GLZS4BA", FactoryCharge: 70  },
-  GLZS4BA3010AA: { uType: "Heat Pump", btu: 30000, freon: "R32", series: "GLZS4BA", FactoryCharge: 81  },
-  GLZS4BA3610AA: { uType: "Heat Pump", btu: 36000, freon: "R32", series: "GLZS4BA", FactoryCharge: 83  },
-  GLZS4BA4210AA: { uType: "Heat Pump", btu: 42000, freon: "R32", series: "GLZS4BA", FactoryCharge: 139 },
-  GLZS4BA4810AA: { uType: "Heat Pump", btu: 48000, freon: "R32", series: "GLZS4BA", FactoryCharge: 174 },
-  GLZS4BA6010AA: { uType: "Heat Pump", btu: 60000, freon: "R32", series: "GLZS4BA", FactoryCharge: 194 },
+  GLZS4BA1810AA: { uType: "Heat Pump", btu: 18000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 70  },
+  GLZS4BA2410AA: { uType: "Heat Pump", btu: 24000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 70  },
+  GLZS4BA3010AA: { uType: "Heat Pump", btu: 30000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 81  },
+  GLZS4BA3610AA: { uType: "Heat Pump", btu: 36000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 83  },
+  GLZS4BA4210AA: { uType: "Heat Pump", btu: 42000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 139 },
+  GLZS4BA4810AA: { uType: "Heat Pump", btu: 48000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 174 },
+  GLZS4BA6010AA: { uType: "Heat Pump", btu: 60000, freon: "R-32", series: "GLZS4BA", FactoryCharge: 194 },
 
   // --- Daikin DC6VSS (R-32) ---
-  DC6VSS2410: { uType: "Condenser", btu: 24000, freon: "R32", series: "DC6VSS", FactoryCharge: 74  },
-  DC6VSS3010: { uType: "Condenser", btu: 30000, freon: "R32", series: "DC6VSS", FactoryCharge: 76  },
-  DC6VSS3610: { uType: "Condenser", btu: 36000, freon: "R32", series: "DC6VSS", FactoryCharge: 83  },
-  DC6VSS4210: { uType: "Condenser", btu: 42000, freon: "R32", series: "DC6VSS", FactoryCharge: 100 },
-  DC6VSS4810: { uType: "Condenser", btu: 48000, freon: "R32", series: "DC6VSS", FactoryCharge: 999 },
-  DC6VSS6010: { uType: "Condenser", btu: 60000, freon: "R32", series: "DC6VSS", FactoryCharge: 999 },
+  DC6VSS2410: { uType: "Condenser", btu: 24000, freon: "R-32", series: "DC6VSS", FactoryCharge: 74  },
+  DC6VSS3010: { uType: "Condenser", btu: 30000, freon: "R-32", series: "DC6VSS", FactoryCharge: 76  },
+  DC6VSS3610: { uType: "Condenser", btu: 36000, freon: "R-32", series: "DC6VSS", FactoryCharge: 83  },
+  DC6VSS4210: { uType: "Condenser", btu: 42000, freon: "R-32", series: "DC6VSS", FactoryCharge: 100 },
+  DC6VSS4810: { uType: "Condenser", btu: 48000, freon: "R-32", series: "DC6VSS", FactoryCharge: null },
+  DC6VSS6010: { uType: "Condenser", btu: 60000, freon: "R-32", series: "DC6VSS", FactoryCharge: null },
 };
 
 // ---------------------------------------------------------------------------
