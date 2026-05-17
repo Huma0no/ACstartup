@@ -24,6 +24,7 @@ import {
   getActiveJobId,
   setActiveJobId,
   deleteCompletion,
+  getWorkspaceState,
 } from "./storage.js";
 import {
   initWorkspace,
@@ -376,6 +377,7 @@ function jobCardHTML(job, ci) {
 function openWorkspace(job) {
   _activeJob = job;
   setActiveJobId(job.id);
+  const isResume = getWorkspaceState()?.jobId === job.id;
   initWorkspace(job);
   initWeighInPhotos(job.address);
   onWeighInPhotoChange(_updatePhotoCount);
@@ -383,6 +385,11 @@ function openWorkspace(job) {
   initChat(job);
   openTab("workspace");
   renderWorkspace();
+  if (!isResume) {
+    document.querySelectorAll("#workspace-form .step-section.acc-open")
+      .forEach(s => s.classList.remove("acc-open"));
+    document.getElementById("section-service")?.classList.add("acc-open");
+  }
   updateActiveJobBar();
   initSitePhotos().then((stored) => {
     for (const [slug, { file, label }] of Object.entries(stored)) {
@@ -1359,6 +1366,10 @@ function wireEvents() {
     renderSettingsModal();
     document.getElementById("settings-modal").showModal();
   });
+  document.getElementById("settings-modal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("settings-modal"))
+      document.getElementById("settings-modal").close();
+  });
   document
     .getElementById("settings-close")
     .addEventListener("click", () =>
@@ -1369,6 +1380,10 @@ function wireEvents() {
     .addEventListener("click", () =>
       document.getElementById("quick-calc-modal").showModal()
     );
+  document.getElementById("quick-calc-modal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("quick-calc-modal"))
+      document.getElementById("quick-calc-modal").close();
+  });
   document
     .getElementById("quick-calc-close")
     .addEventListener("click", () =>
@@ -1382,6 +1397,11 @@ function wireEvents() {
       document.getElementById("ts-overlay").classList.add("visible");
     });
   document.getElementById("ts-overlay").addEventListener("click", () => {
+    document.getElementById("ts-drawer").classList.remove("open");
+    document.getElementById("ts-drawer").setAttribute("aria-hidden", "true");
+    document.getElementById("ts-overlay").classList.remove("visible");
+  });
+  document.querySelector(".ts-close-btn")?.addEventListener("click", () => {
     document.getElementById("ts-drawer").classList.remove("open");
     document.getElementById("ts-drawer").setAttribute("aria-hidden", "true");
     document.getElementById("ts-overlay").classList.remove("visible");

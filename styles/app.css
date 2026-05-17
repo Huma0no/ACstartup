@@ -795,6 +795,19 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--color-text-primary);
 }
 
+.modal-header .btn-icon {
+  font-size: 0;
+}
+.modal-header .btn-icon::after {
+  content: "✕";
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+}
+.modal-header .btn-icon:hover::after {
+  color: var(--color-text-primary);
+}
+
 /* Next button (step navigation) */
 .btn-next {
   background: var(--color-surface-raised);
