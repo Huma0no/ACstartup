@@ -271,12 +271,19 @@ function jobCardHTML(job, ci) {
   const _equipCard = (furnace, outdoor, label) => {
     if (!furnace && !outdoor) return "";
     const dOut = outdoor ? getOutdoorModel(outdoor) : null;
-    const cfm = dOut ? calculateCFM(dOut.btu) : null;
-    const sc =
+    const dIn  = furnace  ? getIndoorModel(furnace)  : null;
+    const cfm  = dOut ? calculateCFM(dOut.btu) : null;
+    const sc   =
       dOut?.oemSubcoolingGoal != null ? `${dOut.oemSubcoolingGoal} °F` : "—";
-    const rev = dOut?.revisedCharge > 0 ? `${dOut.revisedCharge} oz` : "—";
+    const showRevised = dOut?.freon === "R-454B" || dOut?.freon === "R-32";
+    const rev  = dOut?.revisedCharge > 0 ? `${dOut.revisedCharge} oz` : "—";
+    const esp  = dIn?.pESP != null && dIn.pESP !== 9.9
+      ? `ESP ~${dIn.pESP}" wc`
+      : null;
     return `<div class="equip-card">
-      <div class="equip-heading">${esc(label)}</div>
+      <div class="equip-heading">
+        <span>${esc(label)}</span>${esp ? `<span>${esp}</span>` : ""}
+      </div>
       <div class="equip-row">
         <div class="equip-cell">
           <div class="equip-cell-label">Indoor</div>
@@ -289,15 +296,23 @@ function jobCardHTML(job, ci) {
       </div>
       <div class="equip-row">
         <div class="equip-cell">
+          <div class="equip-cell-value">${esc(dIn?.hType || "")}</div>
+        </div>
+        <div class="equip-cell">
+          <div class="equip-cell-value">${esc(dOut?.uType || "")}</div>
+        </div>
+      </div>
+      <div class="equip-row">
+        <div class="equip-cell">
           <div class="equip-cell-label">Factory</div>
           <div class="equip-cell-value">${
             dOut?.FactoryCharge ? `${dOut.FactoryCharge} oz` : "—"
           }</div>
         </div>
-        <div class="equip-cell">
+        ${showRevised ? `<div class="equip-cell">
           <div class="equip-cell-label">Revised</div>
           <div class="equip-cell-value equip-cell-signal">${rev}</div>
-        </div>
+        </div>` : ""}
       </div>
       <div class="equip-row">
         <div class="equip-cell">
