@@ -278,12 +278,12 @@ function jobCardHTML(job, ci) {
     const rev  = dOut?.freon === "R-454B"
       ? (dOut.revisedCharge != null ? `${dOut.revisedCharge} oz` : "—")
       : "N/A";
-    const esp  = dIn?.pESP != null && dIn.pESP !== 9.9
+    const esp = (dIn?.pESP != null && dIn.pESP !== 9.9)
       ? `ESP ~${dIn.pESP}" wc`
-      : null;
+      : "ESP N/A";
     return `<div class="equip-card">
       <div class="equip-heading">
-        <span>${esc(label)}</span>${esp ? `<span>${esp}</span>` : ""}
+        <span>${esc(label)}</span><span>${esp}</span>
       </div>
       <div class="equip-row">
         <div class="equip-cell">
