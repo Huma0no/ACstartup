@@ -361,11 +361,11 @@ function jobCardHTML(job, ci) {
 <li class="job-item${inProg ? " expanded" : ""}" data-id="${esc(job.id)}"
     style="border-left-color:var(--subdivision-${ci})">
   <div class="job-face">
+    <button class="btn-delete" data-delete="${esc(
+      job.id
+    )}" aria-label="Delete"></button>
     <div class="job-top">
       <div class="job-top-addr"><strong>${esc(job.address)}</strong></div>
-      <button class="btn-delete" data-delete="${esc(
-        job.id
-      )}" aria-label="Delete"></button>
       ${techChips ? `<div class="job-top-tech">${techChips}</div>` : ""}
       <div class="job-top-meta">
         <span class="chip chip-sm chip-secondary">${esc(job.builder)}</span>
