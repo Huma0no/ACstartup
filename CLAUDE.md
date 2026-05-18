@@ -60,8 +60,6 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
----
-
 ## 5. Behavior Summary + Diff Policy
 
 **Every proposed change must lead with a Behavior Summary.**
@@ -80,6 +78,16 @@ The Behavior Summary states:
 | Structural or multi-file changes | Full diff mandatory. |
 
 Do not apply any change until the user explicitly confirms.
+
+## 6. Impact Summary
+
+Before applying any change, state:
+- Lines added / removed / modified
+- Net change (+ or -)
+- Verdict: is this the minimum code needed to solve the problem?
+
+If net change is positive (more lines added than removed),
+justify why. More code is not always better.
 
 ---
 
