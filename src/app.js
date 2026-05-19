@@ -451,13 +451,13 @@ const FIX_GROUPS = [
     label: "Fixed Leaks",
     id: "leaks",
     fixes: [
-      { key: FIXES.LEAKS_ECOIL, label: "at eCoil" },
-      { key: FIXES.LEAKS_CUNIT, label: "at Cunit" },
-      { key: FIXES.LEAKS_WALL, label: "inside Wall" },
+      { key: FIXES.LEAKS_ECOIL, label: "Ecoil" },
+      { key: FIXES.LEAKS_CUNIT, label: "Cunit" },
+      { key: FIXES.LEAKS_WALL, label: "Wall" },
     ],
   },
   {
-    label: "Extended LV Wire",
+    label: "Extended Wire",
     id: "ext-lv",
     fixes: [
       { key: FIXES.EXTENDED_WIRE_FURNACE, label: "Furnace" },
@@ -633,7 +633,7 @@ function renderWorkspace() {
     })
     .join("");
   document.getElementById("fixes-list").innerHTML =
-    `<div class="ws-btn-grid">${_standaloneHTML}</div>` + _groupsHTML;
+    `<div class="ws-fix-grid">${_standaloneHTML}${_groupsHTML}</div>`;
 
   // Step 5 — Weight-In
   const s1 = job.system1 || {};

@@ -1001,6 +1001,18 @@ input[name="builder"] {
   gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
+.ws-fix-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.ws-fix-grid .ws-btn {
+  grid-column: span 2;
+}
+.ws-fix-grid .fix-group {
+  grid-column: span 3;
+}
 .ws-qty-row {
   grid-column: 1 / -1;
   display: grid;
@@ -1764,19 +1776,15 @@ input[name="builder"] {
 
 /* Fix group (expandable) */
 .fix-group {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  align-items: flex-start;
 }
 
 .fix-suboptions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  padding: var(--space-2) 0 var(--space-1) var(--space-4);
-  border-left: 2px solid var(--color-accent);
-  margin-left: var(--space-3);
+  gap: var(--space-1);
 }
 
 .fix-suboptions.hidden {
