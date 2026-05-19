@@ -57,31 +57,25 @@ Bloquean el uso en campo. Van primero.
 
 Bugs silenciosos que producen datos incorrectos.
 
-- [ ] **C1** — corregir key mismatch Extended Wire(Furnace) y Extended Wire(Cunit)
-      en index.html para que coincidan exactamente con las keys en data.js
+- [x] **C1** — key mismatch fue falso positivo, keys ya eran correctas
 - [ ] **C2** — exportar buildServiceItems desde workspace.js, eliminar copia
       duplicada en app.js (Edit Modal)
-- [ ] **M1** — normalizar campo `freon` en OUTDOOR_CATALOG a formato único:
-      R-454B, R-32, R-410A
-- [ ] **M2** — reemplazar valores 0 y 999 por null en OUTDOOR_CATALOG.
-      Agregar validación en UI para mostrar "No disponible" cuando null.
-- [ ] **Refactor data.js** — migrar FIX_DISPLAY y ACCESSORY_DISPLAY de string
-      único a objeto `{ label, report }` según Sección 10 del data_dictionary.
-      Actualizar consumidores: app.js lee `label`, reports.js lee `report`.
+- [x] **M1** — campo `freon` normalizado en OUTDOOR_CATALOG: R-454B, R-32, R-410A
+- [x] **M2** — placeholders 0 y 999 reemplazados por null en OUTDOOR_CATALOG
+- [x] **Refactor data.js** — FIX_DISPLAY y ACCESSORY_DISPLAY migrados a
+      `{ label, report }`. app.js lee `label`, reports.js lee `report`.
 
 ### 3C — Ajustes de UI (tercera sesión)
 
 No bloquean pero afectan experiencia en campo.
 
-- [ ] **Job card** — address se corta antes de la X en móvil.
-      Fix: ajustar layout para que address ocupe el espacio disponible
-      hasta el botón X. Investigar y eliminar job-top-spacer si no tiene uso.
-- [ ] **Botón X de eliminar job** — quitar fondo rojo, mantener solo color
-      rojo en el ícono X.
-- [ ] **Tema oscuro en crear job** — mejorar contraste y legibilidad.
-- [ ] **Address field** — convertir input a mayúsculas automáticamente.
-- [ ] **Toggle 2 Systems** — reubicar debajo de los primeros dropdowns de
-      equipo. Corregir separación entre label y toggle.
+- [x] **Job card** — layout de address corregido. Dos filas flexbox independientes.
+      job-top-spacer eliminado.
+- [x] **Botón X de eliminar job** — sin fondo en hover, solo color rojo en ícono.
+- [x] **Tema oscuro en crear job** — inputs usan color-surface para mejor contraste.
+- [x] **Address field** — address, subdivision y builder se convierten a mayúsculas.
+- [x] **Toggle 2 Systems** — reemplazado por botón contextual "+ Add second system"
+      que aparece solo cuando ambos dropdowns de Sistema 1 tienen valor.
 - [ ] **Botón Add Job** — hacerlo más prominente. Habilitarlo solo cuando
       hay datos mínimos requeridos (address). Deshabilitar si no hay cambios.
 - [ ] **Fixes** — ajuste de estilo visual (sin cambios de lógica).
@@ -182,6 +176,8 @@ No bloquean pero afectan experiencia en campo.
 4. Si algo no está claro, se define en el doc antes de codificar.
 5. La app siempre debe funcionar. Si una tarea rompe algo, se revierte.
 6. Dispatch y completion.netlify.app no se tocan.
+7. Verify in device before every commit. No exceptions.
+8. For complex UI components: sketch or mockup first, code after. Never iterate layout in code without a validated visual reference.
 
 ---
 
