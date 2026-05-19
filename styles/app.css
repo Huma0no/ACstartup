@@ -1146,20 +1146,21 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Job top: 2-col × 2-row grid matching JS render */
 .job-top {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  gap: var(--space-1) var(--space-2);
-  align-items: start;
-  min-width: 0;
-  margin-bottom: var(--space-2);
-  padding-right: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.job-top-row1 {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /* Col 1 Row 1 — address */
 .job-top-addr {
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1176,23 +1177,25 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Col 1 Row 2 — tstat + accessory chips */
 .job-top-tech {
-  grid-column: 1 / 2;
-  grid-row: 2 / 3;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
+  gap: var(--space-1);
+  align-items: flex-start;
+  overflow: hidden;
 }
 
 /* Col 2 Row 2 — builder + subdivision chips (right-aligned) */
 .job-top-meta {
-  grid-column: 2 / 3;
-  grid-row: 2 / 3;
+  flex-shrink: 0;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.job-top-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-1);
 }
 
@@ -1243,13 +1246,11 @@ input[type="number"]::-webkit-outer-spin-button {
   justify-content: flex-end;
 }
 
-/* Delete button — absolute top-right of .job-item */
+/* Delete button — in-flow, row1 right cell */
 .btn-delete {
-  position: absolute;
-  top: 8px;
-  right: 8px;
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
