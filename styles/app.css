@@ -623,6 +623,12 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
 
+input[name="address"],
+input[name="subdivision"],
+input[name="builder"] {
+  text-transform: uppercase;
+}
+
 /* Toggle switch */
 .toggle-row {
   display: flex;
