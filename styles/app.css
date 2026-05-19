@@ -817,6 +817,9 @@ input[name="builder"] {
   color: var(--color-text-primary);
 }
 
+.header-actions .btn-icon {
+  font-size: var(--font-size-sm);
+}
 .modal-header .btn-icon {
   font-size: 0;
 }
