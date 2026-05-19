@@ -1168,9 +1168,8 @@ function buildAddJobSection() {
         </label>
       </div>
       <label>Notes<textarea name="notes" rows="2" placeholder="Optional"></textarea></label>
-      <label class="toggle-row"><span>2 Systems</span>
-        <input type="checkbox" id="new-job-two-systems" name="two-systems">
-      </label>
+      <input type="checkbox" id="new-job-two-systems" name="two-systems" hidden>
+      <button type="button" id="btn-add-system2" class="btn-add-system2">+ Add second system</button>
       <div class="form-row">
         <div>
           <label>Indoor unit
@@ -1902,13 +1901,27 @@ function wireEvents() {
   document
     .getElementById("add-job-cancel")
     .addEventListener("click", _collapseAddJobForm);
-  document
-    .getElementById("new-job-two-systems")
-    .addEventListener("change", (e) =>
-      document
-        .getElementById("new-job-sys2")
-        .classList.toggle("hidden", !e.target.checked)
-    );
+  const _checkSys2Btn = () => {
+    const f = document.getElementById("new-job-furnace").value;
+    const o = document.getElementById("new-job-outdoor").value;
+    document.getElementById("btn-add-system2").style.display =
+      f && o ? "block" : "none";
+  };
+  document.getElementById("new-job-furnace").addEventListener("change", _checkSys2Btn);
+  document.getElementById("new-job-outdoor").addEventListener("change", _checkSys2Btn);
+  document.getElementById("btn-add-system2").addEventListener("click", () => {
+    const cb = document.getElementById("new-job-two-systems");
+    const sys2 = document.getElementById("new-job-sys2");
+    const btn = document.getElementById("btn-add-system2");
+    const adding = !cb.checked;
+    cb.checked = adding;
+    sys2.classList.toggle("hidden", !adding);
+    if (!adding) {
+      document.getElementById("new-job-furnace2").value = "";
+      document.getElementById("new-job-outdoor2").value = "";
+    }
+    btn.textContent = adding ? "− Remove second system" : "+ Add second system";
+  });
   document
     .getElementById("new-job-furnace")
     .addEventListener("change", (e) =>

@@ -677,6 +677,22 @@ input[name="builder"] {
   transform: translateX(18px);
 }
 
+.btn-add-system2 {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: var(--space-1) 0;
+  align-self: flex-end;
+  text-align: right;
+  width: 100%;
+}
+.btn-add-system2:hover {
+  opacity: 0.8;
+}
+
 /* ───────────────────────────────────────────────────────────────
    10. BUTTONS
    ─────────────────────────────────────────────────────────────── */
