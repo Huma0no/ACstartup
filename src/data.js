@@ -154,7 +154,6 @@ export const DEFAULT_PRICES = {
     [SERVICES.HEAT]:      30,
     [SERVICES.AC_HEAT]:   30,  // combined, not 30+30
     [SERVICES.PRESTART]:  20,
-    [SERVICES.FINISH]:    20,
     [SERVICES.DRIVE_RUN]: 10,
     [SERVICES.CANCEL]:     0,
   },
@@ -199,6 +198,8 @@ export const DEFAULT_PRICES = {
     [FIXES.LEAKS_WALL]:     50,
   },
 };
+
+export const FINISH_SERVICE_PRICE = 20;
 
 // ---------------------------------------------------------------------------
 // DISPLAY NAMES

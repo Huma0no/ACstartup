@@ -5,7 +5,7 @@ import {
   SERVICES, ACCESSORIES, FIXES,
   STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, ACCESSORY_COMPANIONS, ZONE_BOARDS,
   CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
-  DEFAULT_PRICES, ACCESSORY_DISPLAY, FIX_DISPLAY,
+  DEFAULT_PRICES, ACCESSORY_DISPLAY, FIX_DISPLAY, FINISH_SERVICE_PRICE,
 } from "./data.js";
 import {
   saveWorkspaceState, getWorkspaceState, clearWorkspaceState,
@@ -282,8 +282,7 @@ export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
 
   let service = 0;
   if (hasFinish) {
-    // Rule 4: Finish replaces AC/Heat price — base is always FINISH price ($20)
-    service = prices.SERVICE[SERVICES.FINISH];
+    service = (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0;
   } else if (hasAC && hasHeat) {
     // Rule 1: AC + Heat combined = $30, not $60
     service = prices.SERVICE[SERVICES.AC_HEAT];

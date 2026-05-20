@@ -537,7 +537,7 @@ function renderWorkspace() {
           tsel === n ? " ws-btn-active" : ""
         }" data-tstat="${esc(n)}">${esc(n)}</button>`
     ).join("") +
-    `<button class="ws-btn">Other</button>` +
+    `<button class="ws-btn${tsel && !THERMOSTATS.includes(tsel) ? " ws-btn-active" : ""}" data-tstat-other>${tsel && !THERMOSTATS.includes(tsel) ? esc(tsel) : "Other"}</button>` +
     (tsel
       ? `<div class="ws-qty-row">` +
         ["1", "2", "3", "4+"].map((q) => {
@@ -551,6 +551,13 @@ function renderWorkspace() {
         }).join("") +
         `</div>`
       : "");
+  const _otherRow = document.getElementById("tstat-other-row");
+  if (tsel && !THERMOSTATS.includes(tsel)) {
+    document.getElementById("tstat-other-input").value = tsel;
+    _otherRow.classList.remove("hidden");
+  } else {
+    _otherRow.classList.add("hidden");
+  }
 
   // Step 4 — Accessories
   const _accBtn = (n) => {
@@ -1372,11 +1379,25 @@ function updateJobCardHeader(job) {
 // Event wiring
 // ---------------------------------------------------------------------------
 
+function _confirmTstatOther() {
+  const name = document.getElementById("tstat-other-input").value.trim();
+  if (!name) return;
+  setThermostat(name, 1);
+  saveProgress(_activeJob);
+  renderWorkspace();
+}
+
 function wireEvents() {
   // Tab buttons
   document
     .querySelectorAll(".tab-btn")
     .forEach((b) => b.addEventListener("click", () => openTab(b.dataset.tab)));
+
+  // Tstat Other — inline input
+  document.getElementById("tstat-other-confirm").addEventListener("click", _confirmTstatOther);
+  document.getElementById("tstat-other-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") _confirmTstatOther();
+  });
 
   // Header — modals & drawer
   document.getElementById("btn-settings").addEventListener("click", () => {
@@ -1500,8 +1521,9 @@ function wireEvents() {
     if (!state) return;
 
     const svc = e.target.closest("[data-service]");
-    const tst = e.target.closest("[data-tstat]");
-    const qty = e.target.closest("[data-qty]");
+    const tst      = e.target.closest("[data-tstat]");
+    const tstOther = e.target.closest("[data-tstat-other]");
+    const qty      = e.target.closest("[data-qty]");
     const qtySelect = e.target.closest("[data-qty-select]");
     const acc = e.target.closest("[data-accessory]");
     const grp = e.target.closest("[data-group-toggle]");
@@ -1521,6 +1543,20 @@ function wireEvents() {
       );
       saveProgress(_activeJob);
       renderWorkspace();
+      return;
+    }
+    if (tstOther) {
+      const isCustom = state.selectedThermostat && !THERMOSTATS.includes(state.selectedThermostat);
+      if (isCustom) {
+        setThermostat(null, 1);
+        saveProgress(_activeJob);
+        renderWorkspace();
+      } else {
+        const inp = document.getElementById("tstat-other-input");
+        inp.value = "";
+        document.getElementById("tstat-other-row").classList.remove("hidden");
+        inp.focus();
+      }
       return;
     }
     if (qty) {
