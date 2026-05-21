@@ -18,7 +18,7 @@ export function generateReportText(completion) {
   }
 
   for (const svc of completion.services) {
-    parts.push(`${svc.displayName} $${svc.price}`);
+    parts.push(svc.price > 0 ? `${svc.displayName} $${svc.price}` : svc.displayName);
   }
 
   for (const acc of completion.accessories) {

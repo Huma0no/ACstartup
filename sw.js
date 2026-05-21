@@ -1,55 +1,58 @@
-const CACHE_NAME = "service-call-v16";
+const CACHE_NAME = "field-ops-v1";
 const ASSETS = [
-  "./",
   "./index.html",
-  "./styles.css",
-  "./script.js",
-  "./dropdowns.js",
-  "./pricing.js",
-  "./weightInData.js",
-  "./ui.js",
-  "./reports.js",
-  "./quickCalc.js",
-  "./jobs.js",
-  "./state.js",
-  "./weightInLogic.js",
-  "./constants.js",
-  "./utils.js",
-  "./validation.js",
-  "./components.js",
-  "./imageManager.js",
-  "./jobManager.js",
-  "./fileutils.js",
-  "./equipmentData.js",
-  "./troubleshootingEngine.js",
-  "./claudeAssist.js",
-  "./troubleshootingPanel.js",
-  "./reportmanager.js",
-  "./lv.js",
+  "./styles/app.css",
   "./manifest.json",
+  "./sw.js",
+  "./src/app.js",
+  "./src/data.js",
+  "./src/storage.js",
+  "./src/jobs.js",
+  "./src/workspace.js",
+  "./src/reports.js",
+  "./src/settings.js",
+  "./src/utils.js",
+  "./src/diagrams.js",
+  "./src/lv.js",
+  "./src/ai.js",
+  "./src/importer.js",
   "./icons/icon-192x192.png",
   "./icons/icon-512x512.png",
+  "./images/lv/acc-aprilair.png",
+  "./images/lv/acc-dapc.png",
+  "./images/lv/acc-dehum.png",
+  "./images/lv/acc-ebypass.png",
+  "./images/lv/acc-fin180p.png",
+  "./images/lv/acc-floatswitch.png",
+  "./images/lv/acc-freshair.png",
+  "./images/lv/acc-harmony.png",
+  "./images/lv/acc-hz322.png",
+  "./images/lv/acc-rds.png",
+  "./images/lv/acc-ut3000.png",
+  "./images/lv/airhandler.png",
+  "./images/lv/cond-1-2stage.png",
+  "./images/lv/cond-daikin.png",
+  "./images/lv/cond-heatpump.png",
+  "./images/lv/daikin-comm.png",
+  "./images/lv/furnace-1-2stage.png",
+  "./images/lv/furnace-heatpump.png",
+  "./images/lv/tstat-1-2stage.png",
+  "./images/lv/tstat-daikin.png",
+  "./images/lv/tstat-heatpump.png",
 ];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Intentamos cachear todo el grupo
       try {
         await cache.addAll(ASSETS);
       } catch (e) {
-        console.warn(
-          "Falló cache.addAll, intentando cachear archivos individualmente:",
-          e
-        );
-        // Fallback: Si falla el grupo, intentamos uno por uno para identificar el error
-        // y permitir que el SW se instale con lo que sí funcione.
         for (const url of ASSETS) {
           try {
             await cache.add(url);
           } catch (err) {
-            console.warn(`No se pudo cachear: ${url}`, err);
+            console.warn(`Failed to cache: ${url}`, err);
           }
         }
       }
@@ -60,8 +63,6 @@ self.addEventListener("install", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Network-first para archivos propios de la app (mismo origen)
-  // → siempre carga la versión más reciente; cache solo como fallback offline
   if (url.origin === self.location.origin) {
     event.respondWith(
       fetch(event.request)
@@ -75,7 +76,6 @@ self.addEventListener("fetch", (event) => {
         .catch(() => caches.match(event.request))
     );
   } else {
-    // Cache-first para recursos externos (CDN libraries)
     event.respondWith(
       caches.match(event.request).then((response) => response || fetch(event.request))
     );
@@ -84,15 +84,13 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+          if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
         })
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });

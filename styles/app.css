@@ -3294,6 +3294,14 @@ dialog.modal[open] {
   letter-spacing: 0.06em;
 }
 
+.settings-price-notice {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-warning-soft);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+}
+
 .settings-status {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
