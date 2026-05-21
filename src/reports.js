@@ -57,15 +57,14 @@ export function exportJSON(completions) {
 // Export — CSV (43 columns, matches main branch format)
 //
 // Columns:
-//   Date, Address, Subdivision, Builder,
+//   Date, Address, Subdivision, Builder, Notes,
 //   Service_Type, Service_Price, Thermostat, Tstat_Qty,
 //   Accessories, Accessories_Price, Fixes, Fixes_Price,
-//   Notes, Total,
-//   Indoor_Model, Outdoor_Model,
+//   Total,
+//   Indoor_Model, Outdoor_Model, Refrigerant,
 //   Lineset_Length, Factory_Line_Config, Factory_Charge, Approx_Adjust,
 //   Adjusted_Charge, Fan_Speed, Liquid_Temp, Suction_Temp,
 //   Condenser_Sat_Temp, Subcooling, Subcooling_Goal, Subcooling_Deviation,
-//   Refrigerant,
 //   Indoor_Model_2, Outdoor_Model_2,
 //   Sys2_Lineset, Sys2_Line_Config, Sys2_Fact_Chg, Sys2_Appr_Adj,
 //   Sys2_Adj_Chg, Sys2_Fan_CFM, Sys2_Liq_Temp, Sys2_Suc_Temp,
@@ -80,15 +79,14 @@ function csvCell(value) {
 }
 
 const CSV_HEADER =
-  "Date,Address,Subdivision,Builder," +
+  "Date,Address,Subdivision,Builder,Notes," +
   "Service_Type,Service_Price,Thermostat,Tstat_Qty," +
   "Accessories,Accessories_Price,Fixes,Fixes_Price," +
-  "Notes,Total," +
-  "Indoor_Model,Outdoor_Model," +
+  "Total," +
+  "Indoor_Model,Outdoor_Model,Refrigerant," +
   "Lineset_Length,Factory_Line_Config,Factory_Charge,Approx_Adjust," +
   "Adjusted_Charge,Fan_Speed,Liquid_Temp,Suction_Temp," +
   "Condenser_Sat_Temp,Subcooling,Subcooling_Goal,Subcooling_Deviation," +
-  "Refrigerant," +
   "Indoor_Model_2,Outdoor_Model_2," +
   "Sys2_Lineset,Sys2_Line_Config,Sys2_Fact_Chg,Sys2_Appr_Adj," +
   "Sys2_Adj_Chg,Sys2_Fan_CFM,Sys2_Liq_Temp,Sys2_Suc_Temp," +
@@ -121,6 +119,7 @@ export function exportCSV(completions) {
       c.address,
       c.subdivision,
       c.builder,
+      c.notes || "",
       serviceType,
       c.totals.service,
       c.selectedThermostat?.name || "",
@@ -129,11 +128,11 @@ export function exportCSV(completions) {
       c.totals.accessory,
       fixes,
       c.totals.fix,
-      c.notes || "",
       c.totals.total,
       // Equipment sys1
       c.indoorModel,
       c.outdoorModel,
+      c.refrigerant,
       // Weigh-in sys1
       w.linesetLength        || "",
       w.factoryLineConfig    || "",
@@ -147,7 +146,6 @@ export function exportCSV(completions) {
       w.subcoolingValue      || "",
       w.oemSubcoolingGoal    || "",
       w.subcoolingDeviation  || "",
-      c.refrigerant,
       // Equipment sys2
       c.indoorModel2,
       c.outdoorModel2,

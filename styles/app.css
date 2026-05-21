@@ -47,16 +47,22 @@ html {
 }
 
 body {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  overflow: hidden;
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-family);
   font-size: var(--font-size-md);
   line-height: var(--line-height-normal);
   -webkit-font-smoothing: antialiased;
+}
+
+.app-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 img,
@@ -947,6 +953,23 @@ input[name="builder"] {
 #tstat-other-row input {
   flex: 1;
 }
+#tstat-other-row .ws-btn {
+  width: auto;
+  flex-shrink: 0;
+}
+#acc-other-row,
+#fix-other-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+#acc-other-row input:first-child,
+#fix-other-row input:first-child { flex: 1; }
+#acc-other-row input:last-of-type,
+#fix-other-row input:last-of-type { width: 64px; }
+#acc-other-row .ws-btn,
+#fix-other-row .ws-btn { width: auto; flex-shrink: 0; }
 
 /* Chip color variants (job card) */
 .chip-primary {
@@ -991,6 +1014,7 @@ input[name="builder"] {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 64px;
   padding: var(--space-3) var(--space-2);
   background: var(--color-surface);
@@ -1057,6 +1081,10 @@ input[name="builder"] {
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin-bottom: var(--space-2);
+  grid-column: 1 / -1;
+}
+
+.ws-zone-grid .fix-suboptions {
   grid-column: 1 / -1;
 }
 
@@ -1779,7 +1807,6 @@ input[name="builder"] {
 
 /* Fixes list */
 .fixes-list {
-  display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -1795,8 +1822,16 @@ input[name="builder"] {
 
 .fix-suboptions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-1);
+}
+
+.fix-suboptions .chip {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fix-suboptions.hidden {

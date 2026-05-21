@@ -516,8 +516,7 @@ function renderWorkspace() {
         `<button class="ws-btn${
           sel.includes(n) ? " ws-btn-active" : ""
         }" data-service="${esc(n)}">${esc(n)}</button>`
-    ).join("") +
-    `<button class="ws-btn">Other</button>`;
+    ).join("");
   document.getElementById("ac-heat-options").innerHTML = `
     <label class="toggle-row"><span>2 Systems</span>
       <input type="checkbox" id="ws-two-systems"${
@@ -561,17 +560,30 @@ function renderWorkspace() {
 
   // Step 4 — Accessories
   const _accBtn = (n) => {
+    if (n === ACCESSORIES.OTRO) {
+      return `<button class="ws-btn" data-accessory="${esc(n)}">Other</button>`;
+    }
     const active =
       state.selectedAccessories.includes(n) ||
       state.customAccessories.some((a) => a.name === n);
-    const isTwoSys = state.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(n);
-    const disp =
-      (ACCESSORY_DISPLAY[n]?.label || n.toLowerCase()) + (isTwoSys ? " (2 sys)" : "");
+    const disp = ACCESSORY_DISPLAY[n]?.label || n.toLowerCase();
     const custom = CUSTOM_PRICE_ACCESSORIES.includes(n) ? " data-custom" : "";
     return `<button class="ws-btn${
       active ? " ws-btn-active" : ""
     }" data-accessory="${esc(n)}"${custom}>${esc(disp)}</button>`;
   };
+  const _LP_KIT = [
+    { key: ACCESSORIES.LP_KIT_LENNOX_1STG, label: "Lennox 1Stg" },
+    { key: ACCESSORIES.LP_KIT_LENNOX_2STG, label: "Lennox 2Stg" },
+    { key: ACCESSORIES.LP_KIT_GOODMAN,     label: "Goodman" },
+  ];
+  const _lpActive = _LP_KIT.find((i) => state.selectedAccessories.includes(i.key));
+  const _lpBadge = _lpActive ? ` <span class="chip-badge">1</span>` : "";
+  const _lpSubHTML = _LP_KIT.map(({ key, label }) =>
+    `<button class="chip chip-sm${
+      state.selectedAccessories.includes(key) ? " chip-accessory" : ""
+    }" data-accessory="${esc(key)}">${esc(label)}</button>`
+  ).join("");
   document.getElementById("accessory-buttons").innerHTML =
     `<div class="ws-zone-grid">` +
     [
@@ -591,12 +603,16 @@ function renderWorkspace() {
       ACCESSORIES.FIN6_MD,
       ACCESSORIES.TRANE_HARNESS,
       ACCESSORIES.RDS,
-      ACCESSORIES.LP_KIT_LENNOX_1STG,
-      ACCESSORIES.LP_KIT_LENNOX_2STG,
-      ACCESSORIES.LP_KIT_GOODMAN,
-      ACCESSORIES.OTRO,
     ].map((n) => _accBtn(n)).join("") +
-    `</div>`;
+    `<button class="ws-btn${_lpActive ? " ws-btn-active" : ""}" data-group-toggle="lp-kit">LP Kit${_lpBadge}</button>` +
+    _accBtn(ACCESSORIES.OTRO) +
+    `</div>` +
+    `<div class="fix-suboptions${_lpActive ? "" : " hidden"}" id="fix-group-lp-kit">${_lpSubHTML}</div>` +
+    (state.customAccessories.length
+      ? `<div class="fix-chips-row">${state.customAccessories.map((a) =>
+          `<span class="chip chip-sm chip-accessory">${esc(a.name)}${a.price ? ` $${a.price}` : ""}<button type="button" class="chip-remove" data-remove-custom-acc="${esc(a.name)}" aria-label="Remove">×</button></span>`
+        ).join("")}</div>`
+      : "");
 
   // Step 5 — Fixes
   const _groupedKeys = new Set(
@@ -629,6 +645,9 @@ function renderWorkspace() {
   const _standaloneHTML = Object.values(FIXES)
     .filter((n) => !_groupedKeys.has(n) && n !== FIXES.EXTENDED_WIRE)
     .map((n) => {
+      if (n === FIXES.OTRO) {
+        return `<button class="ws-btn" data-fix="${esc(n)}">Other</button>`;
+      }
       const active =
         state.selectedFixes.includes(n) ||
         state.customFixes.some((f) => f.name === n);
@@ -639,8 +658,13 @@ function renderWorkspace() {
       }" data-fix="${esc(n)}"${custom}>${esc(disp)}</button>`;
     })
     .join("");
+  const _customFixChips = state.customFixes.length
+    ? `<div class="fix-chips-row">${state.customFixes.map((f) =>
+        `<span class="chip chip-sm chip-fix">${esc(f.name)}${f.price ? ` $${f.price}` : ""}<button type="button" class="chip-remove" data-remove-custom-fix="${esc(f.name)}" aria-label="Remove">×</button></span>`
+      ).join("")}</div>`
+    : "";
   document.getElementById("fixes-list").innerHTML =
-    `<div class="ws-fix-grid">${_standaloneHTML}${_groupsHTML}</div>`;
+    `<div class="ws-fix-grid">${_standaloneHTML}${_groupsHTML}</div>${_customFixChips}`;
 
   // Step 5 — Weight-In
   const s1 = job.system1 || {};
@@ -1387,6 +1411,22 @@ function _confirmTstatOther() {
   renderWorkspace();
 }
 
+function _confirmOtherInline(ctx) {
+  const desc = document.getElementById(`${ctx}-other-desc`).value.trim();
+  const price = parseFloat(document.getElementById(`${ctx}-other-price`).value) || 0;
+  if (!desc) return;
+  if (ctx === "acc") {
+    getState().customAccessories.push({ name: desc, price });
+  } else {
+    getState().customFixes.push({ name: desc, price });
+  }
+  document.getElementById(`${ctx}-other-desc`).value = "";
+  document.getElementById(`${ctx}-other-price`).value = "";
+  document.getElementById(`${ctx}-other-row`).classList.add("hidden");
+  saveProgress(_activeJob);
+  renderWorkspace();
+}
+
 function wireEvents() {
   // Tab buttons
   document
@@ -1397,6 +1437,15 @@ function wireEvents() {
   document.getElementById("tstat-other-confirm").addEventListener("click", _confirmTstatOther);
   document.getElementById("tstat-other-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") _confirmTstatOther();
+  });
+  // Acc / Fix Other — inline input
+  document.getElementById("acc-other-confirm").addEventListener("click", () => _confirmOtherInline("acc"));
+  document.getElementById("fix-other-confirm").addEventListener("click", () => _confirmOtherInline("fix"));
+  document.getElementById("acc-other-desc").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") _confirmOtherInline("acc");
+  });
+  document.getElementById("fix-other-desc").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") _confirmOtherInline("fix");
   });
 
   // Header — modals & drawer
@@ -1576,12 +1625,23 @@ function wireEvents() {
       return;
     }
     if (acc) {
+      const key = acc.dataset.accessory;
+      const _LP_KEYS = [ACCESSORIES.LP_KIT_LENNOX_1STG, ACCESSORIES.LP_KIT_LENNOX_2STG, ACCESSORIES.LP_KIT_GOODMAN];
+      if (_LP_KEYS.includes(key)) {
+        _LP_KEYS.filter((k) => k !== key)
+          .forEach((k) => { if (getState().selectedAccessories.includes(k)) toggleAccessory(k); });
+      }
+      if (key === ACCESSORIES.OTRO) {
+        document.getElementById("acc-other-row").classList.remove("hidden");
+        document.getElementById("acc-other-desc").focus();
+        return;
+      }
       if ("custom" in acc.dataset) {
-        const p = prompt(`Price for ${acc.dataset.accessory}:`);
+        const p = prompt(`Price for ${key}:`);
         if (p === null) return;
-        toggleAccessory(acc.dataset.accessory, parseFloat(p) || 0);
+        toggleAccessory(key, parseFloat(p) || 0);
       } else {
-        toggleAccessory(acc.dataset.accessory);
+        toggleAccessory(key);
       }
       saveProgress(_activeJob);
       renderWorkspace();
@@ -1595,13 +1655,35 @@ function wireEvents() {
       return;
     }
     if (fix) {
-      if ("custom" in fix.dataset) {
-        const p = prompt(`Price for ${fix.dataset.fix}:`);
-        if (p === null) return;
-        toggleFix(fix.dataset.fix, parseFloat(p) || 0);
-      } else {
-        toggleFix(fix.dataset.fix);
+      const key = fix.dataset.fix;
+      if (key === FIXES.OTRO) {
+        document.getElementById("fix-other-row").classList.remove("hidden");
+        document.getElementById("fix-other-desc").focus();
+        return;
       }
+      if ("custom" in fix.dataset) {
+        const p = prompt(`Price for ${key}:`);
+        if (p === null) return;
+        toggleFix(key, parseFloat(p) || 0);
+      } else {
+        toggleFix(key);
+      }
+      saveProgress(_activeJob);
+      renderWorkspace();
+      return;
+    }
+    const removeCustomAcc = e.target.closest("[data-remove-custom-acc]");
+    if (removeCustomAcc) {
+      const s = getState();
+      s.customAccessories = s.customAccessories.filter((a) => a.name !== removeCustomAcc.dataset.removeCustomAcc);
+      saveProgress(_activeJob);
+      renderWorkspace();
+      return;
+    }
+    const removeCustomFix = e.target.closest("[data-remove-custom-fix]");
+    if (removeCustomFix) {
+      const s = getState();
+      s.customFixes = s.customFixes.filter((f) => f.name !== removeCustomFix.dataset.removeCustomFix);
       saveProgress(_activeJob);
       renderWorkspace();
       return;
@@ -1741,6 +1823,8 @@ function wireEvents() {
     .addEventListener("click", () => {
       if (!_activeJob) return;
       const completion = buildCompletion(_activeJob, getPrices());
+      completion.refrigerant = getOutdoorModel(completion.outdoorModel)?.freon ||
+        getOutdoorModel(completion.outdoorModel2)?.freon || "";
       completion.reportText = generateReportText(completion);
       saveCompletion(completion);
       removeJob(_activeJob.id);
@@ -2417,6 +2501,10 @@ function openEditModal(completion) {
       },
     };
     updated.reportText = generateReportText(updated);
+    if (!updated.refrigerant) {
+      updated.refrigerant = getOutdoorModel(updated.outdoorModel)?.freon ||
+        getOutdoorModel(updated.outdoorModel2)?.freon || "";
+    }
 
     saveCompletion(updated);
     renderReports();
@@ -2453,6 +2541,14 @@ function init() {
   renderWorkspace();
   updateActiveJobBar();
   precacheJobs(getAllJobs()); // background, no await
+
+  getCompletions().forEach((c) => {
+    if (!c.refrigerant) {
+      const freon = getOutdoorModel(c.outdoorModel)?.freon ||
+        getOutdoorModel(c.outdoorModel2)?.freon || "";
+      if (freon) saveCompletion({ ...c, refrigerant: freon });
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", init);

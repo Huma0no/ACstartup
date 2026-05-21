@@ -17,6 +17,7 @@
     <title>HVAC Field Ops</title>
   </head>
   <body>
+    <div class="app-wrapper">
     <header class="app-header">
       <span class="app-title">Field Ops</span>
       <div class="header-actions">
@@ -99,6 +100,11 @@
             </div>
             <div class="step-body">
               <div id="accessory-buttons" class="chip-group"></div>
+              <div id="acc-other-row" class="hidden">
+                <input id="acc-other-desc" type="text" autocomplete="off" placeholder="Description…">
+                <input id="acc-other-price" type="number" min="0" step="1" placeholder="$">
+                <button type="button" id="acc-other-confirm" class="ws-btn">✓</button>
+              </div>
             </div>
           </div>
 
@@ -111,6 +117,11 @@
             </div>
             <div class="step-body">
               <div id="fixes-list" class="fixes-list"></div>
+              <div id="fix-other-row" class="hidden">
+                <input id="fix-other-desc" type="text" autocomplete="off" placeholder="Description…">
+                <input id="fix-other-price" type="number" min="0" step="1" placeholder="$">
+                <button type="button" id="fix-other-confirm" class="ws-btn">✓</button>
+              </div>
             </div>
           </div>
 
@@ -342,5 +353,6 @@
 
     <script type="module" src="src/app.js"></script>
     <script type="module" src="dropdowns.js"></script>
+    </div>
   </body>
 </html>
