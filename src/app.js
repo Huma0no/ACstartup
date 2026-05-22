@@ -75,6 +75,7 @@ import {
   CUSTOM_PRICE_ACCESSORIES,
   CUSTOM_PRICE_FIXES,
   TWO_SYSTEMS_ACCESSORIES,
+  DEFAULT_PRICES,
   getIndoorSeriesGroups,
   getOutdoorSeriesGroups,
   getIndoorModel,
@@ -1042,6 +1043,34 @@ const AI_PROVIDERS = [
   { id: "google", label: "Google" },
 ];
 
+function _renderPricesBody(prices) {
+  const row = (cat, name, label, val) =>
+    `<label class="toggle-row"><span>${esc(label)}</span><input type="number" min="0" step="1" data-price-category="${cat}" data-price-name="${esc(name)}" value="${val}"></label>`;
+
+  const svcRows = Object.keys(DEFAULT_PRICES.SERVICE)
+    .map(k => row("SERVICE", k, k, prices.SERVICE[k] ?? ""))
+    .join("");
+
+  const accRows = Object.keys(DEFAULT_PRICES.ACCESSORY)
+    .map(k => {
+      const r = row("ACCESSORY", k, k, prices.ACCESSORY[k] ?? "");
+      if (k === ACCESSORIES.WEIGHT_IN_DATA)
+        return r + row("WEIGHT_IN_FINISH_ADDON", "", "  + Finish addon", prices.WEIGHT_IN_FINISH_ADDON);
+      return r;
+    })
+    .join("");
+
+  const fixRows = Object.keys(DEFAULT_PRICES.FIX)
+    .map(k => row("FIX", k, k, prices.FIX[k] ?? ""))
+    .join("");
+
+  return [
+    `<p class="settings-label">Services</p>`, svcRows,
+    `<p class="settings-label">Accessories</p>`, accRows,
+    `<p class="settings-label">Fixes</p>`, fixRows,
+  ].join("");
+}
+
 function renderSettingsModal() {
   const s = getSettings();
   document.getElementById("theme-toggle").checked = s.theme === "light";
@@ -1055,15 +1084,7 @@ function renderSettingsModal() {
   document.getElementById("ai-settings-status").textContent = s.aiApiKey
     ? "Key saved."
     : "";
-  const prices = getPrices();
-  document.querySelectorAll("[data-price-category]").forEach((inp) => {
-    const cat = inp.dataset.priceCategory;
-    const name = inp.dataset.priceName;
-    inp.value =
-      cat === "WEIGHT_IN_FINISH_ADDON"
-        ? prices.WEIGHT_IN_FINISH_ADDON
-        : prices[cat]?.[name] ?? "";
-  });
+  document.getElementById("settings-prices-body").innerHTML = _renderPricesBody(getPrices());
 }
 
 // ---------------------------------------------------------------------------
