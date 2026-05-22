@@ -122,20 +122,29 @@ No bloquean pero afectan experiencia en campo.
       visible cuando se presiona `btn-open-troubleshoot`. El handler se ejecuta
       (añade clase `"open"` al drawer y `"visible"` al overlay) pero el drawer
       no aparece. Implementar o simplificar.
+- [ ] **equip-lv-row buttons** — implementar botones Indoor LV, Outdoor LV y
+      Blower Data en el job card (actualmente renderizan pero no tienen acción).
+      Reglas de imagen por tipo:
+      Indoor — Furnace: `furnace-1-2stage.png` o `furnace-heatpump.png` según
+      `hType`. AirHandler: `airhandler.png`.
+      Outdoor — Condenser: `cond-1-2stage.png` o `cond-daikin.png` según brand.
+      Heat Pump: `cond-heatpump.png`.
+      Blower Data: imagen específica por modelo desde `images/[SERIES]/`
+      (campo `imagen` en INDOOR_CATALOG).
 
 ---
 
 ## Fase 4 — Infraestructura
 **Objetivo:** Corregir la base técnica antes de agregar más features.
 
-- [ ] **sw.js** — reescribir service worker para cachear archivos de src/
+- [x] **sw.js** — reescribir service worker para cachear archivos de src/
       en lugar de archivos del repo original. CACHE_NAME nuevo para forzar
       actualización en browsers con SW viejo instalado.
-- [ ] **dropdowns.js** — eliminar script tag de index.html (línea 340).
+- [x] **dropdowns.js** — eliminar script tag de index.html (línea 340).
       El archivo lanza TypeError en cada carga y no tiene efecto en la PWA.
-- [ ] **Settings price fields** — generar dinámicamente desde DEFAULT_PRICES
+- [x] **Settings price fields** — generar dinámicamente desde DEFAULT_PRICES
       en data.js. Eliminar labels hardcodeados en index.html.
-- [ ] **docs/behavior.md** — construir UI Behavior Spec documentando el
+- [x] **docs/behavior.md** — construir UI Behavior Spec documentando el
       comportamiento esperado de cada sección. Base para testing manual.
 
 ---
@@ -163,7 +172,7 @@ No bloquean pero afectan experiencia en campo.
 | 3C | Ajustes UI | 1 | 🔴 Pendiente |
 | 3D | Ajustes lógica | 1 | 🔴 Pendiente |
 | 3E | Features pendientes | 3+ | 🔴 Pendiente |
-| 4 | Infraestructura | 1 | 🔴 Pendiente |
+| 4 | Infraestructura | 1 | ✅ Completa |
 | 5 | Multi-usuario | 2–3 | ⏳ Futuro |
 
 ---
