@@ -1563,6 +1563,45 @@ function wireEvents() {
       );
       return;
     }
+    const lv     = e.target.closest(".btn-lv");
+    const blower = e.target.closest(".btn-blower");
+    if (lv) {
+      const model = lv.dataset.model;
+      if (lv.dataset.type === "indoor") {
+        const dIn = getIndoorModel(model);
+        if (!dIn) { _openViewer("Indoor LV", ""); return; }
+        let img;
+        if (dIn.hType === "AirHandler") {
+          img = "images/lv/airhandler.png";
+        } else {
+          const card = lv.closest(".equip-card");
+          const dOut = getOutdoorModel(
+            card?.querySelector('.btn-lv[data-type="outdoor"]')?.dataset.model || ""
+          );
+          img = dOut?.uType === "Heat Pump"
+            ? "images/lv/furnace-heatpump.png"
+            : "images/lv/furnace-1-2stage.png";
+        }
+        _openViewer("Indoor LV", img);
+        return;
+      }
+      if (lv.dataset.type === "outdoor") {
+        const dOut = getOutdoorModel(model);
+        if (!dOut) { _openViewer("Outdoor LV", ""); return; }
+        const img = dOut.uType === "Heat Pump"
+          ? "images/lv/cond-heatpump.png"
+          : dOut.series?.startsWith("DC")
+            ? "images/lv/cond-daikin.png"
+            : "images/lv/cond-1-2stage.png";
+        _openViewer("Outdoor LV", img);
+        return;
+      }
+    }
+    if (blower) {
+      const dIn = getIndoorModel(blower.dataset.model);
+      _openViewer("Blower Data", dIn?.imagen || "");
+      return;
+    }
     const lbImg = e.target.closest("[data-lightbox-src]");
     if (lbImg) {
       document.getElementById("lightbox-img").src = lbImg.dataset.lightboxSrc;
