@@ -30,7 +30,7 @@ function buildSystemPrompt(job) {
 
   function appendSystem(label, sys) {
     if (!sys) return;
-    if (sys.furnace) lines.push(`${label} furnace/air handler: ${sys.furnace}`);
+    if (sys.indoor) lines.push(`${label} furnace/air handler: ${sys.indoor}`);
     if (sys.coil)    lines.push(`${label} coil: ${sys.coil}`);
     if (sys.outdoor) lines.push(`${label} outdoor unit: ${sys.outdoor}`);
     if (sys.links) {

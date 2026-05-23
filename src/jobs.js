@@ -23,11 +23,11 @@ export function createJob(data) {
     serviceTime:    data.serviceTime    || "",
     timeSensitive:  data.timeSensitive  || false,
     isTwoSystems:   data.isTwoSystems   || false,
-    details:        data.details        || "",
+    notes:          data.notes          || "",
     jobAccessories: data.jobAccessories || [],
     jobThermostat:  data.jobThermostat  || null,
     system1: {
-      furnace: data.system1?.furnace || "",
+      indoor: data.system1?.indoor || "",
       coil:    data.system1?.coil    || "",
       outdoor: data.system1?.outdoor || "",
       links:   data.system1?.links   || {},
@@ -106,7 +106,7 @@ export function groupBySubdivision(jobs) {
 
 // ---------------------------------------------------------------------------
 // Time-sensitive detection
-// Checks raw text (PDF extract or job.details) for dispatch urgency keywords.
+// Checks raw text (PDF extract or job.notes) for dispatch urgency keywords.
 // ---------------------------------------------------------------------------
 
 export function isTimeSensitive(text) {

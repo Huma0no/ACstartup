@@ -64,6 +64,7 @@ import {
 import { downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat } from "./ai.js";
 import { renderLV as _renderLV, openViewer as _openViewer } from "./lv.js";
+import { importFromJSON } from "./importer.js";
 import {
   SERVICES,
   ACCESSORIES,
@@ -269,10 +270,10 @@ function jobCardHTML(job, ci) {
     .filter(Boolean)
     .join("");
 
-  const _equipCard = (furnace, outdoor, label) => {
-    if (!furnace && !outdoor) return "";
+  const _equipCard = (indoor, outdoor, label) => {
+    if (!indoor && !outdoor) return "";
     const dOut = outdoor ? getOutdoorModel(outdoor) : null;
-    const dIn  = furnace  ? getIndoorModel(furnace)  : null;
+    const dIn  = indoor  ? getIndoorModel(indoor)  : null;
     const cfm  = dOut ? calculateCFM(dOut.btu) : null;
     const sc   =
       dOut?.oemSubcoolingGoal != null ? `${dOut.oemSubcoolingGoal} °F` : "—";
@@ -289,7 +290,7 @@ function jobCardHTML(job, ci) {
       <div class="equip-row">
         <div class="equip-cell">
           <div class="equip-cell-label">Indoor</div>
-          <div class="equip-cell-value">${furnace ? esc(furnace) : "—"}</div>
+          <div class="equip-cell-value">${indoor ? esc(indoor) : "—"}</div>
         </div>
         <div class="equip-cell">
           <div class="equip-cell-label">Outdoor</div>
@@ -338,21 +339,21 @@ function jobCardHTML(job, ci) {
       </div>
       <div class="equip-lv-row">
         <button class="btn-lv" data-type="indoor" data-model="${esc(
-          furnace || ""
+          indoor || ""
         )}">Indoor LV</button>
         <button class="btn-lv" data-type="outdoor" data-model="${esc(
           outdoor || ""
         )}">Outdoor LV</button>
         <button class="btn-blower" data-model="${esc(
-          furnace || ""
+          indoor || ""
         )}">Blower Data</button>
       </div>
     </div>`;
   };
   const equipCards = [
-    _equipCard(s1.furnace, s1.outdoor, "System 1"),
+    _equipCard(s1.indoor, s1.outdoor, "System 1"),
     job.isTwoSystems && s2
-      ? _equipCard(s2.furnace, s2.outdoor, "System 2")
+      ? _equipCard(s2.indoor, s2.outdoor, "System 2")
       : "",
   ]
     .filter(Boolean)
@@ -1225,7 +1226,7 @@ function buildAddJobSection() {
       <div class="form-row">
         <div>
           <label>Indoor unit
-            <select name="furnace" id="new-job-furnace">
+            <select name="indoor" id="new-job-indoor">
               <option value="">-- Select model --</option>${_indoorOptgroups()}
             </select>
           </label>
@@ -1245,7 +1246,7 @@ function buildAddJobSection() {
         <div class="form-row">
           <div>
             <label>Indoor unit 2
-              <select name="furnace2" id="new-job-furnace2">
+              <select name="indoor2" id="new-job-indoor2">
                 <option value="">-- Select model --</option>${_indoorOptgroups()}
               </select>
             </label>
@@ -1561,6 +1562,34 @@ function wireEvents() {
     .addEventListener("click", () =>
       document.getElementById("add-job-section").classList.remove("hidden")
     );
+  document.getElementById("btn-import-calls").addEventListener("click", () => {
+    document.getElementById("import-calls-input").click();
+  });
+  document.getElementById("import-calls-input").addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    file.text().then((text) => {
+      const result = importFromJSON(text);
+      if (result.errors[0]?.index === -1) {
+        toast(result.errors[0].reason, "error");
+      } else {
+        toast(`${result.imported} imported, ${result.skipped} skipped`, "success");
+      }
+      renderJobs();
+    });
+  });
+  document.getElementById("btn-export-calls").addEventListener("click", () => {
+    const date = new Date().toISOString().slice(0, 10);
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(getAllJobs(), null, 2)], { type: "application/json" })
+    );
+    Object.assign(document.createElement("a"), {
+      href: url,
+      download: `calls_${date}.json`,
+    }).click();
+    URL.revokeObjectURL(url);
+  });
   document.getElementById("jobs-list").addEventListener("click", (e) => {
     const del = e.target.closest("[data-delete]");
     const start = e.target.closest("[data-start]");
@@ -1911,8 +1940,8 @@ function wireEvents() {
     .addEventListener("click", () => {
       if (!_activeJob) return;
       const completion = buildCompletion(_activeJob, getPrices());
-      completion.refrigerant = getOutdoorModel(completion.outdoorModel)?.freon ||
-        getOutdoorModel(completion.outdoorModel2)?.freon || "";
+      completion.refrigerant = getOutdoorModel(completion.outdoor)?.freon ||
+        getOutdoorModel(completion.outdoor2)?.freon || "";
       completion.reportText = generateReportText(completion);
       saveCompletion(completion);
       removeJob(_activeJob.id);
@@ -2110,12 +2139,12 @@ function wireEvents() {
     .getElementById("add-job-cancel")
     .addEventListener("click", _collapseAddJobForm);
   const _checkSys2Btn = () => {
-    const f = document.getElementById("new-job-furnace").value;
+    const f = document.getElementById("new-job-indoor").value;
     const o = document.getElementById("new-job-outdoor").value;
     document.getElementById("btn-add-system2").style.display =
       f && o ? "block" : "none";
   };
-  document.getElementById("new-job-furnace").addEventListener("change", _checkSys2Btn);
+  document.getElementById("new-job-indoor").addEventListener("change", _checkSys2Btn);
   document.getElementById("new-job-outdoor").addEventListener("change", _checkSys2Btn);
   document.getElementById("btn-add-system2").addEventListener("click", () => {
     const cb = document.getElementById("new-job-two-systems");
@@ -2125,13 +2154,13 @@ function wireEvents() {
     cb.checked = adding;
     sys2.classList.toggle("hidden", !adding);
     if (!adding) {
-      document.getElementById("new-job-furnace2").value = "";
+      document.getElementById("new-job-indoor2").value = "";
       document.getElementById("new-job-outdoor2").value = "";
     }
     btn.textContent = adding ? "− Remove second system" : "+ Add second system";
   });
   document
-    .getElementById("new-job-furnace")
+    .getElementById("new-job-indoor")
     .addEventListener("change", (e) =>
       _showEquipLinks(
         e.target.value,
@@ -2141,7 +2170,7 @@ function wireEvents() {
       )
     );
   document
-    .getElementById("new-job-furnace2")
+    .getElementById("new-job-indoor2")
     .addEventListener("change", (e) =>
       _showEquipLinks(
         e.target.value,
@@ -2209,28 +2238,28 @@ function wireEvents() {
       address: fd.get("address").toUpperCase(),
       subdivision: (fd.get("subdivision") || "").toUpperCase(),
       builder: fd.get("builder") || "",
-      details: fd.get("notes") || "",
+      notes: fd.get("notes") || "",
       isTwoSystems,
       jobAccessories: [..._newJobAccChips],
       jobThermostat: tstatModel
         ? { model: tstatModel, qty: parseInt(fd.get("tstat-qty")) || 1 }
         : null,
       system1: {
-        furnace: fd.get("furnace") || "",
+        indoor: fd.get("indoor") || "",
         coil: "",
         outdoor: fd.get("outdoor") || "",
         links: {
-          ...(SERIES_LINKS[getIndoorModel(fd.get("furnace"))?.series] ?? {}),
+          ...(SERIES_LINKS[getIndoorModel(fd.get("indoor"))?.series] ?? {}),
           ...(OUTDOOR_LINKS[getOutdoorModel(fd.get("outdoor"))?.series] ?? {}),
         },
       },
       system2: isTwoSystems
         ? {
-            furnace: fd.get("furnace2") || "",
+            indoor: fd.get("indoor2") || "",
             coil: "",
             outdoor: fd.get("outdoor2") || "",
             links: {
-              ...(SERIES_LINKS[getIndoorModel(fd.get("furnace2"))?.series] ??
+              ...(SERIES_LINKS[getIndoorModel(fd.get("indoor2"))?.series] ??
                 {}),
               ...(OUTDOOR_LINKS[getOutdoorModel(fd.get("outdoor2"))?.series] ??
                 {}),
@@ -2590,8 +2619,8 @@ function openEditModal(completion) {
     };
     updated.reportText = generateReportText(updated);
     if (!updated.refrigerant) {
-      updated.refrigerant = getOutdoorModel(updated.outdoorModel)?.freon ||
-        getOutdoorModel(updated.outdoorModel2)?.freon || "";
+      updated.refrigerant = getOutdoorModel(updated.outdoor)?.freon ||
+        getOutdoorModel(updated.outdoor2)?.freon || "";
     }
 
     saveCompletion(updated);
@@ -2632,8 +2661,8 @@ function init() {
 
   getCompletions().forEach((c) => {
     if (!c.refrigerant) {
-      const freon = getOutdoorModel(c.outdoorModel)?.freon ||
-        getOutdoorModel(c.outdoorModel2)?.freon || "";
+      const freon = getOutdoorModel(c.outdoor)?.freon ||
+        getOutdoorModel(c.outdoor2)?.freon || "";
       if (freon) saveCompletion({ ...c, refrigerant: freon });
     }
   });

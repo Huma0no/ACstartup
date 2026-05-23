@@ -63,6 +63,7 @@
     <main class="tab-panels">
       <!-- Tab: Jobs -->
       <section id="tab-jobs" class="tab-panel active" role="tabpanel">
+        <input type="file" id="import-calls-input" accept=".json" hidden>
         <ul id="jobs-list" class="jobs-list" aria-label="Job list"></ul>
       </section>
 
@@ -282,6 +283,13 @@
           <p class="settings-price-notice">Changing prices affects new reports only — saved completions are not updated.</p>
           <div id="settings-prices-body"></div>
           <button type="button" id="btn-reset-prices" class="btn-secondary">Reset to defaults</button>
+        </div>
+        <div class="settings-group">
+          <p class="settings-label">Data</p>
+          <div class="settings-data-row">
+            <button type="button" id="btn-import-calls" class="btn-action-text">[Import Calls]</button>
+            <button type="button" id="btn-export-calls" class="btn-action-text">[Export Calls]</button>
+          </div>
         </div>
       </div>
     </dialog>

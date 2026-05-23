@@ -802,6 +802,26 @@ input[name="builder"] {
   text-decoration: underline;
 }
 
+/* Inline text action */
+.btn-action-text {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.btn-action-text + .btn-action-text {
+  margin-left: var(--space-3);
+}
+.btn-action-text:hover {
+  color: var(--color-accent);
+}
+.settings-data-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
 /* Icon button */
 .btn-icon {
   display: inline-flex;

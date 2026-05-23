@@ -197,8 +197,8 @@ export function setOption(name, value) {
 // System 2 models — set in-field when job had no system2 defined
 // ---------------------------------------------------------------------------
 
-export function setSystem2Models(furnace = "", coil = "", outdoor = "") {
-  _state.system2 = { furnace, coil, outdoor };
+export function setSystem2Models(indoor = "", coil = "", outdoor = "") {
+  _state.system2 = { indoor, coil, outdoor };
 }
 
 // ---------------------------------------------------------------------------
@@ -352,10 +352,10 @@ export function buildCompletion(job, prices = DEFAULT_PRICES) {
     isTwoSystems:       s.isTwoSystems,
     isTemporary:        s.isTemporary,
     refrigerant:        "",         // resolved by caller from equipment data
-    outdoorModel:       job.system1?.outdoor || "",
-    indoorModel:        job.system1?.furnace || "",
-    outdoorModel2:      (s.system2 ?? job.system2)?.outdoor || null,
-    indoorModel2:       (s.system2 ?? job.system2)?.furnace || null,
+    outdoor:            job.system1?.outdoor || "",
+    indoor:             job.system1?.indoor || "",
+    outdoor2:           (s.system2 ?? job.system2)?.outdoor || null,
+    indoor2:            (s.system2 ?? job.system2)?.indoor || null,
     services:           _buildServiceItems(s, totals.service),
     selectedThermostat: s.selectedThermostat ? { name: s.selectedThermostat } : null,
     thermostatQuantity: s.thermostatQuantity,

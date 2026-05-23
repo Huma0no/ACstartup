@@ -3,7 +3,7 @@
 
 import { getJobById, updateJob } from "./jobs.js";
 
-// Required fields per data_dictionary.md §2
+// Required fields per architecture.md §9
 const REQUIRED_JOB_FIELDS = ["id", "date", "address", "subdivision", "builder", "system1"];
 
 function validateJob(job) {

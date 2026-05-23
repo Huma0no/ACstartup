@@ -248,7 +248,7 @@ const FOOTER_LINKS = [
 
 function _resolveJobChips(job) {
   const chips = [];
-  const f = job.system1?.furnace;
+  const f = job.system1?.indoor;
   const o = job.system1?.outdoor;
   const indoorEntry  = f ? getIndoorModel(f)  : null;
   const outdoorEntry = o ? getOutdoorModel(o) : null;

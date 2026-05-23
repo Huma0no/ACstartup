@@ -130,8 +130,8 @@ export function exportCSV(completions) {
       c.totals.fix,
       c.totals.total,
       // Equipment sys1
-      c.indoorModel,
-      c.outdoorModel,
+      c.indoor,
+      c.outdoor,
       c.refrigerant,
       // Weigh-in sys1
       w.linesetLength        || "",
@@ -147,8 +147,8 @@ export function exportCSV(completions) {
       w.oemSubcoolingGoal    || "",
       w.subcoolingDeviation  || "",
       // Equipment sys2
-      c.indoorModel2,
-      c.outdoorModel2,
+      c.indoor2,
+      c.outdoor2,
       // Weigh-in sys2
       w2.linesetLength       || "",
       w2.factoryLineConfig   || "",
