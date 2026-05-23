@@ -28,7 +28,6 @@ export function createJob(data) {
     jobThermostat:  data.jobThermostat  || null,
     system1: {
       indoor: data.system1?.indoor || "",
-      coil:    data.system1?.coil    || "",
       outdoor: data.system1?.outdoor || "",
       links:   data.system1?.links   || {},
     },
