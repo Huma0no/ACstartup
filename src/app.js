@@ -1485,9 +1485,37 @@ function wireEvents() {
     );
   document
     .getElementById("btn-open-quick-calc")
-    .addEventListener("click", () =>
-      document.getElementById("quick-calc-modal").showModal()
-    );
+    .addEventListener("click", () => {
+      const body = document.getElementById("quick-calc-body");
+      const opts = LINE_CONFIG_OPTIONS.map(
+        (o) => `<option value="${esc(o)}">${esc(o) || "—"}</option>`
+      ).join("");
+      body.innerHTML = `
+        <div class="quick-calc-wrapper">
+          <div class="quick-calc-flex">
+            <label class="quick-calc-label">Lineset ft
+              <input type="number" id="qc-lineset" class="input-lg" min="0" step="1" placeholder="—">
+            </label>
+            <label class="quick-calc-label">Line Config
+              <select id="qc-config">${opts}</select>
+            </label>
+          </div>
+          <div id="qc-result" class="result-box-large">—</div>
+        </div>`;
+      function calc() {
+        const oz = parseFloat(
+          calculateApproxAdjust(
+            parseFloat(body.querySelector("#qc-lineset").value),
+            body.querySelector("#qc-config").value
+          )
+        );
+        body.querySelector("#qc-result").textContent =
+          isNaN(oz) ? "—" : oz >= 0 ? `+ ${oz.toFixed(2)} oz` : `− ${Math.abs(oz).toFixed(2)} oz`;
+      }
+      body.querySelector("#qc-lineset").addEventListener("input", calc);
+      body.querySelector("#qc-config").addEventListener("change", calc);
+      document.getElementById("quick-calc-modal").showModal();
+    });
   document.getElementById("quick-calc-modal").addEventListener("click", (e) => {
     if (e.target === document.getElementById("quick-calc-modal"))
       document.getElementById("quick-calc-modal").close();
