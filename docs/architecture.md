@@ -183,9 +183,9 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
   "timeSensitive": false,
   "status": "pending | completed | follow-up",
   "system1": {
-    "furnace": { "series": "", "model": "GR9S800805C" },
-    "coil":    { "series": "", "model": "CHPTA4830C3" },
-    "outdoor": { "series": "", "model": "GLXS4BA4210" }
+    "indoor":  "GR9S800805C",
+    "outdoor": "GLXS4BA4210",
+    "links":   {}
   },
   "system2": null,
   "notes": "Lennar 4030 plan, 1 stage, no secondary r/a...",
@@ -199,6 +199,10 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
   "jobId": "uuid",
   "serviceType": "AC & Heat",
   "twoSystems": false,
+  "indoor":  "GR9S800805C",
+  "outdoor": "GLXS4BA4210",
+  "indoor2": null,
+  "outdoor2": null,
   "thermostat": { "model": "Ecobee", "qty": 2, "price": 60 },
   "accessories": [
     { "name": "fin180p", "price": 10 },
