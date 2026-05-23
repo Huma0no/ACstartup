@@ -325,3 +325,159 @@ No disruption to current session
 
 *Document prepared by: PM/Software Engineer*  
 *Approved by: _________________ Date: _________*
+
+---
+
+## 9. Dispatch Integration
+
+### Terminology — Official and Final
+
+All code, JSON contracts, and documentation must use
+these terms consistently:
+
+| Concept | Term | Notes |
+|---|---|---|
+| Indoor unit model | `indoor` | Replaces: furnace, heaterModel, indoorModel |
+| Outdoor unit model | `outdoor` | Consistent across all layers |
+| Pre-job notes | `notes` | Replaces: details, dispatchNotes |
+| Field notes | `notes` | Same key, different object context |
+
+### Current Architecture (Phase 3E)
+Manual JSON file exchange between Dispatch and PWA.
+
+### JSON Contract — Dispatch → PWA (Incoming Jobs)
+
+File: `route_YYYY-MM-DD.json` — array of Job objects.
+
+**Required fields** (validated by `importer.js`):
+
+```json
+{
+  "id": "uuid",
+  "date": "2026-05-21",
+  "address": "32122 WATERLILY VIEW COURT",
+  "subdivision": "DELLROSE",
+  "builder": "LENNAR",
+  "system1": {
+    "indoor": "GR9S800805C",
+    "outdoor": "GLXS4BA4210"
+  }
+}
+```
+
+**Optional fields:**
+
+| Field | Type | Notes |
+|---|---|---|
+| `contact` | string | Name + phone |
+| `serviceTime` | string | e.g. `"8:00 AM"` |
+| `timeSensitive` | boolean | Overrides keyword detection |
+| `isTwoSystems` | boolean | |
+| `details` | string | Pre-job notes (**legacy** — canonical: `notes`) |
+| `system2` | object | Same shape as `system1`, or `null` |
+| `jobAccessories` | array | Pre-assigned accessories |
+| `jobThermostat` | object | Pre-assigned thermostat |
+
+> `id` is preserved as-is from Dispatch. Duplicate `id`s are skipped silently (no overwrite).
+
+### JSON Contract — PWA → Dispatch (Completions Export)
+
+File: `dashboard_import_YYYY-MM-DD.json` — array of Completion objects.
+
+```json
+{
+  "jobId": "uuid",
+  "address": "32122 WATERLILY VIEW COURT",
+  "subdivision": "DELLROSE",
+  "builder": "LENNAR",
+  "timestamp": "2026-05-21T14:30:00.000Z",
+  "isTwoSystems": false,
+  "isTemporary": false,
+  "refrigerant": "R-410A",
+  "indoorModel": "GR9S800805C",
+  "outdoorModel": "GLXS4BA4210",
+  "indoorModel2": null,
+  "outdoorModel2": null,
+  "services": [],
+  "selectedThermostat": { "name": "Ecobee" },
+  "thermostatQuantity": 1,
+  "accessories": [],
+  "fixes": [],
+  "weightInData": null,
+  "weightInData2": null,
+  "notes": "Lennar 4030 plan, 1 stage",
+  "sitePhotoMeta": [],
+  "totals": { "service": 30, "accessory": 10, "fix": 0, "total": 40 },
+  "reportText": "32122 WATERLILY VIEW COURT, AC & Heat..."
+}
+```
+
+> `indoorModel` / `outdoorModel` are completion-layer aliases for `system1.furnace` /
+> `system1.outdoor` from the Job object. The rename happens at `buildCompletion()`
+> in `workspace.js:355-358`.
+
+> `savedState` is excluded from export — internal PWA state only.
+
+### Field Mapping — Legacy → Canonical
+
+| Legacy field | Canonical | File | Action required |
+|---|---|---|---|
+| `job.system1.furnace` | `job.system1.indoor` | `jobs.js`, `importer.js` | Rename storage key |
+| `completion.indoorModel` | `completion.indoor` | `workspace.js`, `reports.js` | Rename at `buildCompletion` |
+| `job.details` | `job.notes` | `jobs.js` | Rename storage key |
+| `completion.outdoorModel` | `completion.outdoor` | `workspace.js`, `reports.js` | Rename at `buildCompletion` |
+| `job.system1.outdoor` | unchanged | all files | Already canonical |
+| `dispatchNotes` | `notes` | N/A | Never existed in code; term retired |
+
+### Validation Rules
+
+Applied by `importer.js` to every incoming job object:
+
+| Rule | Detail |
+|---|---|
+| Required fields present | `id`, `date`, `address`, `subdivision`, `builder`, `system1` |
+| No empty required strings | `null` and `""` both fail |
+| `system1` is a plain object | Arrays are rejected |
+| No duplicate `id` | Existing jobs skipped, not overwritten |
+| Invalid JSON string | Returns `{ imported: 0, errors: [{ index: -1, reason: "invalid JSON: …" }] }` |
+
+Return shape: `{ imported: N, skipped: N, errors: [{ index, id, reason }] }`
+
+### Known Inconsistencies
+
+Live issues in the codebase as of Phase 3E:
+
+1. **`details` / `notes` split** — Pre-job notes exist under two separate keys that
+   are never synced. `job.details` is set by the new-job form (`app.js:2212`,
+   `jobs.js:26`). `completion.notes` is set by the workspace textarea
+   (`workspace.js:366`). A tech's dispatch note in `job.details` is invisible to
+   the completion record.
+
+2. **`furnace` / `indoorModel` split** — Indoor model is stored as `system1.furnace`
+   (plain string) on Job objects (`jobs.js:30`) but surfaced as `indoorModel` in
+   Completion objects (`workspace.js:356`). No migration path exists between the
+   two keys.
+
+3. **`importer.js` is unwired** — `importFromJSON` and `importFromPDF` are exported
+   but never imported in `app.js`. There is no active import trigger in the UI.
+   The module is a no-op at runtime.
+
+4. **New-job form field name mismatch** — `<textarea name="notes">` (`app.js:1222`)
+   is read as `fd.get("notes")` and saved as `details: fd.get("notes") || ""`
+   (`app.js:2212`). The HTML `name` attribute and the storage key are different.
+
+5. **Data model doc vs. actual code** — `architecture.md §4` shows `system1.furnace`
+   as an object `{ "series": "", "model": "GR9S800805C" }`, but `jobs.js:30` stores
+   it as a plain string `"GR9S800805C"`. The doc is wrong; the code is authoritative.
+
+### Future Architecture (Phase 5)
+
+Replace manual JSON file exchange with a direct sync channel.
+
+| Component | Phase 3E (current) | Phase 5 (target) |
+|---|---|---|
+| Job delivery | Manual JSON file, user imports | Dispatch pushes via local API or shared sync |
+| Completion delivery | Manual JSON export, user sends | PWA pushes on finalize |
+| Field naming | Mixed (`furnace`, `details`, `indoorModel`) | Unified canonical (`indoor`, `outdoor`, `notes`) |
+| Duplicate handling | Skip by `id` | Upsert by `id` — Dispatch can update jobs mid-day |
+| Import UI | Not wired (`importer.js` unused) | Dedicated Import button + result toast |
