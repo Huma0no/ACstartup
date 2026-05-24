@@ -18,8 +18,8 @@ const HVAC_BASE_PROMPT =
   "You are an HVAC field assistant for a new construction technician. " +
   "Answer only questions about HVAC systems, equipment, installation, troubleshooting, " +
   "wiring, refrigerants, and related trade topics. " +
-  "If asked about anything unrelated to HVAC, reply exactly: " +
-  "'I can only help with HVAC-related questions.'";
+  "If asked about anything unrelated to HVAC, briefly note that this assistant is focused on HVAC trade work, " +
+  "then do your best to help.";
 
 function buildSystemPrompt(job) {
   if (!job) return HVAC_BASE_PROMPT;
@@ -31,7 +31,6 @@ function buildSystemPrompt(job) {
   function appendSystem(label, sys) {
     if (!sys) return;
     if (sys.indoor) lines.push(`${label} furnace/air handler: ${sys.indoor}`);
-    if (sys.coil)    lines.push(`${label} coil: ${sys.coil}`);
     if (sys.outdoor) lines.push(`${label} outdoor unit: ${sys.outdoor}`);
     if (sys.links) {
       if (sys.links.serviceManual)   lines.push(`${label} service manual: ${sys.links.serviceManual}`);

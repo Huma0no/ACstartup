@@ -456,6 +456,7 @@ textarea {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   position: relative;
+  padding-bottom: 56px;
 }
 
 .tab-panel {
@@ -3703,4 +3704,91 @@ dialog.modal[open] {
   display: inline-block;
   background: var(--color-warning-soft);
   color: var(--color-warning);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   23. AI BAR
+   ─────────────────────────────────────────────────────────────── */
+
+#ai-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: calc(var(--z-overlay) + 1);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+#ai-chat-history {
+  max-height: 50dvh;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ai-msg-user {
+  align-self: flex-end;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  max-width: 85%;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-msg-assistant {
+  align-self: flex-start;
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  max-width: 85%;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#ai-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+}
+
+#ai-chat-input {
+  flex: 1;
+  resize: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: var(--space-2) 0;
+  min-height: 36px;
+  max-height: 176px;
+  overflow-y: auto;
+  font-size: var(--font-size-sm);
+}
+
+#ai-chat-send {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#ai-chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

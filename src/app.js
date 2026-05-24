@@ -62,7 +62,7 @@ import {
   getSubcoolingDefault,
 } from "./utils.js";
 import { downloadDiagram, precacheJobs } from "./diagrams.js";
-import { initChat } from "./ai.js";
+import { initChat, sendMessage, clearHistory } from "./ai.js";
 import { renderLV as _renderLV, openViewer as _openViewer } from "./lv.js";
 import { importFromJSON } from "./importer.js";
 import {
@@ -90,6 +90,7 @@ import {
 // ---------------------------------------------------------------------------
 
 let _activeJob = null;
+let _chatInitialized = false;
 let _newJobAccChips = [];
 
 const SITE_PRESETS = [
@@ -403,6 +404,7 @@ function openWorkspace(job) {
   onWeighInPhotoChange(_updatePhotoCount);
   _initSitePhotoPresets();
   initChat(job);
+  _chatInitialized = true;
   openTab("workspace");
   renderWorkspace();
   if (!isResume) {
@@ -2246,7 +2248,6 @@ function wireEvents() {
         : null,
       system1: {
         indoor: fd.get("indoor") || "",
-        coil: "",
         outdoor: fd.get("outdoor") || "",
         links: {
           ...(SERIES_LINKS[getIndoorModel(fd.get("indoor"))?.series] ?? {}),
@@ -2256,7 +2257,6 @@ function wireEvents() {
       system2: isTwoSystems
         ? {
             indoor: fd.get("indoor2") || "",
-            coil: "",
             outdoor: fd.get("outdoor2") || "",
             links: {
               ...(SERIES_LINKS[getIndoorModel(fd.get("indoor2"))?.series] ??
@@ -2271,6 +2271,71 @@ function wireEvents() {
     _collapseAddJobForm();
     renderJobs();
     toast(`Job added: ${job.address}`, "success");
+  });
+
+  // AI bar
+  const _aiHistory = document.getElementById("ai-chat-history");
+  const _aiInput   = document.getElementById("ai-chat-input");
+  const _aiSend    = document.getElementById("ai-chat-send");
+
+  function _appendBubble(text, role) {
+    const el = document.createElement("div");
+    el.className = role === "user" ? "ai-msg-user" : "ai-msg-assistant";
+    el.textContent = text;
+    _aiHistory.appendChild(el);
+    _aiHistory.scrollTop = _aiHistory.scrollHeight;
+  }
+
+  async function _sendChat() {
+    const text = _aiInput.value.trim();
+    if (!text) return;
+    const s = getSettings();
+    if (!s?.aiApiKey) {
+      _appendBubble("Configure your API key in Settings to use the AI assistant.", "assistant");
+      return;
+    }
+    _appendBubble(text, "user");
+    _aiInput.value = "";
+    _aiInput.style.height = "";
+    _aiSend.disabled = true;
+    try {
+      const reply = await sendMessage(text);
+      _appendBubble(reply, "assistant");
+    } catch (err) {
+      _appendBubble(`Error: ${err.message}`, "assistant");
+    } finally {
+      _aiSend.disabled = false;
+      _aiInput.focus();
+    }
+  }
+
+  let _justSent = false;
+  _aiInput.addEventListener("focus", () => {
+    if (!_chatInitialized) { initChat(_activeJob); _chatInitialized = true; }
+    _aiHistory.classList.remove("hidden");
+  });
+  _aiInput.addEventListener("blur", () => {
+    if (_justSent) return;
+    _aiHistory.classList.add("hidden");
+  });
+  _aiSend.addEventListener("mousedown", () => {
+    _justSent = true;
+    setTimeout(() => { _justSent = false; }, 300);
+  });
+  _aiSend.addEventListener("touchstart", () => {
+    _justSent = true;
+    setTimeout(() => { _justSent = false; }, 300);
+  }, { passive: true });
+  _aiSend.addEventListener("click", _sendChat);
+  _aiInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      _sendChat();
+    }
+  });
+  _aiInput.addEventListener("input", () => {
+    _aiInput.style.height = "auto";
+    _aiInput.style.height = _aiInput.scrollHeight + "px";
   });
 }
 
@@ -2649,6 +2714,7 @@ function init() {
       _activeJob = job;
       initWorkspace(job);
       initChat(job);
+      _chatInitialized = true;
     }
   }
 
