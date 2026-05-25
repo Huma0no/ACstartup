@@ -1483,15 +1483,12 @@ function wireEvents() {
             </label>
           </div>
           <div id="qc-result" class="result-box-large">—</div>
+          <div id="qc-detail" style="font-size:var(--font-size-xs);color:var(--color-text-secondary);text-align:center;padding-top:var(--space-1)"></div>
         </div>`;
       function calc() {
         const configVal = body.querySelector("#qc-config").value;
-        const oz = parseFloat(
-          calculateApproxAdjust(
-            parseFloat(body.querySelector("#qc-lineset").value),
-            configVal
-          )
-        );
+        const linesetVal = parseFloat(body.querySelector("#qc-lineset").value);
+        const oz = parseFloat(calculateApproxAdjust(linesetVal, configVal));
         const ref = configVal.includes("Trane") || configVal.includes("Lennox")
           ? "R-454B"
           : configVal.includes("Goodman") || configVal.includes("Daikin")
@@ -1499,6 +1496,18 @@ function wireEvents() {
           : "";
         const ozStr = isNaN(oz) ? "—" : oz >= 0 ? `+ ${oz.toFixed(2)} oz` : `− ${Math.abs(oz).toFixed(2)} oz`;
         body.querySelector("#qc-result").textContent = ref ? `${ozStr} · ${ref}` : ozStr;
+
+        let detail = "";
+        if (!isNaN(oz) && configVal) {
+          const multiplier = configVal.includes("Trane") ? 0.47 : 0.6;
+          const factoryLength = configVal.includes("10ft") ? 10
+            : configVal.includes("25ft") ? 25
+            : configVal.includes("30ft") ? 30
+            : 15;
+          const extraFt = linesetVal - factoryLength;
+          detail = `${multiplier} oz per extra lineset ft · ${extraFt} additional ft to add.`;
+        }
+        body.querySelector("#qc-detail").textContent = detail;
       }
       body.querySelector("#qc-lineset").addEventListener("input", calc);
       body.querySelector("#qc-config").addEventListener("change", calc);
