@@ -2,6 +2,7 @@
 // No UI rendering. No direct localStorage access.
 
 import { getSettings } from "./settings.js";
+import { AI_MODELS } from "./data.js";
 
 // ---------------------------------------------------------------------------
 // Module state — in memory only, never persisted
@@ -60,7 +61,7 @@ async function callAnthropic(systemPrompt, history, apiKey) {
       "content-type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-haiku-4-5-20251001",
+      model:      AI_MODELS.anthropic,
       max_tokens: 1024,
       system:     systemPrompt,
       messages:   history,
@@ -79,7 +80,7 @@ async function callOpenAI(systemPrompt, history, apiKey) {
       "Authorization": `Bearer ${apiKey}`,
       "content-type":  "application/json",
     },
-    body: JSON.stringify({ model: "gpt-4o", messages }),
+    body: JSON.stringify({ model: AI_MODELS.openai, messages }),
   });
   if (!res.ok) throw new Error(`OpenAI API error ${res.status}`);
   const data = await res.json();
@@ -92,7 +93,7 @@ async function callGoogle(systemPrompt, history, apiKey) {
     parts: [{ text: m.content }],
   }));
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.google}:generateContent?key=${apiKey}`,
     {
       method:  "POST",
       headers: { "content-type": "application/json" },

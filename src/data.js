@@ -599,3 +599,9 @@ export function getOutdoorSeriesGroups() {
   }
   return order.map((series) => ({ series, models: map.get(series) }));
 }
+
+export const AI_MODELS = {
+  anthropic: "claude-haiku-4-5-20251001",
+  openai:    "gpt-4o",
+  google:    "gemini-2.0-flash",
+};
