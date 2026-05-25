@@ -1485,14 +1485,20 @@ function wireEvents() {
           <div id="qc-result" class="result-box-large">—</div>
         </div>`;
       function calc() {
+        const configVal = body.querySelector("#qc-config").value;
         const oz = parseFloat(
           calculateApproxAdjust(
             parseFloat(body.querySelector("#qc-lineset").value),
-            body.querySelector("#qc-config").value
+            configVal
           )
         );
-        body.querySelector("#qc-result").textContent =
-          isNaN(oz) ? "—" : oz >= 0 ? `+ ${oz.toFixed(2)} oz` : `− ${Math.abs(oz).toFixed(2)} oz`;
+        const ref = configVal.includes("Trane") || configVal.includes("Lennox")
+          ? "R-454B"
+          : configVal.includes("Goodman") || configVal.includes("Daikin")
+          ? "R-32"
+          : "";
+        const ozStr = isNaN(oz) ? "—" : oz >= 0 ? `+ ${oz.toFixed(2)} oz` : `− ${Math.abs(oz).toFixed(2)} oz`;
+        body.querySelector("#qc-result").textContent = ref ? `${ozStr} · ${ref}` : ozStr;
       }
       body.querySelector("#qc-lineset").addEventListener("input", calc);
       body.querySelector("#qc-config").addEventListener("change", calc);
