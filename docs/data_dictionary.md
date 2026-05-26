@@ -171,6 +171,29 @@ Representa el trabajo realizado en un job. Se genera al completar el workspace.
 { "name": "FIN180P", "displayName": "fin180p", "price": 10 }
 ```
 
+### AccessoryItem (updated)
+```json
+{ 
+  "name": "FLOAT_SWITCH", 
+  "displayName": "Float Switch", 
+  "price": 5,
+  "techSupplied": true
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | string | Accessory key from ACCESSORIES constant |
+| `displayName` | string | Human-readable label for reports |
+| `price` | number | Price charged |
+| `techSupplied` | boolean | true = technician supplies and installs (counts against inventory in Dispatch). false = pre-installed on site (does not affect inventory). Other custom accessories are always techSupplied: true. |
+
+### Technician-supplied accessories
+Defined in `src/data.js` as `TECH_SUPPLIED_ACCESSORIES`.
+Thermostats are always techSupplied: true by nature —
+not included in this array since they are tracked
+separately via jobThermostat.
+
 ### FixItem
 ```json
 { "name": "OPEN_ECOIL", "displayName": "opened ecoil to pull out sensor wire", "price": 30, "detail": "" }

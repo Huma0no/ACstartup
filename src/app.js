@@ -76,6 +76,7 @@ import {
   CUSTOM_PRICE_ACCESSORIES,
   CUSTOM_PRICE_FIXES,
   TWO_SYSTEMS_ACCESSORIES,
+  TECH_SUPPLIED_ACCESSORIES,
   DEFAULT_PRICES,
   getIndoorSeriesGroups,
   getOutdoorSeriesGroups,
@@ -194,14 +195,52 @@ function renderJobs() {
     return;
   }
 
-  const cards = groupBySubdivision(jobs).flatMap(({ colorIndex, jobs: gj }) =>
+  const completedIds  = new Set(getCompletions().map((c) => c.jobId));
+  const activeJobs    = jobs.filter((j) => !completedIds.has(j.id));
+  const completedJobs = jobs.filter((j) => completedIds.has(j.id));
+
+  const cards = groupBySubdivision(activeJobs).flatMap(({ colorIndex, jobs: gj }) =>
     gj.map((j) => ({ job: j, html: jobCardHTML(j, colorIndex) }))
   );
 
   let html = "";
-  cards.forEach(({ html: cardHtml }) => {
-    html += cardHtml;
+  cards.forEach(({ html: cardHtml }) => { html += cardHtml; });
+
+  if (completedJobs.length) {
+    html += `<li><button class="btn-clear-completed" data-clear-completed>Clear completed</button></li>`;
+    completedJobs.forEach((job) => {
+      html += `<li class="job-completed"><span class="job-completed-addr">${esc(job.address)}</span></li>`;
+    });
+  }
+
+  const tstatCounts = {};
+  const accCounts   = {};
+  activeJobs.forEach((job) => {
+    if (job.jobThermostat?.model) {
+      const m = job.jobThermostat.model;
+      tstatCounts[m] = (tstatCounts[m] || 0) + (job.jobThermostat.qty || 1);
+    }
+    (job.jobAccessories || []).forEach((key) => {
+      if (TECH_SUPPLIED_ACCESSORIES.includes(key)) accCounts[key] = (accCounts[key] || 0) + 1;
+    });
   });
+  let chipsHtml = Object.entries(tstatCounts)
+    .map(([model, n]) => `<span class="chip chip-sm chip-primary">${n}× ${esc(model)}</span>`)
+    .join("");
+  TECH_SUPPLIED_ACCESSORIES.forEach((key) => {
+    if (accCounts[key]) {
+      const label = ACCESSORY_DISPLAY[key]?.label || key;
+      chipsHtml += `<span class="chip chip-sm chip-secondary">${accCounts[key]}× ${esc(label)}</span>`;
+    }
+  });
+  if (!chipsHtml) chipsHtml = `<span class="load-sheet-empty">No accessories scheduled</span>`;
+  html += `<li id="load-sheet-summary">
+  <div class="load-sheet-header" data-toggle-summary>
+    <span class="acc-chevron">›</span>
+    <span>🧰 Load Sheet Summary (All Jobs)</span>
+  </div>
+  <div class="load-sheet-body hidden">${chipsHtml}</div>
+</li>`;
 
   list.innerHTML = html;
 }
@@ -1592,7 +1631,23 @@ function wireEvents() {
     const edit = e.target.closest("[data-edit]");
     const maps = e.target.closest("[data-maps]");
     const item = e.target.closest(".job-item");
+    const clearCompleted  = e.target.closest("[data-clear-completed]");
+    const toggleSummary   = e.target.closest("[data-toggle-summary]");
 
+    if (toggleSummary) {
+      const li = document.getElementById("load-sheet-summary");
+      const body = li?.querySelector(".load-sheet-body");
+      const chevron = toggleSummary.querySelector(".acc-chevron");
+      if (body) body.classList.toggle("hidden");
+      if (chevron) chevron.classList.toggle("open");
+      return;
+    }
+    if (clearCompleted) {
+      const ids = new Set(getCompletions().map((c) => c.jobId));
+      getAllJobs().filter((j) => ids.has(j.id)).forEach((j) => removeJob(j.id));
+      renderJobs();
+      return;
+    }
     if (del) {
       const dj = getJobById(del.dataset.delete);
       if (!confirm(`Delete ${dj ? dj.address : "this job"}?`)) return;
@@ -1940,7 +1995,6 @@ function wireEvents() {
         getOutdoorModel(completion.outdoor2)?.freon || "";
       completion.reportText = generateReportText(completion);
       saveCompletion(completion);
-      removeJob(_activeJob.id);
       clearWorkspace();
       setActiveJobId(null);
       _activeJob = null;

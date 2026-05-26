@@ -95,6 +95,19 @@ export const CUSTOM_PRICE_ACCESSORIES = [
   ACCESSORIES.OTRO,
 ];
 
+// Accessories the technician supplies and installs (tracked in Load Sheet Summary / Dispatch inventory)
+export const TECH_SUPPLIED_ACCESSORIES = [
+  ACCESSORIES.HZ322,
+  ACCESSORIES.UT3000,
+  ACCESSORIES.HARMONY,
+  ACCESSORIES.DAPC,
+  ACCESSORIES.FLOAT_SWITCH,
+  ACCESSORIES.LP_KIT_LENNOX_1STG,
+  ACCESSORIES.LP_KIT_LENNOX_2STG,
+  ACCESSORIES.LP_KIT_GOODMAN,
+  ACCESSORIES.RDS,
+];
+
 // ---------------------------------------------------------------------------
 // FIXES
 // ---------------------------------------------------------------------------
