@@ -168,148 +168,56 @@ textarea {
 }
 
 /* ───────────────────────────────────────────────────────────────
-   3. THEME A — Minimalista / limpio
+   3. THEMES
    ─────────────────────────────────────────────────────────────── */
 
-:root[data-theme="a"][data-mode="light"] {
-  --color-bg: #ffffff;
-  --color-surface: #f8f9fa;
-  --color-surface-raised: #ffffff;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-disabled: #d1d5db;
-  --color-accent: #06b6d4;
-  --color-accent-soft: #ecfeff;
-  --color-accent-text: #ffffff;
-  --color-success: #10b981;
-  --color-success-soft: #d1fae5;
-  --color-warning: #f59e0b;
-  --color-warning-soft: #fef3c7;
-  --color-danger: #ef4444;
-  --color-danger-soft: #fee2e2;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+:root[data-mode="light"] {
+  --color-bg:             #FFFFFF;
+  --color-surface:        #F2F2F7;
+  --color-surface-raised: #FFFFFF;
+  --color-border:         #C6C6C8;
+  --color-border-strong:  #AEAEB2;
+  --color-text-primary:   #000000;
+  --color-text-secondary: #3C3C43;
+  --color-text-disabled:  #AEAEB2;
+  --color-accent:         #00A8C8;
+  --color-accent-soft:    #E5F7FB;
+  --color-accent-text:    #FFFFFF;
+  --color-success:        #34C759;
+  --color-success-soft:   #D4F5DC;
+  --color-warning:        #FF9500;
+  --color-warning-soft:   #FFF3E0;
+  --color-danger:         #FF3B30;
+  --color-danger-soft:    #FFE5E4;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
 }
 
-:root[data-theme="a"][data-mode="dark"] {
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-surface-raised: #334155;
-  --color-border: #334155;
-  --color-border-strong: #475569;
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-disabled: #475569;
-  --color-accent: #22d3ee;
-  --color-accent-soft: #164e63;
-  --color-accent-text: #0f172a;
-  --color-success: #34d399;
-  --color-success-soft: #064e3b;
-  --color-warning: #fbbf24;
-  --color-warning-soft: #451a03;
-  --color-danger: #f87171;
-  --color-danger-soft: #450a0a;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-/* ───────────────────────────────────────────────────────────────
-   4. THEME B — Moderno con profundidad
-   ─────────────────────────────────────────────────────────────── */
-
-:root[data-theme="b"][data-mode="light"] {
-  --color-bg: #f3f4f6;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-border: #e5e7eb;
-  --color-border-strong: #9ca3af;
-  --color-text-primary: #1f2937;
-  --color-text-secondary: #6b7280;
-  --color-text-disabled: #d1d5db;
-  --color-accent: #0891b2;
-  --color-accent-soft: #e0f7fa;
-  --color-accent-text: #ffffff;
-  --color-success: #059669;
-  --color-success-soft: #d1fae5;
-  --color-warning: #d97706;
-  --color-warning-soft: #fef3c7;
-  --color-danger: #dc2626;
-  --color-danger-soft: #fee2e2;
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-:root[data-theme="b"][data-mode="dark"] {
-  --color-bg: #18181b;
-  --color-surface: #27272a;
-  --color-surface-raised: #3f3f46;
-  --color-border: #3f3f46;
-  --color-border-strong: #52525b;
-  --color-text-primary: #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-text-disabled: #52525b;
-  --color-accent: #22d3ee;
-  --color-accent-soft: #083344;
-  --color-accent-text: #0c0a09;
-  --color-success: #34d399;
-  --color-success-soft: #022c22;
-  --color-warning: #fcd34d;
-  --color-warning-soft: #2d1b00;
-  --color-danger: #f87171;
-  --color-danger-soft: #2d0808;
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-/* ───────────────────────────────────────────────────────────────
-   5. THEME C — Industrial / técnico
-   ─────────────────────────────────────────────────────────────── */
-
-:root[data-theme="c"][data-mode="light"] {
-  --color-bg: #eceff1;
-  --color-surface: #ffffff;
-  --color-surface-raised: #f5f5f5;
-  --color-border: #b0bec5;
-  --color-border-strong: #78909c;
-  --color-text-primary: #212121;
-  --color-text-secondary: #546e7a;
-  --color-text-disabled: #b0bec5;
-  --color-accent: #0d9488;
-  --color-accent-soft: #ccfbf1;
-  --color-accent-text: #ffffff;
-  --color-success: #0d9488;
-  --color-success-soft: #ccfbf1;
-  --color-warning: #e65100;
-  --color-warning-soft: #fbe9e7;
-  --color-danger: #c62828;
-  --color-danger-soft: #ffebee;
-  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-:root[data-theme="c"][data-mode="dark"] {
-  --color-bg: #0a0a0f;
-  --color-surface: #0d0d18;
-  --color-surface-raised: #111118;
-  --color-border: #1a1a2e;
-  --color-border-strong: #242430;
-  --color-text-primary: #e2e8f0;
-  --color-text-secondary: #475569;
-  --color-text-disabled: #48484a;
-  --color-accent: #2dd4bf;
-  --color-accent-soft: #0d2820;
-  --color-accent-text: #001a1a;
-  --color-success: #2dd4bf;
-  --color-success-soft: #0d2e13;
-  --color-warning: #ff9f0a;
-  --color-warning-soft: #2e1a00;
-  --color-danger: #ff453a;
-  --color-danger-soft: #2e0a09;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.7);
+:root[data-mode="dark"] {
+  --color-bg:             #0A0A0F;
+  --color-surface:        #0D0D18;
+  --color-surface-raised: #111128;
+  --color-border:         #1A1A2E;
+  --color-border-strong:  #2DD4BF;
+  --color-text-primary:   #E2E8F0;
+  --color-text-secondary: #64748B;
+  --color-text-disabled:  #1E293B;
+  --color-accent:         #2DD4BF;
+  --color-accent-soft:    #0D2820;
+  --color-accent-text:    #0A0A0F;
+  --color-success:        #2DD4BF;
+  --color-success-soft:   #0D2E13;
+  --color-warning:        #FF9F0A;
+  --color-warning-soft:   #2E1A00;
+  --color-danger:         #FF453A;
+  --color-danger-soft:    #2E0A09;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.6);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.8),
+               0 0 8px rgba(45,212,191,0.08);
+  --radius-sm:   2px;
+  --radius-md:   4px;
+  --radius-lg:   6px;
+  --radius-full: 4px;
 }
 
 /* ───────────────────────────────────────────────────────────────

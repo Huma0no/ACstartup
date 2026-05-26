@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="c" data-mode="dark">
+<html lang="en" data-mode="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,315 +18,402 @@
   </head>
   <body>
     <div class="app-wrapper">
-    <header class="app-header">
-      <span class="app-title">Field Ops</span>
-      <div class="header-actions">
-        <button type="button" id="btn-add-job" class="btn-primary">+ Job</button>
-        <button
-          type="button"
-          id="btn-open-quick-calc"
-          class="btn-icon"
-          aria-label="Quick Charge Calc"
-        >Calc</button>
-        <button
-          type="button"
-          id="btn-open-troubleshoot"
-          class="btn-icon"
-          aria-label="Troubleshooting Engine"
-        >TS</button>
-        <button
-          type="button"
-          id="btn-settings"
-          class="btn-icon"
-          aria-label="Settings"
-        >⚙</button>
-      </div>
-      <div class="active-job-row">
-        <span id="active-job-addr" class="active-job-addr"></span>
-        <div id="active-job-chips" class="active-job-chips"></div>
-      </div>
-    </header>
+      <header class="app-header">
+        <span class="app-title">Field Ops</span>
+        <div class="header-actions">
+          <button type="button" id="btn-add-job" class="btn-primary">
+            + Job
+          </button>
+          <button
+            type="button"
+            id="btn-open-quick-calc"
+            class="btn-icon"
+            aria-label="Quick Charge Calc"
+          >
+            Calc
+          </button>
+          <button
+            type="button"
+            id="btn-open-troubleshoot"
+            class="btn-icon"
+            aria-label="Troubleshooting Engine"
+          >
+            TS
+          </button>
+          <button
+            type="button"
+            id="btn-settings"
+            class="btn-icon"
+            aria-label="Settings"
+          >
+            ⚙
+          </button>
+        </div>
+        <div class="active-job-row">
+          <span id="active-job-addr" class="active-job-addr"></span>
+          <div id="active-job-chips" class="active-job-chips"></div>
+        </div>
+      </header>
 
-    <nav class="tabs-nav" role="tablist" aria-label="Main navigation">
-      <button type="button" role="tab" class="tab-btn active" data-tab="jobs">
-        Jobs
-      </button>
-      <button type="button" role="tab" class="tab-btn" data-tab="workspace">
-        Workspace
-      </button>
-      <button type="button" role="tab" class="tab-btn" data-tab="reports">
-        Reports
-      </button>
-      <button type="button" role="tab" class="tab-btn" data-tab="lv">LV</button>
-    </nav>
+      <nav class="tabs-nav" role="tablist" aria-label="Main navigation">
+        <button type="button" role="tab" class="tab-btn active" data-tab="jobs">
+          Jobs
+        </button>
+        <button type="button" role="tab" class="tab-btn" data-tab="workspace">
+          Workspace
+        </button>
+        <button type="button" role="tab" class="tab-btn" data-tab="reports">
+          Reports
+        </button>
+        <button type="button" role="tab" class="tab-btn" data-tab="lv">
+          LV
+        </button>
+      </nav>
 
-    <main class="tab-panels">
-      <!-- Tab: Jobs -->
-      <section id="tab-jobs" class="tab-panel active" role="tabpanel">
-        <input type="file" id="import-calls-input" accept=".json" hidden>
-        <ul id="jobs-list" class="jobs-list" aria-label="Job list"></ul>
-      </section>
+      <main class="tab-panels">
+        <!-- Tab: Jobs -->
+        <section id="tab-jobs" class="tab-panel active" role="tabpanel">
+          <input type="file" id="import-calls-input" accept=".json" hidden />
+          <ul id="jobs-list" class="jobs-list" aria-label="Job list"></ul>
+        </section>
 
-      <!-- Tab: Workspace -->
-      <section id="tab-workspace" class="tab-panel hidden" role="tabpanel">
-        <p id="workspace-empty" class="empty-state">Select a job to begin</p>
+        <!-- Tab: Workspace -->
+        <section id="tab-workspace" class="tab-panel hidden" role="tabpanel">
+          <p id="workspace-empty" class="empty-state">Select a job to begin</p>
 
-        <div id="workspace-form" class="workspace hidden">
-
-          <div id="section-service" class="step-section">
-            <div class="step-header" data-section="service">
-              <span class="acc-state-icon">○</span>
-              <span>Service</span>
-              <span class="acc-summary"></span>
-              <span class="acc-chevron">›</span>
-            </div>
-            <div class="step-body">
-              <div id="service-type-buttons" class="chip-group"></div>
-              <div id="ac-heat-options" class="chip-group"></div>
-              <div id="quantity-selector" class="quantity-row"></div>
-              <div id="thermostat-buttons" class="chip-group"></div>
-              <div id="tstat-other-row" class="hidden">
-                <input id="tstat-other-input" type="text" autocomplete="off" placeholder="Tstat model…">
-                <button type="button" id="tstat-other-confirm" class="ws-btn">✓</button>
+          <div id="workspace-form" class="workspace hidden">
+            <div id="section-service" class="step-section">
+              <div class="step-header" data-section="service">
+                <span class="acc-state-icon">○</span>
+                <span>Service</span>
+                <span class="acc-summary"></span>
+                <span class="acc-chevron">›</span>
+              </div>
+              <div class="step-body">
+                <div id="service-type-buttons" class="chip-group"></div>
+                <div id="ac-heat-options" class="chip-group"></div>
+                <div id="quantity-selector" class="quantity-row"></div>
+                <div id="thermostat-buttons" class="chip-group"></div>
+                <div id="tstat-other-row" class="hidden">
+                  <input
+                    id="tstat-other-input"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Tstat model…"
+                  />
+                  <button type="button" id="tstat-other-confirm" class="ws-btn">
+                    ✓
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div id="section-accessories" class="step-section">
-            <div class="step-header" data-section="accessories">
-              <span class="acc-state-icon">○</span>
-              <span>Accessories</span>
-              <span class="acc-summary"></span>
-              <span class="acc-chevron">›</span>
-            </div>
-            <div class="step-body">
-              <div id="accessory-buttons" class="chip-group"></div>
-              <div id="acc-other-row" class="hidden">
-                <input id="acc-other-desc" type="text" autocomplete="off" placeholder="Description…">
-                <input id="acc-other-price" type="number" min="0" step="1" placeholder="$">
-                <button type="button" id="acc-other-confirm" class="ws-btn">✓</button>
+            <div id="section-accessories" class="step-section">
+              <div class="step-header" data-section="accessories">
+                <span class="acc-state-icon">○</span>
+                <span>Accessories</span>
+                <span class="acc-summary"></span>
+                <span class="acc-chevron">›</span>
+              </div>
+              <div class="step-body">
+                <div id="accessory-buttons" class="chip-group"></div>
+                <div id="acc-other-row" class="hidden">
+                  <input
+                    id="acc-other-desc"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Description…"
+                  />
+                  <input
+                    id="acc-other-price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="$"
+                  />
+                  <button type="button" id="acc-other-confirm" class="ws-btn">
+                    ✓
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div id="section-fixes" class="step-section">
-            <div class="step-header" data-section="fixes">
-              <span class="acc-state-icon">○</span>
-              <span>Fixes</span>
-              <span class="acc-summary"></span>
-              <span class="acc-chevron">›</span>
-            </div>
-            <div class="step-body">
-              <div id="fixes-list" class="fixes-list"></div>
-              <div id="fix-other-row" class="hidden">
-                <input id="fix-other-desc" type="text" autocomplete="off" placeholder="Description…">
-                <input id="fix-other-price" type="number" min="0" step="1" placeholder="$">
-                <button type="button" id="fix-other-confirm" class="ws-btn">✓</button>
+            <div id="section-fixes" class="step-section">
+              <div class="step-header" data-section="fixes">
+                <span class="acc-state-icon">○</span>
+                <span>Fixes</span>
+                <span class="acc-summary"></span>
+                <span class="acc-chevron">›</span>
+              </div>
+              <div class="step-body">
+                <div id="fixes-list" class="fixes-list"></div>
+                <div id="fix-other-row" class="hidden">
+                  <input
+                    id="fix-other-desc"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Description…"
+                  />
+                  <input
+                    id="fix-other-price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="$"
+                  />
+                  <button type="button" id="fix-other-confirm" class="ws-btn">
+                    ✓
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div id="section-weight-in" class="step-section">
-            <div class="step-header" data-section="weight-in">
-              <span class="acc-state-icon">○</span>
-              <span>Weigh-In</span>
-              <span class="acc-summary"></span>
-              <span class="acc-chevron">›</span>
+            <div id="section-weight-in" class="step-section">
+              <div class="step-header" data-section="weight-in">
+                <span class="acc-state-icon">○</span>
+                <span>Weigh-In</span>
+                <span class="acc-summary"></span>
+                <span class="acc-chevron">›</span>
+              </div>
+              <div class="step-body">
+                <div id="wi-fields-sys1"></div>
+                <div id="wi-photo-row-1"></div>
+                <div id="wi-fields-sys2"></div>
+                <div id="wi-photo-row-2"></div>
+              </div>
             </div>
-            <div class="step-body">
-              <div id="wi-fields-sys1"></div>
-              <div id="wi-photo-row-1"></div>
-              <div id="wi-fields-sys2"></div>
-              <div id="wi-photo-row-2"></div>
-            </div>
-          </div>
 
-          <div id="section-notes" class="step-section">
-            <div class="step-header" data-section="notes">
-              <span class="acc-state-icon">○</span>
-              <span>Notes &amp; Photos</span>
-              <span class="acc-summary"></span>
-              <span class="acc-chevron">›</span>
+            <div id="section-notes" class="step-section">
+              <div class="step-header" data-section="notes">
+                <span class="acc-state-icon">○</span>
+                <span>Notes &amp; Photos</span>
+                <span class="acc-summary"></span>
+                <span class="acc-chevron">›</span>
+              </div>
+              <div class="step-body">
+                <textarea
+                  id="notes-input"
+                  rows="4"
+                  placeholder="Field notes…"
+                ></textarea>
+                <div id="site-photos-section">
+                  <p class="step-label">Site Photos (Issues/Conditions)</p>
+                  <div id="site-photo-presets"></div>
+                  <button
+                    type="button"
+                    id="btn-download-site-photos"
+                    class="btn-secondary"
+                    disabled
+                  >
+                    💾 Download All Photos (0)
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="step-body">
-              <textarea
-                id="notes-input"
-                rows="4"
-                placeholder="Field notes…"
-              ></textarea>
-              <div id="site-photos-section">
-                <p class="step-label">Site Photos (Issues/Conditions)</p>
-                <div id="site-photo-presets"></div>
-                <button type="button" id="btn-download-site-photos" class="btn-secondary" disabled>
-                  💾 Download All Photos (0)
+
+            <footer class="workspace-footer">
+              <button
+                type="button"
+                id="btn-generate-report"
+                class="btn-primary"
+              >
+                Generate Report
+              </button>
+              <span id="price-display" class="price-display"></span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- Tab: Reports -->
+        <section id="tab-reports" class="tab-panel hidden" role="tabpanel">
+          <div class="reports-header">
+            <button type="button" id="btn-export-json" class="btn">DB</button>
+            <button type="button" id="btn-export-csv" class="btn">CSV</button>
+          </div>
+          <ul id="reports-list" class="reports-list"></ul>
+          <p id="reports-empty" class="empty-state hidden">No reports yet</p>
+          <div id="reports-global-actions" class="hidden">
+            <div class="btn-row">
+              <button type="button" id="btn-delete-all" class="btn">
+                Delete All
+              </button>
+              <button type="button" id="btn-share-all" class="btn">
+                Share All
+              </button>
+            </div>
+            <div id="share-all-panel" class="hidden">
+              <div class="btn-row">
+                <button
+                  type="button"
+                  class="btn"
+                  data-share-all-method="whatsapp"
+                >
+                  WhatsApp
+                </button>
+                <button type="button" class="btn" data-share-all-method="sms">
+                  SMS
+                </button>
+                <button type="button" class="btn" data-share-all-method="email">
+                  Email
+                </button>
+                <button type="button" class="btn" data-share-all-method="copy">
+                  Copy
                 </button>
               </div>
             </div>
           </div>
+        </section>
 
-          <footer class="workspace-footer">
-            <button type="button" id="btn-generate-report" class="btn-primary">
-              Generate Report
-            </button>
-            <span id="price-display" class="price-display"></span>
-          </footer>
-        </div>
-      </section>
+        <!-- Tab: LV Diagrams -->
+        <section id="tab-lv" class="tab-panel hidden" role="tabpanel">
+          <div id="lv-container" class="lv-container"></div>
+        </section>
+      </main>
 
-      <!-- Tab: Reports -->
-      <section id="tab-reports" class="tab-panel hidden" role="tabpanel">
-        <div class="reports-header">
-          <button type="button" id="btn-export-json" class="btn">DB</button>
-          <button type="button" id="btn-export-csv" class="btn">CSV</button>
+      <!-- Troubleshooting Drawer + Overlay -->
+      <aside
+        id="ts-drawer"
+        class="ts-drawer"
+        aria-hidden="true"
+        aria-label="Troubleshooting"
+      >
+        <header id="ts-header" class="ts-header"></header>
+        <div id="ts-body" class="ts-body"></div>
+      </aside>
+      <div id="ts-overlay" class="ts-overlay" aria-hidden="true"></div>
+
+      <!-- Quick Calc Modal -->
+      <dialog id="quick-calc-modal" class="modal">
+        <div class="modal-header">
+          <span>Quick Charge Calc</span>
+          <button
+            type="button"
+            id="quick-calc-close"
+            class="btn-icon"
+            aria-label="Close"
+          ></button>
         </div>
-        <ul id="reports-list" class="reports-list"></ul>
-        <p id="reports-empty" class="empty-state hidden">No reports yet</p>
-        <div id="reports-global-actions" class="hidden">
-          <div class="btn-row">
-            <button type="button" id="btn-delete-all" class="btn">Delete All</button>
-            <button type="button" id="btn-share-all" class="btn">Share All</button>
+        <div id="quick-calc-body" class="modal-body"></div>
+      </dialog>
+
+      <!-- Settings Modal -->
+      <dialog id="settings-modal" class="modal">
+        <div class="modal-header">
+          <span>Settings</span>
+          <button
+            type="button"
+            id="settings-close"
+            class="btn-icon"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-group">
+            <p class="settings-label">Appearance</p>
+            <label class="toggle-row">
+              <span>Dark Mode</span>
+              <input type="checkbox" id="theme-toggle" role="switch" />
+            </label>
           </div>
-          <div id="share-all-panel" class="hidden">
+          <div class="settings-group">
+            <p class="settings-label">AI Provider</p>
+            <div id="ai-provider-row" class="ai-provider-row"></div>
+            <div id="ai-provider-ext-row" class="ai-provider-row hidden"></div>
+            <button type="button" id="ai-settings-more" class="btn-text">
+              More ▾
+            </button>
+          </div>
+          <div class="settings-group">
+            <p class="settings-label">API Key</p>
+            <input
+              type="password"
+              id="ai-settings-key-input"
+              autocomplete="off"
+              placeholder="Paste key…"
+            />
             <div class="btn-row">
-              <button type="button" class="btn" data-share-all-method="whatsapp">WhatsApp</button>
-              <button type="button" class="btn" data-share-all-method="sms">SMS</button>
-              <button type="button" class="btn" data-share-all-method="email">Email</button>
-              <button type="button" class="btn" data-share-all-method="copy">Copy</button>
+              <button type="button" id="ai-settings-save" class="btn-primary">
+                Save
+              </button>
+              <button
+                type="button"
+                id="ai-settings-clear"
+                class="btn-secondary"
+              >
+                Clear
+              </button>
+            </div>
+            <p
+              id="ai-settings-status"
+              class="settings-status"
+              aria-live="polite"
+            ></p>
+          </div>
+          <div class="settings-group">
+            <p class="settings-label">Prices</p>
+            <p class="settings-price-notice">
+              Changing prices affects new reports only — saved completions are
+              not updated.
+            </p>
+            <div id="settings-prices-body"></div>
+            <button type="button" id="btn-reset-prices" class="btn-secondary">
+              Reset to defaults
+            </button>
+          </div>
+          <div class="settings-group">
+            <p class="settings-label">Data</p>
+            <div class="settings-data-row">
+              <button
+                type="button"
+                id="btn-import-calls"
+                class="btn-action-text"
+              >
+                [Import Calls]
+              </button>
+              <button
+                type="button"
+                id="btn-export-calls"
+                class="btn-action-text"
+              >
+                [Export Calls]
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </dialog>
 
-      <!-- Tab: LV Diagrams -->
-      <section id="tab-lv" class="tab-panel hidden" role="tabpanel">
-        <div id="lv-container" class="lv-container"></div>
-      </section>
-    </main>
+      <!-- Toast -->
+      <div
+        id="toast-container"
+        class="toast-container"
+        aria-live="polite"
+        aria-atomic="true"
+      ></div>
 
-    <!-- Troubleshooting Drawer + Overlay -->
-    <aside
-      id="ts-drawer"
-      class="ts-drawer"
-      aria-hidden="true"
-      aria-label="Troubleshooting"
-    >
-      <header id="ts-header" class="ts-header"></header>
-      <div id="ts-body" class="ts-body"></div>
-    </aside>
-    <div id="ts-overlay" class="ts-overlay" aria-hidden="true"></div>
-
-    <!-- Quick Calc Modal -->
-    <dialog id="quick-calc-modal" class="modal">
-      <div class="modal-header">
-        <span>Quick Charge Calc</span>
+      <!-- Lightbox -->
+      <div
+        id="lightbox"
+        class="lightbox hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Photo preview"
+      >
         <button
           type="button"
-          id="quick-calc-close"
-          class="btn-icon"
+          id="lightbox-close"
+          class="lightbox-close"
           aria-label="Close"
         ></button>
+        <img id="lightbox-img" src="" alt="" />
       </div>
-      <div id="quick-calc-body" class="modal-body"></div>
-    </dialog>
 
-    <!-- Settings Modal -->
-    <dialog id="settings-modal" class="modal">
-      <div class="modal-header">
-        <span>Settings</span>
-        <button
-          type="button"
-          id="settings-close"
-          class="btn-icon"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body">
-        <div class="settings-group">
-          <p class="settings-label">Appearance</p>
-          <label class="toggle-row">
-            <span>Dark Mode</span>
-            <input type="checkbox" id="theme-toggle" role="switch" />
-          </label>
-        </div>
-        <div class="settings-group">
-          <p class="settings-label">AI Provider</p>
-          <div id="ai-provider-row" class="ai-provider-row"></div>
-          <div id="ai-provider-ext-row" class="ai-provider-row hidden"></div>
-          <button type="button" id="ai-settings-more" class="btn-text">
-            More ▾
-          </button>
-        </div>
-        <div class="settings-group">
-          <p class="settings-label">API Key</p>
-          <input
-            type="password"
-            id="ai-settings-key-input"
-            autocomplete="off"
-            placeholder="Paste key…"
-          />
-          <div class="btn-row">
-            <button type="button" id="ai-settings-save" class="btn-primary">
-              Save
-            </button>
-            <button type="button" id="ai-settings-clear" class="btn-secondary">
-              Clear
-            </button>
-          </div>
-          <p
-            id="ai-settings-status"
-            class="settings-status"
-            aria-live="polite"
-          ></p>
-        </div>
-        <div class="settings-group">
-          <p class="settings-label">Prices</p>
-          <p class="settings-price-notice">Changing prices affects new reports only — saved completions are not updated.</p>
-          <div id="settings-prices-body"></div>
-          <button type="button" id="btn-reset-prices" class="btn-secondary">Reset to defaults</button>
-        </div>
-        <div class="settings-group">
-          <p class="settings-label">Data</p>
-          <div class="settings-data-row">
-            <button type="button" id="btn-import-calls" class="btn-action-text">[Import Calls]</button>
-            <button type="button" id="btn-export-calls" class="btn-action-text">[Export Calls]</button>
-          </div>
-        </div>
-      </div>
-    </dialog>
-
-    <!-- Toast -->
-    <div
-      id="toast-container"
-      class="toast-container"
-      aria-live="polite"
-      aria-atomic="true"
-    ></div>
-
-    <!-- Lightbox -->
-    <div
-      id="lightbox"
-      class="lightbox hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Photo preview"
-    >
-      <button
-        type="button"
-        id="lightbox-close"
-        class="lightbox-close"
-        aria-label="Close"
-      ></button>
-      <img id="lightbox-img" src="" alt="" />
-    </div>
-
-    <script type="module" src="src/app.js"></script>
+      <script type="module" src="src/app.js"></script>
     </div>
 
     <div id="ai-bar">
       <div id="ai-chat-history" class="hidden"></div>
       <div id="ai-input-row">
-        <textarea id="ai-chat-input" rows="1"
-          placeholder="ASK AI"></textarea>
+        <textarea id="ai-chat-input" rows="1" placeholder="ASK AI"></textarea>
         <button type="button" id="ai-chat-send">↑</button>
       </div>
     </div>

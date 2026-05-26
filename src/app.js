@@ -1094,7 +1094,7 @@ function _renderPricesBody(prices) {
 
 function renderSettingsModal() {
   const s = getSettings();
-  document.getElementById("theme-toggle").checked = s.theme === "light";
+  document.getElementById("theme-toggle").checked = s.theme === "dark";
   document.getElementById("ai-provider-row").innerHTML = AI_PROVIDERS.map(
     ({ id, label }) =>
       `<button class="chip chip-sm${
@@ -2143,7 +2143,7 @@ function wireEvents() {
 
   // Settings modal — theme, provider, key
   document.getElementById("theme-toggle").addEventListener("change", (e) => {
-    const mode = e.target.checked ? "light" : "dark";
+    const mode = e.target.checked ? "dark" : "light";
     setTheme(mode);
     document.documentElement.setAttribute("data-mode", mode);
   });
