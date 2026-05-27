@@ -391,9 +391,13 @@ function jobCardHTML(job, ci) {
       <div class="job-top-row2">
         ${techChips ? `<div class="job-top-tech">${techChips}</div>` : '<div class="job-top-tech"></div>'}
         <div class="job-top-meta">
-          <span class="chip chip-sm chip-secondary">${esc(job.builder)}</span>
-          <span class="chip chip-sm chip-secondary">${esc(job.subdivision)}</span>
+          <div class="job-meta-chips">
+            <span class="chip chip-sm chip-secondary">${esc(job.builder)}</span>
+            <span class="chip chip-sm chip-secondary">${esc(job.subdivision)}</span>
+          </div>
           ${badge}${ts}
+          <button class="btn btn-edit" data-edit="${esc(job.id)}">Edit</button>
+          <button class="btn btn-maps" data-maps="${esc(job.address)}">Maps</button>
         </div>
       </div>
     </div>
@@ -402,10 +406,6 @@ function jobCardHTML(job, ci) {
       ${inProg ? "Continue →" : "Start →"}
     </button>
   </div>
-  <div class="job-actions"><div class="job-buttons">
-    <button class="btn btn-edit" data-edit="${esc(job.id)}">Edit</button>
-    <button class="btn btn-maps" data-maps="${esc(job.address)}">Maps</button>
-  </div></div>
 </li>`;
 }
 
@@ -2060,8 +2060,12 @@ function wireEvents() {
   });
   document.getElementById("btn-delete-all").addEventListener("click", () => {
     if (!confirm("Delete all reports?")) return;
+    const jobIds = getCompletions().map((c) => c.jobId);
     getCompletions().forEach((c) => deleteCompletion(c.jobId));
+    jobIds.forEach((id) => removeJob(id));
     renderReports();
+    renderJobs();
+    toast("All reports and completed jobs deleted.", "success");
   });
   document.getElementById("btn-export-json").addEventListener("click", () => {
     const date = new Date().toISOString().slice(0, 10);

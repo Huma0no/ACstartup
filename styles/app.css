@@ -63,6 +63,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 img,
@@ -101,11 +103,11 @@ textarea {
 :root {
   /* Typography */
   --font-family: "Inter", system-ui, -apple-system, sans-serif;
-  --font-size-xs: 11px;
-  --font-size-sm: 13px;
-  --font-size-md: 15px;
-  --font-size-lg: 18px;
-  --font-size-xl: 24px;
+  --font-size-xs: 9px;
+  --font-size-sm: 11px;
+  --font-size-md: 11px;
+  --font-size-lg: 13px;
+  --font-size-xl: 19px;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 600;
@@ -113,12 +115,12 @@ textarea {
   --line-height-normal: 1.5;
 
   /* Spacing */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
+  --space-1: 3px;
+  --space-2: 6px;
+  --space-3: 10px;
+  --space-4: 10px;
+  --space-5: 16px;
+  --space-6: 19px;
 
   /* Border radius */
   --radius-sm: 6px;
@@ -131,8 +133,8 @@ textarea {
   --tr-std: all 0.25s ease;
 
   /* Layout */
-  --header-h: 52px;
-  --nav-h: 48px;
+  --header-h: 35px;
+  --nav-h: 32px;
 
   /* Z-Index */
   --z-base: 1;
@@ -1237,16 +1239,13 @@ input[name="builder"] {
 }
 
 /* Job actions row */
-.job-actions {
-  padding: var(--space-2) var(--space-3);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg);
+.job-meta-chips {
+  display: flex;
+  gap: var(--space-1);
 }
 
-.job-buttons {
-  display: flex;
-  gap: var(--space-2);
-  justify-content: flex-end;
+.job-item.expanded .job-meta-chips {
+  display: none;
 }
 
 /* Delete button — in-flow, row1 right cell */
@@ -1315,12 +1314,12 @@ input[name="builder"] {
 
 /* Start / Resume job button */
 .btn-start-job {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
-  min-height: 48px;
+  min-height: 31px;
   padding: 0 var(--space-4);
   margin-top: var(--space-2);
   background: var(--color-accent);
@@ -1335,6 +1334,10 @@ input[name="builder"] {
 
 .btn-start-job:hover {
   filter: brightness(1.08);
+}
+
+.job-item.expanded .btn-start-job {
+  display: flex;
 }
 
 /* History toggle */
@@ -3637,11 +3640,6 @@ dialog.modal[open] {
    ─────────────────────────────────────────────────────────────── */
 
 #ai-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: calc(var(--z-overlay) + 1);
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
