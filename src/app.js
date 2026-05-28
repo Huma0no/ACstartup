@@ -425,11 +425,7 @@ function openWorkspace(job) {
   _chatInitialized = true;
   openTab("workspace");
   renderWorkspace();
-  if (!isResume) {
-    document.querySelectorAll("#workspace-form .step-section.acc-open")
-      .forEach(s => s.classList.remove("acc-open"));
-    document.getElementById("section-service")?.classList.add("acc-open");
-  }
+  _showSection("section-service");
   updateActiveJobBar();
   initSitePhotos().then((stored) => {
     for (const [slug, { file, label }] of Object.entries(stored)) {
@@ -513,6 +509,14 @@ function wiGridHTML(data, attr) {
   }).join("")}</div>`;
 }
 
+function _showSection(id) {
+  document.querySelectorAll("#workspace-form .step-section")
+    .forEach((s) => s.classList.remove("ws-section-active"));
+  document.getElementById(id)?.classList.add("ws-section-active");
+  document.querySelectorAll("#ws-nav .ws-nav-chip")
+    .forEach((c) => c.classList.toggle("ws-nav-current", c.dataset.nav === id));
+}
+
 function renderWorkspace() {
   const job = _activeJob;
   const state = getState();
@@ -520,6 +524,7 @@ function renderWorkspace() {
 
   document.getElementById("workspace-empty").classList.toggle("hidden", on);
   document.getElementById("workspace-form").classList.toggle("hidden", !on);
+  document.getElementById("ws-nav").classList.toggle("hidden", !on);
   if (!on) return;
 
   // Step 1 — Services
@@ -539,15 +544,17 @@ function renderWorkspace() {
           sel.includes(n) ? " ws-btn-active" : ""
         }" data-service="${esc(n)}">${esc(n)}</button>`
     ).join("");
-  document.getElementById("ac-heat-options").innerHTML = `
-    <label class="toggle-row"><span>2 Systems</span>
+  const _showTwoSys = sel.some((s) => [SERVICES.AC, SERVICES.HEAT, SERVICES.FINISH, SERVICES.PRESTART].includes(s));
+  const _showTemp   = sel.some((s) => [SERVICES.AC, SERVICES.HEAT].includes(s));
+  document.getElementById("ac-heat-options").innerHTML =
+    (_showTwoSys ? `<label class="toggle-row"><span>2 Systems</span>
       <input type="checkbox" id="ws-two-systems"${
         state.isTwoSystems ? " checked" : ""
-      }></label>
-    <label class="toggle-row"><span>Temporarily</span>
+      }></label>` : "") +
+    (_showTemp ? `<label class="toggle-row"><span>Temporarily</span>
       <input type="checkbox" id="ws-temporarily"${
         state.isTemporary ? " checked" : ""
-      }></label>`;
+      }></label>` : "");
 
   // Step 3 — Thermostat
   const tsel = state.selectedThermostat;
@@ -754,55 +761,17 @@ function updateAccordionSummaries() {
   const state = getState();
   if (!state) return;
 
-  const setText = (selector, text) => {
-    const el = document.querySelector(selector);
-    if (el) el.textContent = text || "—";
-  };
-
   const setDone = (id, done) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.toggle("acc-done", done);
-    const icon = el.querySelector(".acc-state-icon");
-    if (icon) icon.textContent = done ? "✓" : "○";
+    const chip = document.querySelector(`#ws-nav [data-nav="${id}"]`);
+    if (chip) chip.classList.toggle("ws-nav-done", done);
   };
 
-  const svcParts = [...state.selectedServices, state.selectedThermostat].filter(
-    Boolean
-  );
-  setText("#section-service .acc-summary", svcParts.join(" · ") || "—");
-  setDone("section-service", svcParts.length > 0);
-
-  const accParts = [
-    ...state.selectedAccessories.map(
-      (n) => ACCESSORY_DISPLAY[n]?.label || n.toLowerCase()
-    ),
-    ...state.customAccessories.map(
-      (a) => ACCESSORY_DISPLAY[a.name]?.label || a.name.toLowerCase()
-    ),
-  ];
-  setText("#section-accessories .acc-summary", accParts.join(" · ") || "—");
-  setDone("section-accessories", accParts.length > 0);
-
-  const fixParts = [
-    ...state.selectedFixes.map((n) => FIX_DISPLAY[n]?.label || n.toLowerCase()),
-    ...state.customFixes.map(
-      (f) => FIX_DISPLAY[f.name]?.label || f.name.toLowerCase()
-    ),
-  ];
-  setText("#section-fixes .acc-summary", fixParts.join(" · ") || "—");
-  setDone("section-fixes", fixParts.length > 0);
-
-  const hasWiData = Object.values(state.weightInData || {}).some(Boolean);
-  setText("#section-weight-in .acc-summary", hasWiData ? "data entered" : "—");
-  setDone("section-weight-in", hasWiData);
-
-  const notes = state.notes || "";
-  setText(
-    "#section-notes .acc-summary",
-    notes ? (notes.length > 30 ? notes.slice(0, 30) + "…" : notes) : "—"
-  );
-  setDone("section-notes", notes.length > 0);
+  setDone("section-service", state.selectedServices.length > 0);
+  setDone("section-tstat", !!state.selectedThermostat);
+  setDone("section-accessories", state.selectedAccessories.length > 0 || state.customAccessories.length > 0);
+  setDone("section-fixes", state.selectedFixes.length > 0 || state.customFixes.length > 0);
+  setDone("section-weight-in", Object.values(state.weightInData || {}).some(Boolean));
+  setDone("section-notes", (state.notes || "").length > 0);
 }
 
 function _updatePhotoCount() {
@@ -1579,16 +1548,19 @@ function wireEvents() {
     document.getElementById("ts-overlay").classList.remove("visible");
   });
 
-  // Accordion
+  // Workspace chip nav
+  document.getElementById("ws-nav").addEventListener("click", (e) => {
+    const chip = e.target.closest(".ws-nav-chip");
+    if (!chip) return;
+    _showSection(chip.dataset.nav);
+  });
+
+  // Workspace next-section button
   document.getElementById("workspace-form").addEventListener("click", (e) => {
-    const header = e.target.closest(".step-header");
-    if (!header) return;
-    const section = header.closest(".step-section");
-    const isOpen = section.classList.contains("acc-open");
-    document
-      .querySelectorAll("#workspace-form .step-section.acc-open")
-      .forEach((s) => s.classList.remove("acc-open"));
-    if (!isOpen) section.classList.add("acc-open");
+    if (!e.target.closest("[data-next]")) return;
+    const chips = [...document.querySelectorAll("#ws-nav .ws-nav-chip")];
+    const idx = chips.findIndex((c) => c.classList.contains("ws-nav-current"));
+    if (idx >= 0 && idx < chips.length - 1) _showSection(chips[idx + 1].dataset.nav);
   });
 
   // Jobs — list delegation

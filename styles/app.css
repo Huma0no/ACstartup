@@ -1588,27 +1588,24 @@ input[name="builder"] {
 /* Stepper nav pills */
 /* Accordion sections */
 .step-section {
+  display: none;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-2);
   overflow: hidden;
 }
 
+.step-section.ws-section-active {
+  display: block;
+}
+
 .step-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   padding: 0 var(--space-4);
-  height: 52px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
+  height: 40px;
   background: var(--color-surface);
-}
-
-.step-header:hover {
-  background: var(--color-surface-raised);
 }
 
 .step-header span {
@@ -1617,57 +1614,55 @@ input[name="builder"] {
   color: var(--color-text-primary);
 }
 
-.step-header .acc-summary {
-  font-size: var(--font-size-xs);
+/* Workspace chip nav */
+.ws-nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.ws-nav-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  flex: 1;
-  text-align: right;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: var(--space-2);
+  transition: var(--tr-fast);
+}
+
+.ws-nav-chip.ws-nav-done {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.ws-nav-chip.ws-nav-current {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-weight: var(--font-weight-bold);
 }
 
 /* Step body */
 .step-body {
   padding: var(--space-4);
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: var(--space-3);
   background: var(--color-bg);
-}
-
-.step-section.acc-open .step-body {
-  display: block;
-}
-
-.step-section.acc-done .step-header {
-  border-color: var(--color-accent);
-}
-
-.step-section.acc-done .acc-state-icon {
-  color: var(--color-accent);
-}
-
-.step-section.acc-na {
-  opacity: 0.5;
-}
-
-.acc-state-icon {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  flex-shrink: 0;
-}
-
-.acc-chevron {
-  font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
-  flex-shrink: 0;
-  transition: transform var(--tr-fast);
-}
-
-.step-section.acc-open .acc-chevron {
-  transform: rotate(90deg);
 }
 
 .model-selection-row {

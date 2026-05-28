@@ -81,18 +81,33 @@
         <section id="tab-workspace" class="tab-panel hidden" role="tabpanel">
           <p id="workspace-empty" class="empty-state">Select a job to begin</p>
 
+          <div id="ws-nav" class="ws-nav hidden">
+            <button class="ws-nav-chip" data-nav="section-service">Srv</button>
+            <button class="ws-nav-chip" data-nav="section-tstat">Tstat</button>
+            <button class="ws-nav-chip" data-nav="section-accessories">Acc</button>
+            <button class="ws-nav-chip" data-nav="section-fixes">Fix</button>
+            <button class="ws-nav-chip" data-nav="section-weight-in">Wght</button>
+            <button class="ws-nav-chip" data-nav="section-notes">Note</button>
+          </div>
+
           <div id="workspace-form" class="workspace hidden">
             <div id="section-service" class="step-section">
-              <div class="step-header" data-section="service">
-                <span class="acc-state-icon">○</span>
+              <div class="step-header">
                 <span>Service</span>
-                <span class="acc-summary"></span>
-                <span class="acc-chevron">›</span>
               </div>
               <div class="step-body">
                 <div id="service-type-buttons" class="chip-group"></div>
                 <div id="ac-heat-options" class="chip-group"></div>
                 <div id="quantity-selector" class="quantity-row"></div>
+                <button type="button" class="btn-next" data-next>Next →</button>
+              </div>
+            </div>
+
+            <div id="section-tstat" class="step-section">
+              <div class="step-header">
+                <span>Thermostat</span>
+              </div>
+              <div class="step-body">
                 <div id="thermostat-buttons" class="chip-group"></div>
                 <div id="tstat-other-row" class="hidden">
                   <input
@@ -105,15 +120,13 @@
                     ✓
                   </button>
                 </div>
+                <button type="button" class="btn-next" data-next>Next →</button>
               </div>
             </div>
 
             <div id="section-accessories" class="step-section">
-              <div class="step-header" data-section="accessories">
-                <span class="acc-state-icon">○</span>
+              <div class="step-header">
                 <span>Accessories</span>
-                <span class="acc-summary"></span>
-                <span class="acc-chevron">›</span>
               </div>
               <div class="step-body">
                 <div id="accessory-buttons" class="chip-group"></div>
@@ -135,15 +148,13 @@
                     ✓
                   </button>
                 </div>
+                <button type="button" class="btn-next" data-next>Next →</button>
               </div>
             </div>
 
             <div id="section-fixes" class="step-section">
-              <div class="step-header" data-section="fixes">
-                <span class="acc-state-icon">○</span>
+              <div class="step-header">
                 <span>Fixes</span>
-                <span class="acc-summary"></span>
-                <span class="acc-chevron">›</span>
               </div>
               <div class="step-body">
                 <div id="fixes-list" class="fixes-list"></div>
@@ -165,30 +176,26 @@
                     ✓
                   </button>
                 </div>
+                <button type="button" class="btn-next" data-next>Next →</button>
               </div>
             </div>
 
             <div id="section-weight-in" class="step-section">
-              <div class="step-header" data-section="weight-in">
-                <span class="acc-state-icon">○</span>
+              <div class="step-header">
                 <span>Weigh-In</span>
-                <span class="acc-summary"></span>
-                <span class="acc-chevron">›</span>
               </div>
               <div class="step-body">
                 <div id="wi-fields-sys1"></div>
                 <div id="wi-photo-row-1"></div>
                 <div id="wi-fields-sys2"></div>
                 <div id="wi-photo-row-2"></div>
+                <button type="button" class="btn-next" data-next>Next →</button>
               </div>
             </div>
 
             <div id="section-notes" class="step-section">
-              <div class="step-header" data-section="notes">
-                <span class="acc-state-icon">○</span>
+              <div class="step-header">
                 <span>Notes &amp; Photos</span>
-                <span class="acc-summary"></span>
-                <span class="acc-chevron">›</span>
               </div>
               <div class="step-body">
                 <textarea
