@@ -6522,17 +6522,27 @@
 
           return {
             // ── Core fields (PWA loadJobsFromLocalStorage uses these) ──
+            id: crypto.randomUUID(),
+            date: j.routeDate || new Date().toISOString().split("T")[0],
             address: addr,
-            details: j.importantNotes || "",
+            notes: j.importantNotes || "",
             subdivision: j.subdivision || "",
             builder: j.builder || "",
-            heaterModel: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
-            outdoorModel: j.outdoorModel || latest?.outdoor_model || "",
-            heaterModel2: j.furnaceModel2 || j.heaterModel2 || "",
-            outdoorModel2: j.outdoorModel2 || "",
+            system1: {
+              indoor: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
+              outdoor: j.outdoorModel || latest?.outdoor_model || "",
+            },
+            system2: (j.furnaceModel2 || j.heaterModel2 || j.outdoorModel2)
+              ? {
+                  indoor: j.furnaceModel2 || j.heaterModel2 || "",
+                  outdoor: j.outdoorModel2 || "",
+                }
+              : null,
             isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
-            thermostat: thermostat,
-            extractedAccessories: extractedAccessories,
+            jobThermostat: thermostat
+              ? { model: thermostat.type || thermostat.model || "", qty: parseInt(thermostat.qty) || 1 }
+              : null,
+            jobAccessories: extractedAccessories,
             allHeaters: [],
             allUnits: [],
             savedState: null,
@@ -6544,7 +6554,6 @@
             contactPhone: j.contactPhone || "",
             cityState: j.cityState || "",
             dispatchNotes: j.dispatchNotes || "",
-            routeDate: j.routeDate || new Date().toISOString().split("T")[0],
           };
         });
 
