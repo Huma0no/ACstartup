@@ -618,19 +618,19 @@ function renderWorkspace() {
     [
       ACCESSORIES.UT3000,
       ACCESSORIES.HZ322,
-      ACCESSORIES.HARMONY,
       ACCESSORIES.DAPC,
+      ACCESSORIES.ECOIL_WIRE,
       ACCESSORIES.E_BYPASS,
+      ACCESSORIES.HARMONY,
       ACCESSORIES.BYPASS,
       ACCESSORIES.FIN180P,
-      ACCESSORIES.DEHUM,
       ACCESSORIES.FLOAT_SWITCH,
       ACCESSORIES.WEIGHT_IN_DATA,
-      ACCESSORIES.ECOIL_WIRE,
+      ACCESSORIES.DEHUM,
+      ACCESSORIES.TRANE_HARNESS,
       ACCESSORIES.APRIL_AIR,
       ACCESSORIES.FA_INTAKE,
       ACCESSORIES.FIN6_MD,
-      ACCESSORIES.TRANE_HARNESS,
       ACCESSORIES.RDS,
     ].map((n) => _accBtn(n)).join("") +
     `<button class="ws-btn${_lpActive ? " ws-btn-active" : ""}" data-group-toggle="lp-kit">LP Kit${_lpBadge}</button>` +
@@ -734,20 +734,26 @@ function renderWorkspace() {
   const _wiAdj = parseFloat(wiData1.adjustedOz);
   const _wiNewTotalTxt =
     _wiBc && !isNaN(_wiAdj) ? ouncesToPoundsAndOunces(_wiBc + _wiAdj) : "—";
-  document.getElementById("wi-fields-sys1").innerHTML = wiGridHTML(
-    wiData1,
-    "data-wi"
-  );
+  document.getElementById("wi-fields-sys1").innerHTML =
+    `<div class="wi-system-header"><span class="step-label">System 1</span>` +
+    `<div class="wi-model-chips">` +
+    (s1.indoor ? `<span class="chip chip-sm">${esc(s1.indoor)}</span>` : "") +
+    (s1.outdoor ? `<span class="chip chip-sm">${esc(s1.outdoor)}</span>` : "") +
+    `</div></div>` +
+    wiGridHTML(wiData1, "data-wi");
   const _sys2Fields = document.getElementById("wi-fields-sys2");
   const _sys2PhotoRow = document.getElementById("wi-photo-row-2");
-  _sys2Fields.innerHTML = state.isTwoSystems
-    ? `<p class="step-label">System 2</p>${wiGridHTML(
-        state.weightInData2,
-        "data-wi2"
-      )}`
+  const _showSys2 = state.isTwoSystems || !!(job.system2?.indoor || job.system2?.outdoor);
+  _sys2Fields.innerHTML = _showSys2
+    ? `<div class="wi-system-header"><span class="step-label">System 2</span>` +
+      `<div class="wi-model-chips">` +
+      (job.system2?.indoor ? `<span class="chip chip-sm">${esc(job.system2.indoor)}</span>` : "") +
+      (job.system2?.outdoor ? `<span class="chip chip-sm">${esc(job.system2.outdoor)}</span>` : "") +
+      `</div></div>` +
+      wiGridHTML(state.weightInData2, "data-wi2")
     : "";
-  _sys2Fields.classList.toggle("hidden", !state.isTwoSystems);
-  _sys2PhotoRow.classList.toggle("hidden", !state.isTwoSystems);
+  _sys2Fields.classList.toggle("hidden", !_showSys2);
+  _sys2PhotoRow.classList.toggle("hidden", !_showSys2);
   const _ntcEl = document.getElementById("wi-new-total-charge");
   if (_ntcEl) _ntcEl.textContent = _wiNewTotalTxt;
 
@@ -937,8 +943,9 @@ function updatePriceDisplay() {
 }
 
 function _renderNewTotalCharge(data, sys) {
-  if (sys !== 1) return;
-  const el = document.getElementById("wi-new-total-charge");
+  const el = document.getElementById(
+    sys === 1 ? "wi-new-total-charge" : "wi-new-total-charge-2"
+  );
   if (!el) return;
   const fc = parseFloat(data?.factoryChargeOz);
   const adj = parseFloat(data?.adjustedOz);
@@ -1578,11 +1585,15 @@ function wireEvents() {
     e.target.value = "";
     file.text().then((text) => {
       const result = importFromJSON(text);
+      const _status = document.getElementById("import-status");
       if (result.errors[0]?.index === -1) {
         toast(result.errors[0].reason, "error");
+        if (_status) _status.textContent = result.errors[0].reason;
       } else {
         toast(`${result.imported} imported, ${result.skipped} skipped`, "success");
+        if (_status) _status.textContent = `${result.imported} imported, ${result.skipped} skipped`;
       }
+      if (_status) setTimeout(() => { _status.textContent = ""; }, 4000);
       renderJobs();
     });
   });
@@ -1872,6 +1883,36 @@ function wireEvents() {
       }
       setWeightInData(data, 1);
       _renderNewTotalCharge(data, 1);
+      updatePriceDisplay();
+      saveProgress(_activeJob);
+    }
+    if (e.target.dataset.wi2 === "factoryLineConfig") {
+      const data = {};
+      wsForm.querySelectorAll("[data-wi2]").forEach((inp) => {
+        data[inp.getAttribute("data-wi2")] = inp.value;
+      });
+      const outdoor = getOutdoorModel(_activeJob?.system2?.outdoor);
+      if (outdoor) {
+        const lineConfig = e.target.value;
+        const baseCharge = lineConfig.includes("revisedCharge")
+          ? outdoor.revisedCharge
+          : outdoor.FactoryCharge;
+        const fcInput = wsForm.querySelector('[data-wi2="factoryChargeOz"]');
+        if (fcInput) {
+          fcInput.value = String(baseCharge);
+          data.factoryChargeOz = String(baseCharge);
+        }
+        const approxInput = wsForm.querySelector('[data-wi2="approxAdjustOz"]');
+        const result = calculateApproxAdjust(
+          parseFloat(data.linesetLength),
+          lineConfig
+        );
+        data.approxAdjustOz =
+          result !== null ? result : baseCharge ? String(baseCharge) : "";
+        if (approxInput) approxInput.value = data.approxAdjustOz;
+      }
+      setWeightInData(data, 2);
+      _renderNewTotalCharge(data, 2);
       updatePriceDisplay();
       saveProgress(_activeJob);
     }
