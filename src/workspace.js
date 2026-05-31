@@ -3,7 +3,7 @@
 
 import {
   SERVICES, ACCESSORIES, FIXES,
-  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, ACCESSORY_COMPANIONS, ZONE_BOARDS,
+  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, TECH_SUPPLIED_ACCESSORIES, ACCESSORY_COMPANIONS, ZONE_BOARDS,
   CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
   DEFAULT_PRICES, ACCESSORY_DISPLAY, FIX_DISPLAY, FINISH_SERVICE_PRICE,
 } from "./data.js";
@@ -357,7 +357,7 @@ export function buildCompletion(job, prices = DEFAULT_PRICES) {
     outdoor2:           (s.system2 ?? job.system2)?.outdoor || null,
     indoor2:            (s.system2 ?? job.system2)?.indoor || null,
     services:           _buildServiceItems(s, totals.service),
-    selectedThermostat: s.selectedThermostat ? { name: s.selectedThermostat } : null,
+    selectedThermostat: s.selectedThermostat ? { name: s.selectedThermostat, techSupplied: true } : null,
     thermostatQuantity: s.thermostatQuantity,
     accessories:        _buildAccessoryItems(s, prices),
     fixes:              _buildFixItems(s, prices),
@@ -429,11 +429,11 @@ function _buildAccessoryItems(s, prices) {
     if (name === ACCESSORIES.WEIGHT_IN_DATA && hasFinish) price += prices.WEIGHT_IN_FINISH_ADDON;
     if (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
     const displayName = (ACCESSORY_DISPLAY[name]?.report || name.toLowerCase()) + (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name) ? " (2 sys)" : "");
-    items.push({ name, displayName, price });
+    items.push({ name, displayName, price, techSupplied: TECH_SUPPLIED_ACCESSORIES.includes(name) });
   }
 
   for (const acc of s.customAccessories) {
-    items.push({ name: acc.name, displayName: acc.name.toLowerCase(), price: acc.price });
+    items.push({ name: acc.name, displayName: acc.name.toLowerCase(), price: acc.price, techSupplied: true });
   }
 
   return items;
@@ -442,10 +442,10 @@ function _buildAccessoryItems(s, prices) {
 function _buildFixItems(s, prices) {
   const items = [];
   for (const name of s.selectedFixes) {
-    items.push({ name, displayName: FIX_DISPLAY[name]?.report || name.toLowerCase(), price: prices.FIX[name] ?? 0 });
+    items.push({ name, displayName: FIX_DISPLAY[name]?.report || name.toLowerCase(), price: prices.FIX[name] ?? 0, techSupplied: false });
   }
   for (const fix of s.customFixes) {
-    items.push({ name: fix.name, displayName: fix.name.toLowerCase(), price: fix.price });
+    items.push({ name: fix.name, displayName: fix.name.toLowerCase(), price: fix.price, techSupplied: false });
   }
   return items;
 }
@@ -585,11 +585,12 @@ function _setupPhotoRow(containerId, keys, includeNTC) {
   for (const key of keys) row.appendChild(_makeSlot(key));
 
   if (includeNTC) {
+    const ntcId = typeof includeNTC === "string" ? includeNTC : "wi-new-total-charge";
     const ntc = document.createElement("div");
     ntc.style.cssText = "display:flex;flex-direction:column;justify-content:center;";
     ntc.innerHTML =
       `<span style="font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);color:var(--color-text-secondary);">New Total Charge</span>` +
-      `<span id="wi-new-total-charge" style="font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);color:var(--color-accent);">—</span>`;
+      `<span id="${ntcId}" style="font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);color:var(--color-accent);">—</span>`;
     row.appendChild(ntc);
   }
 
@@ -611,8 +612,8 @@ export function onWeighInPhotoChange(cb) { _onWeighInPhotoChange = cb; }
 export function initWeighInPhotos(address) {
   if (_photoRowsInitialized) return;
   _dbPrefix = address.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 24);
-  _setupPhotoRow("wi-photo-row-1", ["weight", "fan"], true);
-  _setupPhotoRow("wi-photo-row-2", ["weight2", "fan2"], false);
+  _setupPhotoRow("wi-photo-row-1", ["weight", "fan"], "wi-new-total-charge");
+  _setupPhotoRow("wi-photo-row-2", ["weight2", "fan2"], "wi-new-total-charge-2");
   _restorePhotos();
   _photoRowsInitialized = true;
 }
