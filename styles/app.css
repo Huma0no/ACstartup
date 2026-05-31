@@ -1009,7 +1009,7 @@ input[name="builder"] {
 }
 .ws-zone-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   margin-bottom: var(--space-2);
   grid-column: 1 / -1;
@@ -1018,6 +1018,11 @@ input[name="builder"] {
 .ws-zone-grid .fix-suboptions {
   grid-column: 1 / -1;
 }
+.ws-zone-grid .ws-btn                      { min-height: 32px; }
+.ws-zone-grid [data-accessory="UT3000"]    { grid-column: span 3; }
+.ws-zone-grid [data-accessory="HZ322"]     { grid-column: 4; grid-row: span 2; }
+.ws-zone-grid [data-accessory="Harmony"]   { grid-column: span 3; }
+.ws-zone-grid [data-group-toggle="lp-kit"] { grid-column: span 2; }
 
 #accessory-buttons {
   display: block;
@@ -1599,19 +1604,11 @@ input[name="builder"] {
   display: block;
 }
 
-.step-header {
+.wi-system-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-4);
-  height: 40px;
-  background: var(--color-surface);
-}
-
-.step-header span {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
 }
 
 /* Workspace chip nav */
@@ -1941,8 +1938,6 @@ input[name="builder"] {
 
 /* Workspace footer — sticky bottom */
 .workspace-footer {
-  position: sticky;
-  bottom: 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   padding: var(--space-3) var(--space-4);
@@ -1950,8 +1945,6 @@ input[name="builder"] {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  z-index: var(--z-sticky);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .price-display {
@@ -2033,13 +2026,6 @@ input[name="builder"] {
   border: 1px solid var(--color-border);
   border-left: 2px solid var(--color-accent);
   border-radius: var(--radius-sm);
-}
-
-.air-core-stack {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 2px;
-  padding: 1px;
 }
 
 /* ───────────────────────────────────────────────────────────────
@@ -2521,9 +2507,6 @@ input.em-price {
   position: absolute;
   inset: 0;
   color: rgba(255, 255, 255, 0.45);
-}
-.lv-uc-icon {
-  font-size: 52px;
 }
 .lv-uc-text {
   font-size: 18px;
