@@ -1191,6 +1191,15 @@ input[name="builder"] {
   color: var(--color-text-primary);
 }
 
+.job-top-notes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 var(--space-1);
+}
+
 /* Col 1 Row 2 — tstat + accessory chips */
 .job-top-tech {
   display: flex;

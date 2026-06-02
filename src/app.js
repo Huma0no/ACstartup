@@ -389,6 +389,7 @@ function jobCardHTML(job, ci) {
         <button class="btn-delete" data-delete="${esc(job.id)}"
           aria-label="Delete"></button>
       </div>
+      ${job.notes ? `<div class="job-top-notes">${esc(job.notes)}</div>` : ""}
       <div class="job-top-row2">
         ${techChips ? `<div class="job-top-tech">${techChips}</div>` : '<div class="job-top-tech"></div>'}
         <div class="job-top-meta">
