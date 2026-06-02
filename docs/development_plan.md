@@ -159,6 +159,14 @@ No bloquean pero afectan experiencia en campo.
 - [ ] Prueba con 1–2 contratistas reales antes de cobrar
 - [ ] Definir modelo de precio y forma de entrega
 
+### 3F — Pendientes UI/UX
+
+- [ ] Job Card — notes from New Job not displayed on card
+- [ ] API Key persistence — key lost when Netlify version updates
+- [ ] AI input — replace permanent bar with floating button
+- [ ] Next button — add internal pulsing line effect
+- [ ] Generate Report — auto-download photos when they exist
+
 ---
 
 ## Resumen
