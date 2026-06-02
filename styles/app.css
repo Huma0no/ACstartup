@@ -771,10 +771,15 @@ input[name="builder"] {
 }
 
 /* Next button (step navigation) */
+@keyframes btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.03); }
+}
+
 .btn-next {
-  background: var(--color-surface-raised);
-  color: var(--color-accent);
-  border: 1px solid var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   padding: var(--space-2) var(--space-5);
   font-size: var(--font-size-sm);
@@ -782,10 +787,11 @@ input[name="builder"] {
   min-height: 44px;
   cursor: pointer;
   transition: var(--tr-fast);
+  animation: btn-pulse 2s ease-in-out infinite;
 }
 .btn-next:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
 }
 
 /* General .btn (legacy compatibility) */
