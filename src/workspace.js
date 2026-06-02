@@ -391,7 +391,7 @@ function _buildServiceItems(s, serviceTotal) {
     displayName = combo ? `Finish/ ${combo} started` : "Finish/";
   } else if (hasAC && hasHeat) {
     name = SERVICES.AC_HEAT;
-    displayName = "AC & Heat started";
+    displayName = s.isTemporary ? "AC & Heat started (Temporarily)" : "AC & Heat started";
   } else if (hasAC) {
     name = SERVICES.AC;
     // Rule 7: Temporarily modifies text only, not price

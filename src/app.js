@@ -84,6 +84,7 @@ import {
   getOutdoorModel,
   SERIES_LINKS,
   OUTDOOR_LINKS,
+  FINISH_SERVICE_PRICE,
 } from "./data.js";
 
 // ---------------------------------------------------------------------------
@@ -2689,10 +2690,10 @@ function openEditModal(completion) {
         const combo =
           hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
         dn = combo ? `Finish/ ${combo} started` : "Finish";
-        price = prices.SERVICE[SERVICES.FINISH] ?? 0;
+        price = (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0;
       } else if (hasAC && hasHeat) {
         name = SERVICES.AC_HEAT;
-        dn = "AC & Heat started";
+        dn = newTemp ? "AC & Heat started (Temporarily)" : "AC & Heat started";
         price = prices.SERVICE[SERVICES.AC_HEAT] ?? 0;
       } else if (hasAC) {
         name = SERVICES.AC;
