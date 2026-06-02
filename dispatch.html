@@ -4677,11 +4677,12 @@
 
       // Compute completion text + total for one job (pure, no DOM)
       function _compJobText(j) {
-        const ss = j.savedState || {};
-        const total =
-          (ss.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
-          (ss.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
-          (ss.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0);
+        const ss = j.savedState || null;
+        const total = ss
+          ? (ss.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+            (ss.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+            (ss.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0)
+          : (j.totals?.total || 0);
 
         // Use the PWA-generated reportText if available — exact match
         if (j.reportText) {
@@ -4957,8 +4958,8 @@
         let cardsHtml = "";
 
         techJobs.forEach((j, idx) => {
-          const ss = j.savedState;
-          if (!ss) return;
+          const ss = j.savedState || null;
+          if (!ss && !j.reportText) return;
           const { text, total } = _compJobText(j);
           totalDay += total;
           allText.push(text);
