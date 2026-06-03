@@ -441,6 +441,16 @@ Site photo labels (from `sitePhotoMeta`) appear in report text between notes and
 
 **Edge case:** If no job is active (`_activeJob` is null), the button click does nothing.
 
+### 8.3 Photo download
+
+Triggered automatically between step 4 (saveCompletion) and step 6 (clearWorkspace):
+
+- If photos exist in the current workspace session (weigh-in slots or site photos), a ZIP is automatically downloaded before the workspace is cleared.
+- ZIP filename format: `report_photos_YYYY-MM-DD.zip` (today's date, UTC).
+- Each file inside the ZIP is named `{ADDRESS}_{LABEL}.jpg`.
+- If no photos exist, the download is skipped silently — no toast, no interruption to the flow.
+- The report is saved regardless of whether a photo download occurs.
+
 ---
 
 ## 9. Reports Tab
