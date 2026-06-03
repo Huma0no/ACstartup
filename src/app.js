@@ -791,6 +791,8 @@ function updateAccordionSummaries() {
   const setDone = (id, done) => {
     const chip = document.querySelector(`#ws-nav [data-nav="${id}"]`);
     if (chip) chip.classList.toggle("ws-nav-done", done);
+    const btn = document.querySelector(`#${id} .btn-next`);
+    if (btn) btn.classList.toggle("btn-next-active", done);
   };
 
   setDone("section-service", state.selectedServices.length > 0);
@@ -1092,6 +1094,7 @@ function _renderPricesBody(prices) {
 function renderSettingsModal() {
   const s = getSettings();
   document.getElementById("theme-toggle").checked = s.theme === "dark";
+  document.getElementById("theme-terminal-btn")?.classList.toggle("chip-primary", s.theme === "terminal");
   document.getElementById("ai-provider-row").innerHTML = AI_PROVIDERS.map(
     ({ id, label }) =>
       `<button class="chip chip-sm${
@@ -2029,7 +2032,7 @@ function wireEvents() {
         getOutdoorModel(completion.outdoor2)?.freon || "";
       completion.reportText = generateReportText(completion);
       saveCompletion(completion);
-      await _downloadPhotosZip(`report_photos_${new Date().toISOString().slice(0, 10)}.zip`, true);
+      await _downloadPhotosZip(`${(_activeJob?.address || "JOB").replace(/[^a-z0-9]/gi, "_").toUpperCase()}_PHOTOS.zip`, true);
       clearWorkspace();
       setActiveJobId(null);
       _activeJob = null;
@@ -2163,11 +2166,23 @@ function wireEvents() {
       await _downloadPhotosZip(`${safeAddr}_PHOTOS.zip`, false);
     });
 
+  document.querySelectorAll(".btn-next").forEach(btn => {
+    for (let i = 0; i < 3; i++) {
+      const s = document.createElement("span");
+      s.className = "ripple";
+      btn.appendChild(s);
+    }
+  });
+
   // Settings modal — theme, provider, key
   document.getElementById("theme-toggle").addEventListener("change", (e) => {
     const mode = e.target.checked ? "dark" : "light";
     setTheme(mode);
     document.documentElement.setAttribute("data-mode", mode);
+  });
+  document.getElementById("theme-terminal-btn").addEventListener("click", () => {
+    setTheme("terminal");
+    document.documentElement.setAttribute("data-mode", "terminal");
   });
   document.getElementById("ai-provider-row").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-provider]");
