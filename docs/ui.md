@@ -513,6 +513,33 @@
 | `ts-chat-msg-user` / `ts-chat-msg-assistant` | Chat bubble layout (max-width 88%) |
 | `ts-provider-chip` | AI provider selector pill |
 
+#### Structure
+
+| Element | Purpose |
+|---|---|
+| `#ts-drawer` | Fixed-right panel that slides in |
+| `#ts-drawer-close` | Close button in drawer header |
+| `#ts-context-chips` | Equipment summary chips (indoor/outdoor model, refrigerant, accessories) |
+| `#ts-job-display` | Active job card or job picker |
+| `#ts-symptom-section` + `.ts-symptom-btn` | Grid of 9 symptom chip buttons |
+| `#ts-fault-input` / `#ts-fault-code-value` | Fault code text input (shown only for `fault_code` symptom) |
+| `#ts-results-section` | Container for severity badge + summary + steps |
+| `#ts-severity-badge` | Colored severity pill |
+| `#ts-steps-list` | Numbered checklist of diagnostic steps |
+| `#ts-equipment-notes` | Equipment reference notes below steps |
+| `#ts-claude-section` | AI assist footer: Ask AI button + chat area |
+| `#ts-reset-btn` | Returns to symptom selection |
+
+#### States
+
+| State | Description |
+|---|---|
+| Closed | Drawer off-screen (`translateX(100%)`), overlay transparent |
+| Open — no job | Generic Mode badge visible; symptom grid available |
+| Open — with job | Equipment context chips in header; steps are equipment-specific |
+| Diagnosing | Results section visible; steps interactive (tap to check off) |
+| Branch active | Yes/No sub-steps revealed below the branch question |
+
 ---
 
 ## 12. Toast

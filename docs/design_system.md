@@ -343,6 +343,26 @@ Se asignan automáticamente en orden al importar jobs.
 
 ---
 
+## Severidad — tokens de color (Troubleshooting)
+
+Mapeados a los tokens existentes del design system. Usados por `.ts-severity-badge` en el drawer de troubleshooting.
+
+| Severity | Token | Descripción |
+|---|---|---|
+| `critical` | `var(--color-danger)` | Riesgo de seguridad (A2L, eléctrico) |
+| `high` | `var(--color-warning)` | Sistema completamente caído |
+| `medium` | `var(--color-accent)` | Operación degradada |
+| `low` | `var(--color-success)` | Informativo, problema menor |
+
+```css
+.ts-critical { background: var(--color-danger);  }
+.ts-high     { background: var(--color-warning); }
+.ts-medium   { background: var(--color-accent);  }
+.ts-low      { background: var(--color-success); }
+```
+
+---
+
 ## Cómo probar los temas
 
 En `index.html`, el atributo del elemento raíz controla el tema:

@@ -678,3 +678,55 @@ Price changes take effect on the next workspace price recalculation. Prices at t
 | LP Kit variant selected | Other LP Kit variants deselected |
 | Generate Report | Job removed from Jobs tab; workspace cleared; Reports tab opened |
 | Settings price change | Live effect on workspace price display; baked into report on Generate |
+
+---
+
+## 14. Troubleshooting Drawer
+
+### 14.1 Trigger
+
+TS button in the app header opens the drawer. The drawer slides in from the right over the current view.
+
+### 14.2 Flow
+
+1. **Drawer opens** — auto-selects the active job if one exists. Falls back to Generic Mode if no job is active.
+2. **Job context displayed** — header shows job address; chips show indoor/outdoor model, refrigerant, and key accessories (zoning, float switch, A2L harness).
+3. **Technician selects a symptom** — 9 options available:
+
+| Key | Label |
+|---|---|
+| `no_cooling` | No Enfría |
+| `no_heating` | No Calienta |
+| `fault_code` | Fault Code |
+| `no_fan` | Fan No Arranca |
+| `float_switch` | Float Switch |
+| `zoning` | Zoning Issue |
+| `a2l_safety` | A2L Safety |
+| `tstat` | Tstat Issue |
+| `condenser_no_start` | Condensadora No Arranca |
+
+4. **Fault code entry** — selecting `fault_code` reveals a text input. Technician enters the code and taps "Lookup".
+5. **Engine runs diagnosis** — returns severity level, summary, ordered steps, and equipment notes.
+6. **Steps display** — numbered list with action text, tool required (multimeter, visual, gauges, etc.), and optional detail text. Tapping a step marks it checked.
+7. **Branch steps** — some steps include a Yes/No question. Tapping a branch button reveals the relevant sub-steps below the question. Tapping the active button again collapses it.
+8. **Ask AI** — the "Ask AI →" button pre-loads the current diagnosis context (symptom, equipment, L1 result) into the global AI assistant and opens it. The troubleshooting drawer closes.
+9. **Reset** — returns to symptom selection and clears results. Job context is preserved.
+
+### 14.3 Generic Mode
+
+When no active job exists: diagnosis runs without equipment-specific context. Steps are generic (not tailored to refrigerant, accessories, or board type). A "Generic Mode" label appears in the job section.
+
+Multiple jobs but none selected: a job picker appears. Technician can select a job or proceed in Generic Mode.
+
+### 14.4 Without API Key
+
+Level 1 (rule-based) steps and branches work without a key. Tapping "Ask AI →" opens the Settings modal to configure the API key instead of opening the AI assistant.
+
+### 14.5 Severity Levels
+
+| Level | Meaning |
+|---|---|
+| `critical` | Potential safety issue (A2L refrigerant, electrical hazard) |
+| `high` | System is fully down, affects habitability |
+| `medium` | Degraded operation, cooling or heating impaired |
+| `low` | Informational, minor issue |

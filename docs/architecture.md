@@ -51,10 +51,13 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
     ├── ai.js               # AI chat interface, provider switching (~200 lines)
     ├── diagrams.js         # Equipment diagram lookup, cache management (~150 lines)
     ├── utils.js            # Pure calculation functions, no DOM dependency (~80 lines)
-    └── lv.js               # LV diagram viewer — job header, static sections, viewer singleton (~200 lines)
+    ├── lv.js               # LV diagram viewer — job header, static sections, viewer singleton (~200 lines)
+    ├── equipmentData.js    # HVAC equipment catalog: fault codes, heaters, outdoor units, thermostats, accessories, zoning boards (~400 lines)
+    ├── troubleshootingEngine.js  # Rule-based diagnosis engine — pure logic, no UI, no network (~800 lines)
+    └── tsPanel.js          # Troubleshooting drawer UI — job selection, step rendering, AI handoff (~500 lines)
 ```
 
-**Total: 14 files.** Clean, one responsibility per file.
+**Total: 17 files.** Clean, one responsibility per file.
 
 ---
 
@@ -165,6 +168,26 @@ This document covers the **PWA only** (field tool). Dispatch is a separate app.
 - Viewer singleton: zoom +/−, 1:1 reset, pinch-to-zoom, pan when zoomed
 - Footer links: Lennox, Trane, Goodman, Daikin — sourced from SERIES_LINKS / OUTDOOR_LINKS in data.js
 - No DOMContentLoaded — called by app.js via renderLV(container)
+
+### `equipmentData.js`
+- HVAC equipment catalog: fault codes keyed by board type, heater/air handler models, outdoor unit models, thermostats, accessories, zoning boards
+- Single source of truth for all equipment-specific data used by the troubleshooting engine
+- No UI, no DOM, no network — pure static data
+
+### Troubleshooting — two-layer architecture
+
+#### `troubleshootingEngine.js` (Layer 1 — Logic)
+- Rule-based HVAC field diagnosis; no UI, no network calls
+- Exports: `SYMPTOM`, `SYMPTOM_LABELS`, `buildContext(state)`, `diagnose({ symptom, detail, context })`
+- `buildContext()` converts a job state object into an equipment context (`isA2L`, `hasZoning`, `hasFloatSwitch`, etc.)
+- `diagnose()` routes to one of 9 private handlers; each returns `{ title, severity, summary, steps[], equipmentNotes[], faultCodeInfo }`
+- Steps may include `branches` (Yes/No decision trees with nested sub-steps)
+- Depends on: `equipmentData.js` only
+
+#### `tsPanel.js` (Layer 2 — UI)
+- Controls the troubleshooting drawer: job selection, symptom picker, step rendering, AI handoff
+- Uses engine results to populate the DOM; never calls APIs directly
+- Depends on: `troubleshootingEngine.js`, `settings.js` (`getApiKey`), `jobs.js` (`getAllJobs`), `storage.js`, `app.js` (toast, AI FAB handoff)
 
 ---
 

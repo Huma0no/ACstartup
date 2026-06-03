@@ -167,6 +167,16 @@ No bloquean pero afectan experiencia en campo.
 - [ ] Next button — add internal pulsing line effect
 - [ ] Generate Report — auto-download photos when they exist
 
+### 3G — Troubleshooting Drawer
+
+- [ ] Create `src/equipmentData.js` — migrate fault codes and equipment data from `data.js` and `OUTDOOR_CATALOG`
+- [ ] Integrate `troubleshootingEngine.js` into `src/`
+- [ ] Build TS drawer HTML in `index.html`
+- [ ] Write new `tsPanel.js` using PWA architecture
+      (uses `getAllJobs`, `getApiKey`, `toast`, existing drawer shell)
+- [ ] Write TS CSS (~40 rules, severity colors, step styles)
+- [ ] Wire "Ask AI →" to global AI FAB with diagnosis context
+
 ---
 
 ## Resumen
@@ -180,6 +190,7 @@ No bloquean pero afectan experiencia en campo.
 | 3C | Ajustes UI | 1 | 🔴 Pendiente |
 | 3D | Ajustes lógica | 1 | 🔴 Pendiente |
 | 3E | Features pendientes | 3+ | 🔴 Pendiente |
+| 3G | Troubleshooting | 1–2 | 🔴 Pendiente |
 | 4 | Infraestructura | 1 | ✅ Completa |
 | 5 | Multi-usuario | 2–3 | ⏳ Futuro |
 
