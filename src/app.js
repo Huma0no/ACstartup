@@ -120,6 +120,25 @@ function _loadJSZip() {
   return _jsZipPromise;
 }
 
+async function _downloadPhotosZip(filename, silent) {
+  const photos = getAllPhotos();
+  if (!photos.length) return;
+  const safeAddr = (_activeJob?.address || "JOB")
+    .replace(/[^a-z0-9]/gi, "_")
+    .toUpperCase();
+  await _loadJSZip();
+  const zip = new window.JSZip();
+  for (const { file, label } of photos) {
+    const name = `${safeAddr}_${label.toUpperCase().replace(/[^A-Z0-9]/g, "_")}.jpg`;
+    zip.file(name, file);
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  Object.assign(document.createElement("a"), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+  if (!silent) toast("Photos downloaded!", "success");
+}
+
 // ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
@@ -2003,13 +2022,14 @@ function wireEvents() {
   // Generate Report
   document
     .getElementById("btn-generate-report")
-    .addEventListener("click", () => {
+    .addEventListener("click", async () => {
       if (!_activeJob) return;
       const completion = buildCompletion(_activeJob, getPrices());
       completion.refrigerant = getOutdoorModel(completion.outdoor)?.freon ||
         getOutdoorModel(completion.outdoor2)?.freon || "";
       completion.reportText = generateReportText(completion);
       saveCompletion(completion);
+      await _downloadPhotosZip(`report_photos_${new Date().toISOString().slice(0, 10)}.zip`, true);
       clearWorkspace();
       setActiveJobId(null);
       _activeJob = null;
@@ -2137,27 +2157,10 @@ function wireEvents() {
   document
     .getElementById("btn-download-site-photos")
     .addEventListener("click", async () => {
-      const photos = getAllPhotos();
-      if (!photos.length) return;
       const safeAddr = (_activeJob?.address || "SITE")
         .replace(/[^a-z0-9]/gi, "_")
         .toUpperCase();
-      await _loadJSZip();
-      const zip = new window.JSZip();
-      for (const { file, label } of photos) {
-        const name = `${safeAddr}_${label
-          .toUpperCase()
-          .replace(/[^A-Z0-9]/g, "_")}.jpg`;
-        zip.file(name, file);
-      }
-      const blob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(blob);
-      Object.assign(document.createElement("a"), {
-        href: url,
-        download: `${safeAddr}_PHOTOS.zip`,
-      }).click();
-      URL.revokeObjectURL(url);
-      toast("Photos downloaded!", "success");
+      await _downloadPhotosZip(`${safeAddr}_PHOTOS.zip`, false);
     });
 
   // Settings modal — theme, provider, key
