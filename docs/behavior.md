@@ -84,6 +84,15 @@ Not implemented. No import button or handler exists in the current codebase.
 - Deleting a job also removes its associated `savedState`; if the deleted job was in the header bar, `updateActiveJobBar()` is called.
 - Completing a job (generating a report) removes it from the job list and creates a completion in the Reports tab.
 
+### 1.10 Job card color and grouping
+
+- Jobs are grouped by subdivision in the job list.
+- Each unique subdivision receives a color index (1–8) assigned in first-seen order.
+- The left border of each job card reflects its subdivision color via the `--subdivision-N` CSS variable.
+- Jobs within the same subdivision render together.
+- Empty subdivision is treated as its own group and receives its own color index.
+- Completed jobs render separately after active jobs, without color grouping.
+
 ---
 
 ## 2. Workspace
