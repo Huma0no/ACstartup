@@ -2340,10 +2340,12 @@ function wireEvents() {
     toast(`Job added: ${job.address}`, "success");
   });
 
-  // AI bar
+  // AI FAB
   const _aiHistory = document.getElementById("ai-chat-history");
   const _aiInput   = document.getElementById("ai-chat-input");
   const _aiSend    = document.getElementById("ai-chat-send");
+  const _aiFab     = document.getElementById("ai-fab");
+  const _aiPanel   = document.getElementById("ai-panel");
 
   function _appendBubble(text, role) {
     const el = document.createElement("div");
@@ -2376,23 +2378,19 @@ function wireEvents() {
     }
   }
 
-  let _justSent = false;
-  _aiInput.addEventListener("focus", () => {
+  _aiFab.addEventListener("click", () => {
     if (!_chatInitialized) { initChat(_activeJob); _chatInitialized = true; }
-    _aiHistory.classList.remove("hidden");
+    _aiFab.classList.add("hidden");
+    _aiPanel.classList.remove("hidden");
+    _aiInput.focus();
   });
-  _aiInput.addEventListener("blur", () => {
-    if (_justSent) return;
-    _aiHistory.classList.add("hidden");
+  document.addEventListener("click", (e) => {
+    if (!_aiPanel.classList.contains("hidden") &&
+        !e.target.closest("#ai-fab-wrap")) {
+      _aiPanel.classList.add("hidden");
+      _aiFab.classList.remove("hidden");
+    }
   });
-  _aiSend.addEventListener("mousedown", () => {
-    _justSent = true;
-    setTimeout(() => { _justSent = false; }, 300);
-  });
-  _aiSend.addEventListener("touchstart", () => {
-    _justSent = true;
-    setTimeout(() => { _justSent = false; }, 300);
-  }, { passive: true });
   _aiSend.addEventListener("click", _sendChat);
   _aiInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {

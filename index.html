@@ -258,14 +258,6 @@
           <div id="lv-container" class="lv-container"></div>
         </section>
       </main>
-      <div id="ai-bar">
-        <div id="ai-chat-history" class="hidden"></div>
-        <div id="ai-input-row">
-          <textarea id="ai-chat-input" rows="1" placeholder="ASK AI"></textarea>
-          <button type="button" id="ai-chat-send">↑</button>
-        </div>
-      </div>
-
       <!-- Troubleshooting Drawer + Overlay -->
       <aside
         id="ts-drawer"
@@ -402,6 +394,17 @@
           aria-label="Close"
         ></button>
         <img id="lightbox-img" src="" alt="" />
+      </div>
+
+      <div id="ai-fab-wrap">
+        <button id="ai-fab" aria-label="AI Assistant">IA</button>
+        <div id="ai-panel" class="hidden">
+          <div id="ai-chat-history"></div>
+          <div id="ai-panel-input">
+            <textarea id="ai-chat-input" rows="1" placeholder="ASK AI..."></textarea>
+            <button type="button" id="ai-chat-send">↑</button>
+          </div>
+        </div>
       </div>
 
       <script type="module" src="src/app.js"></script>
