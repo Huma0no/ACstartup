@@ -388,7 +388,9 @@ function _buildServiceItems(s, serviceTotal) {
   if (hasFinish) {
     name = SERVICES.FINISH;
     const combo = hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
-    displayName = combo ? `Finish/ ${combo} started` : "Finish/";
+    displayName = combo
+      ? `Finish/ ${combo} started${s.isTemporary ? " (Temporarily)" : ""}`
+      : "Finish/";
   } else if (hasAC && hasHeat) {
     name = SERVICES.AC_HEAT;
     displayName = s.isTemporary ? "AC & Heat started (Temporarily)" : "AC & Heat started";
