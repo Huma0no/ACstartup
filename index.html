@@ -265,8 +265,36 @@
         aria-hidden="true"
         aria-label="Troubleshooting"
       >
-        <header id="ts-header" class="ts-header"></header>
-        <div id="ts-body" class="ts-body"></div>
+        <header id="ts-header" class="ts-header">
+          <span id="ts-job-addr"></span>
+          <div id="ts-context-chips"></div>
+          <button type="button" id="ts-drawer-close">✕</button>
+        </header>
+        <div id="ts-body" class="ts-body">
+          <div id="ts-symptom-section">
+            <p class="ts-section-label">Select symptom</p>
+            <div id="ts-symptom-grid">
+              <!-- 9 symptom buttons injected by JS -->
+            </div>
+            <div id="ts-fault-row" class="hidden">
+              <input id="ts-fault-input" type="text" placeholder="Enter fault code…">
+              <button type="button" id="ts-lookup-btn">Look up</button>
+            </div>
+          </div>
+          <div id="ts-results-section" class="hidden">
+            <div id="ts-result-header">
+              <span id="ts-severity-badge"></span>
+              <span id="ts-result-title"></span>
+            </div>
+            <p id="ts-result-summary"></p>
+            <ol id="ts-steps-list"></ol>
+            <div id="ts-equipment-notes" class="hidden"></div>
+            <div id="ts-result-actions">
+              <button type="button" id="ts-ask-ai-btn">Ask AI →</button>
+              <button type="button" id="ts-reset-btn">Reset</button>
+            </div>
+          </div>
+        </div>
       </aside>
       <div id="ts-overlay" class="ts-overlay" aria-hidden="true"></div>
 
@@ -302,6 +330,10 @@
               <span>Dark Mode</span>
               <input type="checkbox" id="theme-toggle" role="switch" />
             </label>
+            <div class="toggle-row">
+              <span>Terminal</span>
+              <button type="button" id="theme-terminal-btn" class="chip chip-sm">Terminal</button>
+            </div>
           </div>
           <div class="settings-group">
             <p class="settings-label">AI Provider</p>
@@ -336,6 +368,13 @@
               class="settings-status"
               aria-live="polite"
             ></p>
+            <a
+              id="ai-settings-link"
+              class="settings-status"
+              href=""
+              target="_blank"
+              rel="noopener noreferrer"
+            ></a>
           </div>
           <div class="settings-group">
             <p class="settings-label">Prices</p>

@@ -5,7 +5,8 @@ import {
   getSettings,
   setTheme,
   setAiProvider,
-  setAiApiKey,
+  setApiKey,
+  getApiKey,
   getPrices,
   setPrice,
   resetPrices,
@@ -65,6 +66,13 @@ import { downloadDiagram, precacheJobs } from "./diagrams.js";
 import { initChat, sendMessage, clearHistory } from "./ai.js";
 import { renderLV as _renderLV, openViewer as _openViewer } from "./lv.js";
 import { importFromJSON } from "./importer.js";
+import { initTsPanel } from "./tsPanel.js";
+import {
+  diagnose,
+  buildContext,
+  SYMPTOM,
+  SYMPTOM_LABELS,
+} from "./troubleshootingEngine.js";
 import {
   SERVICES,
   ACCESSORIES,
@@ -1063,6 +1071,12 @@ const AI_PROVIDERS = [
   { id: "google", label: "Google" },
 ];
 
+const AI_PROVIDER_LINKS = {
+  anthropic: { href: "https://console.anthropic.com/settings/billing", text: "Get API key · Add credits →" },
+  openai:    { href: "https://platform.openai.com/account/billing",    text: "Get API key · Add credits →" },
+  google:    { href: "https://aistudio.google.com",                    text: "Get API key (free) →" },
+};
+
 function _renderPricesBody(prices) {
   const row = (cat, name, label, val) =>
     `<label class="toggle-row"><span>${esc(label)}</span><input type="number" min="0" step="1" data-price-category="${cat}" data-price-name="${esc(name)}" value="${val}"></label>`;
@@ -1101,10 +1115,13 @@ function renderSettingsModal() {
         s.aiProvider === id ? " chip-primary" : ""
       }" data-provider="${id}">${label}</button>`
   ).join("");
-  document.getElementById("ai-settings-key-input").value = s.aiApiKey || "";
-  document.getElementById("ai-settings-status").textContent = s.aiApiKey
+  document.getElementById("ai-settings-key-input").value = getApiKey(s.aiProvider);
+  document.getElementById("ai-settings-status").textContent = getApiKey(s.aiProvider)
     ? "Key saved."
-    : "";
+    : "No key saved.";
+  const _link = AI_PROVIDER_LINKS[s.aiProvider] || AI_PROVIDER_LINKS.anthropic;
+  document.getElementById("ai-settings-link").href        = _link.href;
+  document.getElementById("ai-settings-link").textContent = _link.text;
   document.getElementById("settings-prices-body").innerHTML = _renderPricesBody(getPrices());
 }
 
@@ -1564,19 +1581,14 @@ function wireEvents() {
   document
     .getElementById("btn-open-troubleshoot")
     .addEventListener("click", () => {
-      document.getElementById("ts-drawer").classList.add("open");
+      document.getElementById("ts-drawer").classList.add("ts-open");
       document.getElementById("ts-drawer").setAttribute("aria-hidden", "false");
-      document.getElementById("ts-overlay").classList.add("visible");
+      document.getElementById("ts-overlay").classList.add("ts-open");
     });
   document.getElementById("ts-overlay").addEventListener("click", () => {
-    document.getElementById("ts-drawer").classList.remove("open");
+    document.getElementById("ts-drawer").classList.remove("ts-open");
     document.getElementById("ts-drawer").setAttribute("aria-hidden", "true");
-    document.getElementById("ts-overlay").classList.remove("visible");
-  });
-  document.querySelector(".ts-close-btn")?.addEventListener("click", () => {
-    document.getElementById("ts-drawer").classList.remove("open");
-    document.getElementById("ts-drawer").setAttribute("aria-hidden", "true");
-    document.getElementById("ts-overlay").classList.remove("visible");
+    document.getElementById("ts-overlay").classList.remove("ts-open");
   });
 
   // Workspace chip nav
@@ -2193,14 +2205,14 @@ function wireEvents() {
   });
   document.getElementById("ai-settings-save").addEventListener("click", () => {
     const key = document.getElementById("ai-settings-key-input").value.trim();
-    setAiApiKey(key);
+    setApiKey(getSettings().aiProvider, key);
     document.getElementById("ai-settings-status").textContent = key
       ? "Key saved."
       : "Key cleared.";
     toast("API key saved", "success");
   });
   document.getElementById("ai-settings-clear").addEventListener("click", () => {
-    setAiApiKey("");
+    setApiKey(getSettings().aiProvider, "");
     document.getElementById("ai-settings-key-input").value = "";
     document.getElementById("ai-settings-status").textContent = "Key cleared.";
   });
@@ -2377,7 +2389,7 @@ function wireEvents() {
     const text = _aiInput.value.trim();
     if (!text) return;
     const s = getSettings();
-    if (!s?.aiApiKey) {
+    if (!getApiKey(s?.aiProvider)) {
       _appendBubble("Configure your API key in Settings to use the AI assistant.", "assistant");
       return;
     }
@@ -2803,6 +2815,7 @@ function init() {
 
   buildAddJobSection();
   wireEvents();
+  initTsPanel();
   renderJobs();
   renderWorkspace();
   updateActiveJobBar();

@@ -18,7 +18,7 @@ const DEFAULTS = {
   techName:           "",
   theme:              "dark",
   aiProvider:         "anthropic",
-  aiApiKey:           "",
+  aiApiKeys:          { anthropic: "", openai: "", google: "" },
   prices:             {},   // sparse overrides — merged onto DEFAULT_PRICES in getPrices()
   onboardingComplete: false,
 };
@@ -30,6 +30,13 @@ const DEFAULTS = {
 export function initSettings() {
   const saved = _load();
   _settings = saved ? { ...DEFAULTS, ...saved } : { ...DEFAULTS };
+  if (_settings.aiApiKey) {
+    if (!_settings.aiApiKeys || typeof _settings.aiApiKeys !== "object")
+      _settings.aiApiKeys = { anthropic: "", openai: "", google: "" };
+    _settings.aiApiKeys[_settings.aiProvider || "anthropic"] = _settings.aiApiKey;
+    delete _settings.aiApiKey;
+    _save(_settings);
+  }
   return _settings;
 }
 
@@ -80,8 +87,12 @@ export function setAiProvider(provider) {
   _save(_settings);
 }
 
-export function setAiApiKey(key) {
-  _settings.aiApiKey = key;
+export function getApiKey(provider) {
+  return _settings.aiApiKeys[provider] || "";
+}
+
+export function setApiKey(provider, key) {
+  _settings.aiApiKeys[provider] = key;
   _save(_settings);
 }
 

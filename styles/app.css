@@ -2586,3 +2586,154 @@ dialog.modal[open] {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ───────────────────────────────────────────────────────────────
+   24. TROUBLESHOOTING
+   ─────────────────────────────────────────────────────────────── */
+
+/* Header */
+#ts-job-addr {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex: 1;
+}
+#ts-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+#ts-drawer-close {
+  background: none;
+  border: none;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  padding: var(--space-1);
+}
+
+/* Section label */
+.ts-section-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+/* Symptom grid */
+#ts-symptom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.ts-symptom-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+.ts-symptom-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Fault code row */
+#ts-fault-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+#ts-fault-input {
+  flex: 1;
+}
+#ts-lookup-btn {
+  flex-shrink: 0;
+}
+
+/* Results */
+#ts-result-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+#ts-result-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+}
+#ts-result-summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+/* Steps */
+#ts-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+}
+.ts-step-item {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+.ts-step-tool {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* Branch */
+.ts-branch-wrap {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+.ts-branch-question {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-2);
+}
+.ts-branch-btns {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Severity badges */
+.ts-severity-badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ts-critical { background: var(--color-danger-soft);  color: var(--color-danger);  }
+.ts-high     { background: var(--color-warning-soft); color: var(--color-warning); }
+.ts-medium   { background: var(--color-accent-soft);  color: var(--color-accent);  }
+.ts-low      { background: var(--color-success-soft); color: var(--color-success); }
+
+/* Result actions */
+#ts-result-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* Equipment notes */
+#ts-equipment-notes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+}

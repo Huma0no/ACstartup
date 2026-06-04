@@ -1,7 +1,7 @@
 // src/ai.js — AI chat with the active provider from settings.js.
 // No UI rendering. No direct localStorage access.
 
-import { getSettings } from "./settings.js";
+import { getSettings, getApiKey } from "./settings.js";
 import { AI_MODELS } from "./data.js";
 
 // ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ export function initChat(job) {
 export async function sendMessage(text) {
   const settings = getSettings();
   const provider = settings?.aiProvider || "anthropic";
-  const apiKey   = settings?.aiApiKey  || "";
+  const apiKey   = getApiKey(provider);
 
   if (!apiKey) {
     throw new Error("No API key configured. Add your key in Settings.");
