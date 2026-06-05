@@ -177,6 +177,21 @@ No bloquean pero afectan experiencia en campo.
 - [ ] Write TS CSS (~40 rules, severity colors, step styles)
 - [ ] Wire "Ask AI →" to global AI FAB with diagnosis context
 
+### 3H — Date & Timestamp Features
+
+- [ ] **Dispatch /api/import — store completion with job date, not import date.**
+      Use `job.timestamp` (parsed to ms) or `job.date` (parsed to ms) for `created_at`.
+      Current: `Date.now()` — records import time, not when work was done.
+      Target: `job.timestamp ? new Date(job.timestamp).getTime() : job.date ? new Date(job.date).getTime() : Date.now()`
+
+- [ ] **PWA Export JSON — filename uses oldest completion date.**
+      Current: `dashboard_import_YYYY-MM-DD.json` using today's date.
+      Target: `dashboard_import_YYYY-MM-DD.json` using the oldest `timestamp` or `date`
+      across all completions in the export batch.
+
+- [x] **PWA Completion report — date included via `timestamp` field in JSON.**
+      Confirmed working. No changes needed.
+
 ---
 
 ## Resumen
@@ -191,6 +206,7 @@ No bloquean pero afectan experiencia en campo.
 | 3D | Ajustes lógica | 1 | 🔴 Pendiente |
 | 3E | Features pendientes | 3+ | 🔴 Pendiente |
 | 3G | Troubleshooting | 1–2 | 🔴 Pendiente |
+| 3H | Date & Timestamp | 1 | 🔴 Pendiente |
 | 4 | Infraestructura | 1 | ✅ Completa |
 | 5 | Multi-usuario | 2–3 | ⏳ Futuro |
 
