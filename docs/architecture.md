@@ -508,3 +508,46 @@ Replace manual JSON file exchange with a direct sync channel.
 | Field naming | Mixed (`furnace`, `details`, `indoorModel`) | Unified canonical (`indoor`, `outdoor`, `notes`) |
 | Duplicate handling | Skip by `id` | Upsert by `id` — Dispatch can update jobs mid-day |
 | Import UI | Not wired (`importer.js` unused) | Dedicated Import button + result toast |
+
+### server.js Adaptation Plan
+
+#### Field mapping — PWA canonical → SQLite columns
+
+| PWA field | SQLite column | Action needed |
+|---|---|---|
+| job.indoor | indoor_model | rename in server.js reader |
+| job.outdoor | outdoor_model | rename in server.js reader |
+| job.indoor2 | indoor_model_2 | rename in server.js reader |
+| job.outdoor2 | outdoor_model_2 | rename in server.js reader |
+| job.techName | technician | already handled |
+| job.notes | notes | move from savedState level |
+| job.totals.total | total_price | use totals object |
+| job.weightInData | weight_in_json | move from savedState level |
+| job.weightInData2 | weight_in_2_json | move from savedState level |
+| job.jobId | job_id | NEW COLUMN — add migration |
+| job.timestamp | timestamp | NEW COLUMN — add migration |
+| accessories[].techSupplied | tech_supplied | NEW COLUMN in job_items — add migration |
+
+#### SQLite migrations required (server.js)
+
+Three new columns must be added via ALTER TABLE:
+
+1. `jobs` table:
+   ```sql
+   ALTER TABLE jobs ADD COLUMN job_id TEXT;
+   ALTER TABLE jobs ADD COLUMN timestamp TEXT;
+   ```
+
+2. `job_items` table:
+   ```sql
+   ALTER TABLE job_items ADD COLUMN tech_supplied INTEGER DEFAULT 0;
+   ```
+
+Migrations run at server startup if columns don't exist.
+
+#### Adaptation principles
+
+- `server.js` adapts to Field Ops canonical format — not the reverse
+- Fallbacks for legacy format: if `job.indoor` is missing, fall back to `job.heaterModel` for backward compatibility
+- `savedState` is no longer required — all data lives at top level
+- `techSupplied` drives inventory deduction: only accessories with `techSupplied=true` are deducted from inventory
