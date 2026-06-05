@@ -16,7 +16,7 @@ let _settings = null;
 
 const DEFAULTS = {
   techName:           "",
-  theme:              "dark",
+  theme:              "terminal",
   aiProvider:         "anthropic",
   aiApiKeys:          { anthropic: "", openai: "", google: "" },
   prices:             {},   // sparse overrides — merged onto DEFAULT_PRICES in getPrices()

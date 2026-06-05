@@ -2145,6 +2145,18 @@ dialog.modal[open] {
   display: flex;
   flex-direction: column;
   animation: scaleIn 0.2s ease-out both;
+  width: min(480px, calc(100dvw - var(--space-4) * 2));
+  max-height: calc(100dvh - var(--space-6) * 2);
+}
+
+@supports (-webkit-touch-callout: none) {
+  dialog.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+  }
 }
 
 .modal-header {
@@ -2621,6 +2633,110 @@ dialog.modal[open] {
   margin-bottom: var(--space-2);
 }
 
+/* ── Job section ── */
+.ts-active-job {
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ts-active-job-address {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ts-active-job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+.ts-job-chip {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+.ts-chip-outdoor  { background: #1b5e20; color: #fff; }
+.ts-chip-a2l      { background: #b71c1c; color: #fff; }
+.ts-chip-tstat    { background: #4a148c; color: #fff; }
+.ts-chip-acc      { background: #e65100; color: #fff; }
+.ts-no-equip-warning {
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  font-weight: var(--font-weight-medium);
+}
+.ts-job-change-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  padding: 0;
+  text-decoration: underline;
+  align-self: flex-start;
+}
+.ts-job-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: var(--space-2);
+}
+.ts-job-picker-item {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+}
+.ts-job-picker-item:hover {
+  border-color: var(--color-accent);
+}
+.ts-job-picker-address {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ts-job-picker-equip {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+.ts-generic-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  background: var(--color-warning-soft);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+}
+.ts-generic-icon { font-size: 18px; flex-shrink: 0; }
+.ts-generic-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-warning);
+}
+.ts-generic-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
 /* Symptom grid */
 #ts-symptom-grid {
   display: grid;
@@ -2636,10 +2752,16 @@ dialog.modal[open] {
   cursor: pointer;
   text-align: left;
   color: var(--color-text-primary);
+  transition: var(--tr-fast);
 }
 .ts-symptom-btn:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+.ts-symptom-btn.ts-active {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
 }
 
 /* Fault code row */
@@ -2677,13 +2799,74 @@ dialog.modal[open] {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-left: var(--space-4);
+  list-style: none;
+  padding: 0;
 }
+.ts-steps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+.ts-steps-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+.ts-steps-reset {
+  font-size: var(--font-size-xs);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+.ts-steps-reset:hover { color: var(--color-text-primary); }
 .ts-step-item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: var(--tr-fast);
+}
+.ts-step-item:hover { background: var(--color-surface-raised); }
+.ts-step-item.ts-checked { opacity: 0.45; }
+.ts-step-item.ts-checked .ts-step-action { text-decoration: line-through; }
+.ts-step-item.ts-checked .ts-step-num { background: #22c55e; }
+.ts-step-item.ts-checked .ts-step-num-inner { display: none; }
+.ts-step-item.ts-checked .ts-step-num::after { content: "✓"; }
+.ts-step-num {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ts-step-content {
+  flex: 1;
   font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
+}
+.ts-step-action { font-weight: var(--font-weight-medium); }
+.ts-step-detail {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
 }
 .ts-step-tool {
+  display: inline-block;
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   margin-top: var(--space-1);
@@ -2692,10 +2875,8 @@ dialog.modal[open] {
 /* Branch */
 .ts-branch-wrap {
   margin-top: var(--space-2);
-  padding: var(--space-2);
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--color-border);
 }
 .ts-branch-question {
   font-size: var(--font-size-sm);
@@ -2706,20 +2887,79 @@ dialog.modal[open] {
   display: flex;
   gap: var(--space-2);
 }
+.ts-branch-btn {
+  flex: 1;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  color: var(--color-text-primary);
+  transition: var(--tr-fast);
+}
+.ts-branch-btn:hover { border-color: var(--color-accent); }
+.ts-branch-yes.ts-branch-active {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.ts-branch-no.ts-branch-active {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.ts-branch-substeps {
+  margin-top: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ts-branch-step {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  transition: opacity var(--tr-fast);
+}
+.ts-branch-step:hover { opacity: 0.8; }
+.ts-branch-step.ts-checked { opacity: 0.4; }
+.ts-branch-step.ts-checked .ts-branch-step-action { text-decoration: line-through; }
+.ts-branch-step.ts-checked .ts-branch-step-num { background: #22c55e; }
+.ts-branch-step-num {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ts-branch-step-body { flex: 1; font-size: var(--font-size-xs); }
+.ts-branch-step-action { font-weight: var(--font-weight-medium); }
 
 /* Severity badges */
 .ts-severity-badge {
-  font-size: var(--font-size-xs);
+  font-size: 0.7em;
   font-weight: var(--font-weight-bold);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border-radius: 3px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 .ts-critical { background: var(--color-danger-soft);  color: var(--color-danger);  }
-.ts-high     { background: var(--color-warning-soft); color: var(--color-warning); }
-.ts-medium   { background: var(--color-accent-soft);  color: var(--color-accent);  }
-.ts-low      { background: var(--color-success-soft); color: var(--color-success); }
+.ts-warning  { background: var(--color-warning-soft); color: var(--color-warning); }
+.ts-info     { background: var(--color-accent-soft);  color: var(--color-accent);  }
 
 /* Result actions */
 #ts-result-actions {
@@ -2727,13 +2967,39 @@ dialog.modal[open] {
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
+#ts-ask-ai-btn {
+  background: #4a1a9e;
+  color: #fff;
+  border: 1px solid #2d0d6e;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: var(--tr-fast);
+}
+#ts-ask-ai-btn:hover { background: #6a2ec4; }
 
 /* Equipment notes */
 #ts-equipment-notes {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.ts-note-item {
+  background: var(--color-warning-soft);
+  border: 1px solid var(--color-warning);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
-  margin-top: var(--space-2);
+}
+.ts-note-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-warning);
+  margin-bottom: 2px;
+}
+.ts-note-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
 }
