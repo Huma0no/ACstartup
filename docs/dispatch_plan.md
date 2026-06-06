@@ -7,7 +7,7 @@
 
 ---
 
-## Fase D1 — New Job UX
+## Fase D1 — New Job UX ✅
 
 **Current behavior:** Jobs created in New Job section go to
 Export PWA. User must scroll to find and select them manually.
@@ -21,21 +21,38 @@ Export PWA. User must scroll to find and select them manually.
 
 ---
 
-## Fase D2 — HOME Redesign
+## Fase D2A — HOME Cleanup
 
-**Current:** HOME shows income summary mixed with operations.
+**Status:** Pending
+
+**Current:** HOME shows income KPI cards (Revenue · 7 days,
+Top Tech · Week) and a Total $ column in Recent Activity table.
 
 **Target:**
+- Remove "Revenue · 7 days" KPI card (`hk-revenue`)
+- Remove "Top Tech · Week" KPI card (`hk-tech`)
+- Remove Total $ column from Recent Activity table
 - HOME shows operations only: jobs today, server status,
-  recent activity, partial jobs count
-- New section INCOME with filters: date range, technician,
-  subdivision, builder
-- Income section shows totals, per-tech breakdown,
-  per-service breakdown
+  recent activity (without revenue column)
 
 ---
 
-## Fase D3 — Section Renames
+## Fase D2B — INCOME Panel
+
+**Status:** Future — dedicated session
+
+**Target:**
+- New dedicated INCOME panel
+- Chart with daily granularity, default last 30 days
+- Period filters: day, week, month, year, YTD, all
+- Up to 5 comparative lines (previous period overlay) —
+  TradingView-style
+- Consolidates Payments + Custom Reports income
+- Filters: date range, technician, subdivision, builder
+
+---
+
+## Fase D3 — Section Renames ✅
 
 - COMPLETION → IMPORT PWA
 - No other renames at this time
@@ -70,7 +87,7 @@ Each flow:
 
 ---
 
-## Fase D5 — Partial Jobs
+## Fase D5 — Partial Jobs ✅
 
 **Purpose:** Track jobs that were completed partially and
 require a follow-up visit.
@@ -129,9 +146,10 @@ before planning changes.
 
 ## Implementation Order
 
-1. D3 — Rename (trivial, immediate)
-2. D5 — Partial jobs (small, high value)
-3. D1 — New Job UX (medium)
-4. D4 — RESTOCK module (complex)
-5. D2 — HOME redesign (medium)
-6. D6 — Additional features (future)
+1. D3 — Rename ✅
+2. D5 — Partial jobs ✅
+3. D1 — New Job UX ✅
+4. D2A — HOME cleanup (pending)
+5. D4 — RESTOCK module (complex)
+6. D2B — INCOME panel (future)
+7. D6 — Additional features (future)

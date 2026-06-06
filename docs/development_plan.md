@@ -162,6 +162,7 @@ No bloquean pero afectan experiencia en campo.
 ### 3F — Pendientes UI/UX
 
 - [ ] Job Card — notes from New Job not displayed on card
+- [ ] Edit job cards — not yet implemented
 - [ ] API Key persistence — key lost when Netlify version updates
 - [ ] AI input — replace permanent bar with floating button
 - [ ] Next button — add internal pulsing line effect
