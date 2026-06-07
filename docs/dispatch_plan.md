@@ -153,3 +153,26 @@ before planning changes.
 5. D4 — RESTOCK module (complex)
 6. D2B — INCOME panel (future)
 7. D6 — Additional features (future)
+
+---
+
+## Purge List
+
+### Scheduled for removal (post-audit session)
+
+**Restock Queue UI** — to be removed when Custom Reports
+restock feature is implemented:
+- HTML: Restock Queue card in panel-reports
+  (#restock-list, #restock-print-btn, #restock-hist-wrap,
+  #restock-hist-empty, restock History <details>)
+- JS functions: loadRestockPending(), printAndMarkRestock(),
+  loadRestockHistory(), restockSyncMaster(), restockSyncGroup(),
+  restockToggleAll(), restockToggleGroup()
+- Note: server.js endpoints /api/restock/pending,
+  /api/restock/mark, /api/restock/history are KEPT —
+  they will be called from Custom Reports restock feature.
+
+**General JS audit** — after all Dispatch features complete:
+- Identify and remove dead functions
+- Reduce duplication
+- Align with Field Ops canonical naming where applicable
