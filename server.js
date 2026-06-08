@@ -1161,6 +1161,7 @@ app.get("/api/reports/custom/equipment", (req, res) => {
     WHERE ji.category IN ('Thermostat', 'Accessory')
       AND j.date BETWEEN ? AND ?
       AND ji.item_name IN (${placeholders})
+      AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
     ORDER BY j.date DESC, j.id ASC, ji.item_name ASC
   `;
 
@@ -1171,6 +1172,7 @@ app.get("/api/reports/custom/equipment", (req, res) => {
     WHERE ji.category IN ('Thermostat', 'Accessory')
       AND j.date BETWEEN ? AND ?
       AND ji.item_name IN (${placeholders})
+      AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
     GROUP BY ji.item_name
     ORDER BY qty DESC
   `;
@@ -1201,6 +1203,7 @@ app.get("/api/reports/custom/refrigerant", (req, res) => {
     WHERE ji.category = 'Refrigerant'
       AND j.date BETWEEN ? AND ?
       AND ji.item_name IN (${placeholders})
+      AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
     ORDER BY j.date DESC
   `;
   db.all(sql, [from, to, ...selected], (err, rows) => {
