@@ -56,9 +56,19 @@ function initDB() {
       "weight_in_json TEXT",
       "weight_in_2_json TEXT",
       "report_text TEXT",
+      "job_id TEXT",
+      "timestamp TEXT",
+      "is_partial INTEGER DEFAULT 0",
     ];
     columnsToAdd.forEach((col) =>
       db.run(`ALTER TABLE jobs ADD COLUMN ${col}`, () => {})
+    );
+
+    const jobItemsColumnsToAdd = [
+      "tech_supplied INTEGER DEFAULT 0",
+    ];
+    jobItemsColumnsToAdd.forEach((col) =>
+      db.run(`ALTER TABLE job_items ADD COLUMN ${col}`, () => {})
     );
 
     // 2. Audit log de ediciones a trabajos guardados
@@ -192,11 +202,11 @@ app.post("/api/import", async (req, res) => {
     `INSERT INTO jobs (
       address, date, technician, total_price, notes, created_at,
       subdivision, builder, indoor_model, outdoor_model, indoor_model_2, outdoor_model_2,
-      weight_in_json, weight_in_2_json, report_text
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      weight_in_json, weight_in_2_json, report_text, job_id, timestamp, is_partial
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertItem = db.prepare(
-    `INSERT INTO job_items (job_id, category, item_name, quantity, price) VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO job_items (job_id, category, item_name, quantity, price, tech_supplied) VALUES (?, ?, ?, ?, ?, ?)`
   );
   const updateInv = db.prepare(
     `UPDATE inventory SET quantity = quantity - ? WHERE item_name LIKE ?`
@@ -226,10 +236,11 @@ app.post("/api/import", async (req, res) => {
       // Extraer datos básicos
       const state = job.savedState || {};
       const address = job.address;
-      const date = state.date || new Date().toISOString().split("T")[0];
+      const date = job.date || state.date || new Date().toISOString().split("T")[0];
 
       // Calcular total desde los ítems
       const totalPrice =
+        job.totals?.total ||
         (state.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
         (state.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
         (state.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0);
@@ -240,17 +251,21 @@ app.post("/api/import", async (req, res) => {
           date,
           job.technician || job.techName || "Default Tech",
           totalPrice,
-          state.notes || "",
-          Date.now(),
+          job.notes || state.notes || "",
+          job.timestamp ? new Date(job.timestamp).getTime() :
+          job.date ? new Date(job.date).getTime() : Date.now(),
           job.subdivision || "",
           job.builder || "",
-          job.heaterModel || "",
-          job.outdoorModel || "",
-          job.heaterModel2 || "",
-          job.outdoorModel2 || "",
-          JSON.stringify(state.weightInData || {}),
-          JSON.stringify(state.weightInData2 || {}),
+          job.indoor   || job.heaterModel  || "",
+          job.outdoor  || job.outdoorModel  || "",
+          job.indoor2  || job.heaterModel2  || "",
+          job.outdoor2 || job.outdoorModel2 || "",
+          JSON.stringify(job.weightInData  || state.weightInData  || {}),
+          JSON.stringify(job.weightInData2 || state.weightInData2 || {}),
           job.reportText || "",
+          job.jobId || "",
+          job.timestamp || new Date().toISOString(),
+          job.is_partial || 0,
         ]);
 
         const jobId = result.lastID;
@@ -282,7 +297,7 @@ app.post("/api/import", async (req, res) => {
             "Refrigerant",
             refType,
             ozAdded,
-            0,
+            0, 0,
           ]);
           await runStmt(updateInv, [ozAdded, `%${refType}%`]);
         }
@@ -295,7 +310,7 @@ app.post("/api/import", async (req, res) => {
             "Thermostat",
             state.selectedThermostat.name,
             qty,
-            0,
+            0, 0,
           ]);
           await runStmt(updateInv, [qty, `%${state.selectedThermostat.name}%`]);
         }
@@ -308,7 +323,7 @@ app.post("/api/import", async (req, res) => {
               "Service",
               srv.name,
               1, // Cantidad 1 por defecto para servicios
-              srv.basePrice || 0,
+              srv.basePrice || 0, 0,
             ]);
           }
         }
@@ -321,9 +336,12 @@ app.post("/api/import", async (req, res) => {
               "Accessory",
               acc.name,
               1,
-              acc.basePrice || 0,
+              acc.price || acc.basePrice || 0,
+              acc.techSupplied !== false ? 1 : 0,
             ]);
-            await runStmt(updateInv, [1, `%${acc.name}%`]);
+            if (acc.techSupplied !== false) {
+              await runStmt(updateInv, [1, `%${acc.name}%`]);
+            }
           }
         }
 
@@ -335,7 +353,7 @@ app.post("/api/import", async (req, res) => {
               "Fix",
               fix.name,
               1,
-              fix.basePrice || 0,
+              fix.basePrice || 0, 0,
             ]);
           }
         }
@@ -761,6 +779,20 @@ app.get("/api/jobs/:id/edits", (req, res) => {
   );
 });
 
+// 9f. PATCH is_partial flag for a job
+app.patch("/api/jobs/:id/partial", (req, res) => {
+  const { id } = req.params;
+  const { is_partial } = req.body;
+  db.run(
+    "UPDATE jobs SET is_partial = ? WHERE id = ?",
+    [is_partial ? 1 : 0, id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ updated: this.changes });
+    }
+  );
+});
+
 // Helper simple para adivinar tipo de gas si no viene explícito
 function getRefrigerantType(model) {
   if (!model) return "Unknown";
@@ -1123,22 +1155,13 @@ app.get("/api/reports/custom/equipment", (req, res) => {
   const placeholders = selected.map(() => "?").join(",");
 
   const sqlRows = `
-    SELECT j.date, j.address,
-           GROUP_CONCAT(
-             CASE WHEN CAST(ji.quantity AS INTEGER) > 1
-                  THEN ji.item_name || ' x' || CAST(CAST(ji.quantity AS INTEGER) AS TEXT)
-                  ELSE ji.item_name
-             END,
-             ', '
-           ) AS items_list,
-           COUNT(DISTINCT ji.item_name) AS item_count
+    SELECT ji.id AS job_item_id, j.date, j.address, ji.item_name, ji.quantity
     FROM job_items ji
     JOIN jobs j ON ji.job_id = j.id
     WHERE ji.category IN ('Thermostat', 'Accessory')
       AND j.date BETWEEN ? AND ?
       AND ji.item_name IN (${placeholders})
-    GROUP BY j.id
-    ORDER BY j.date DESC
+    ORDER BY j.date DESC, j.id ASC, ji.item_name ASC
   `;
 
   const sqlSummary = `
@@ -1172,7 +1195,7 @@ app.get("/api/reports/custom/refrigerant", (req, res) => {
 
   const placeholders = selected.map(() => "?").join(",");
   const sql = `
-    SELECT j.date, j.address, ji.item_name AS ref_type, ji.quantity AS oz_used
+    SELECT ji.id AS job_item_id, j.date, j.address, ji.item_name AS ref_type, ji.quantity AS oz_used
     FROM job_items ji
     JOIN jobs j ON ji.job_id = j.id
     WHERE ji.category = 'Refrigerant'
@@ -1192,23 +1215,31 @@ app.get("/api/reports/custom/refrigerant", (req, res) => {
 
 // ─── RESTOCK QUEUE ───────────────────────────────────────────────────────────
 
-// RQ-1. Pending restock — Thermostat+Accessory items not yet restocked, oldest first
+// RQ-1. Pending restock — Thermostat+Accessory+Refrigerant items not yet restocked, oldest first
 app.get("/api/restock/pending", (req, res) => {
+  const { from, to } = req.query;
+  const params = [];
+  let dateClause = "";
+  if (from && to) {
+    dateClause = "AND j.date BETWEEN ? AND ?";
+    params.push(from, to);
+  }
   const sql = `
     SELECT ji.id AS job_item_id, ji.item_name, ji.quantity, j.date, j.address
     FROM job_items ji
     JOIN jobs j ON ji.job_id = j.id
-    WHERE ji.category IN ('Thermostat', 'Accessory')
+    WHERE ji.category IN ('Thermostat', 'Accessory', 'Refrigerant')
       AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
+      ${dateClause}
     ORDER BY j.date ASC, j.id ASC, ji.item_name ASC
   `;
-  db.all(sql, [], (err, rows) => {
+  db.all(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
-// RQ-2. Mark items as restocked
+// RQ-2. Mark items as restocked + restock inventory
 app.post("/api/restock/mark", (req, res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: "ids array required" });
@@ -1217,7 +1248,13 @@ app.post("/api/restock/mark", (req, res) => {
   ids.forEach(id => stmt.run([id, now]));
   stmt.finalize(err => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ ok: true, count: ids.length });
+    const placeholders = ids.map(() => "?").join(",");
+    db.all(`SELECT item_name, quantity FROM job_items WHERE id IN (${placeholders})`, ids, (err2, rows) => {
+      if (err2) return res.json({ ok: true, count: ids.length });
+      const invStmt = db.prepare("UPDATE inventory SET quantity = quantity + ? WHERE item_name = ?");
+      rows.forEach(row => invStmt.run([row.quantity, row.item_name]));
+      invStmt.finalize(() => res.json({ ok: true, count: ids.length }));
+    });
   });
 });
 

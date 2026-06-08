@@ -1529,7 +1529,7 @@
           <span class="nav-icon">📲</span> Export → PWA
         </div>
         <div class="nav-item" data-panel="completion">
-          <span class="nav-icon">✓</span> Completion
+          <span class="nav-icon">✓</span> Import PWA
         </div>
         <div class="sidebar-sec">Admin</div>
         <div class="nav-item" data-panel="techs">
@@ -1577,15 +1577,10 @@
               <div class="home-kpi-val" id="hk-board" style="color:var(--ice)">—</div>
               <div class="home-kpi-sub" id="hk-board-sub"></div>
             </div>
-            <div class="card home-kpi" onclick="switchPanel('reports')" title="Go to Reports" style="cursor:pointer">
-              <div class="home-kpi-label">Revenue · 7 days</div>
-              <div class="home-kpi-val" id="hk-revenue" style="color:var(--green)">—</div>
-              <div class="home-kpi-sub" id="hk-revenue-sub"></div>
-            </div>
-            <div class="card home-kpi" onclick="switchPanel('reports')" title="Go to Reports" style="cursor:pointer">
-              <div class="home-kpi-label">Top Tech · Week</div>
-              <div class="home-kpi-val" id="hk-tech" style="color:var(--purple);font-size:16px">—</div>
-              <div class="home-kpi-sub" id="hk-tech-sub"></div>
+            <div class="card home-kpi" onclick="switchPanel('history')" style="cursor:pointer">
+              <div class="home-kpi-label">Partial Jobs</div>
+              <div class="home-kpi-val" id="hk-partial">—</div>
+              <div class="home-kpi-sub" id="hk-partial-sub">pending follow-up</div>
             </div>
             <div class="card home-kpi" id="hk-stock-card" onclick="switchPanel('inventory')" title="Go to Inventory" style="cursor:pointer">
               <div class="home-kpi-label">Low Stock</div>
@@ -1616,11 +1611,10 @@
                       <th>Date</th>
                       <th>Address</th>
                       <th>Tech</th>
-                      <th style="text-align:right">Total</th>
                     </tr>
                   </thead>
                   <tbody id="home-recent-tbody">
-                    <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
+                    <tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -1937,6 +1931,16 @@
                 id="nj-extra-btn" style="color:var(--text-dim);font-size:11px">▸ All fields</button>
             </div>
 
+            <div id="nj-recent-section" style="display:none;margin-top:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span class="sec-sub">Jobs added this session</span>
+                <button class="btn btn-primary btn-sm" onclick="njExportSelected()">
+                  Export selected →
+                </button>
+              </div>
+              <div id="nj-recent-list"></div>
+            </div>
+
             <!-- ── NIVEL 2: Todos los campos (colapsado) ── -->
             <div id="nj-extra-fields" style="display:none;border-top:1px solid var(--border);margin-top:14px;padding-top:14px">
 
@@ -2136,9 +2140,9 @@
         <!-- ══════════ PANEL: COMPLETION ══════════ -->
         <div class="panel" id="panel-completion">
           <div class="sec-header">
-            <div class="sec-title">Completion</div>
+            <div class="sec-title">Import PWA</div>
             <div class="sec-sub">
-              End of day · generate completion text for HVAC
+              Import tech JSON · review and save to database
             </div>
           </div>
           <div class="card">
@@ -2365,6 +2369,12 @@
           </div>
 
           <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text-dim)">
+                <input type="checkbox" id="hist-partial-only" onchange="filterHistory()" />
+                Show partial only
+              </label>
+            </div>
             <div class="tbl-wrap" style="max-height: 580px; overflow-y: auto">
               <table>
                 <thead>
@@ -2550,6 +2560,9 @@
               </div>
 
             </div><!-- /3-col grid -->
+            <div style="display:flex;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--border);margin-top:4px">
+              <button type="button" class="btn btn-amber" onclick="crMarkRestocked()">Add to Inventory</button>
+            </div>
           </div>
 
           <!-- ── Restock Queue ── -->
@@ -2559,7 +2572,11 @@
                 <div class="card-title" style="margin:0">Restock Queue</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Pending equipment — oldest first</div>
               </div>
-              <div style="display:flex;gap:6px;align-items:center">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <label style="font-size:11px;color:var(--text-dim)">From</label>
+                <input type="date" id="restock-from" style="width:130px" />
+                <label style="font-size:11px;color:var(--text-dim)">To</label>
+                <input type="date" id="restock-to" style="width:130px" />
                 <button type="button" class="btn btn-outline btn-sm" onclick="loadRestockPending()">↻ Load</button>
                 <button type="button" class="btn btn-amber btn-sm" id="restock-print-btn" style="display:none" onclick="printAndMarkRestock()">🖨 Print &amp; Mark Restocked</button>
               </div>
@@ -4740,6 +4757,7 @@
 
       // Generate full edit panel HTML for one completion card
       function _compEditPanelHtml(j, idx, ss) {
+        ss = ss || {};
         const wid  = ss.weightInData  || {};
         const wid2 = ss.weightInData2 || {};
 
@@ -4964,9 +4982,23 @@
           totalDay += total;
           allText.push(text);
 
+          const isPrestart = ss
+            ? (ss.selectedServices?.length === 1 &&
+               ss.selectedServices[0].name === "Prestart" &&
+               !ss.selectedAccessories?.length &&
+               !ss.selectedFixes?.length)
+            : (j.services?.length === 1 && j.services[0]?.name === "Prestart");
+          j.is_partial = isPrestart ? 1 : 0;
+
           cardsHtml += `
     <div id="comp-card-${idx}" style="background:var(--bg3);border:1px solid var(--border);
                                        border-radius:3px;padding:10px;margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--amber);
+                    margin-bottom:6px;cursor:pointer;user-select:none">
+        <input type="checkbox" ${isPrestart ? "checked" : ""}
+          onchange="_lastImportedJobs[${idx}].is_partial=this.checked?1:0" />
+        ⚠️ Mark as partial (follow-up needed)
+      </label>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div id="comp-view-${idx}" style="flex:1;font-size:11px;color:var(--text);
              line-height:1.7;font-family:var(--mono)">${esc(text)}</div>
@@ -6095,6 +6127,7 @@
           routeDate: new Date().toISOString().split("T")[0],
         };
         jobs.push(job);
+        njAddToRecentList(job);
         save();
         renderBoard();
         updateStats();
@@ -6107,6 +6140,35 @@
     <button onclick="this.parentNode.remove()" style="background:none;border:none;color:#3ddc84;cursor:pointer;font-size:14px">✕</button>`;
         document.body.appendChild(toast);
         setTimeout(() => toast.parentNode && toast.remove(), 5000);
+      }
+
+      function njAddToRecentList(job) {
+        const section = document.getElementById("nj-recent-section");
+        const list = document.getElementById("nj-recent-list");
+        section.style.display = "block";
+        const row = document.createElement("div");
+        row.className = "export-job-row";
+        row.dataset.id = job.id;
+        row.innerHTML = `
+          <input type="checkbox" class="nj-export-chk" data-id="${job.id}" checked />
+          <div>
+            <strong>${esc(job.address)}</strong>
+            <span style="opacity:0.6;font-size:0.85em;margin-left:6px">
+              ${esc(job.subdivision || "")} ${esc(job.builder || "")}
+            </span>
+          </div>`;
+        list.appendChild(row);
+      }
+
+      async function njExportSelected() {
+        const checked = [...document.querySelectorAll(".nj-export-chk:checked")]
+          .map(cb => cb.dataset.id);
+        if (!checked.length) {
+          alert("No jobs selected");
+          return;
+        }
+        const selected = jobs.filter(j => checked.includes(j.id));
+        await doExportPWA(selected);
       }
 
       function clearNewJobForm() {
@@ -6433,8 +6495,8 @@
         return parts.join(", ");
       }
 
-      async function doExportPWA() {
-        const selected = getSelectedExportJobs();
+      async function doExportPWA(overrideJobs) {
+        const selected = overrideJobs || getSelectedExportJobs();
         if (selected.length === 0) {
           showExportStatus("⚠ Select at least one job", "var(--amber)");
           return;
@@ -7108,20 +7170,11 @@
           if (!res.ok) throw new Error();
           const d = await res.json();
 
-          // Revenue
-          document.getElementById("hk-revenue").textContent =
-            "$" + parseFloat(d.weekRevenue).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
-          document.getElementById("hk-revenue-sub").textContent =
-            `${d.weekJobs} jobs this week`;
-
-          // Top tech
-          if (d.topTech) {
-            document.getElementById("hk-tech").textContent = d.topTech.technician;
-            document.getElementById("hk-tech-sub").textContent = `${d.topTech.job_count} jobs this week`;
-          } else {
-            document.getElementById("hk-tech").textContent = "—";
-            document.getElementById("hk-tech-sub").textContent = "No data yet";
-          }
+          // Partial jobs (in-memory)
+          const partialCount = jobs.filter(j => j.is_partial === 1).length;
+          document.getElementById("hk-partial").textContent = partialCount;
+          document.getElementById("hk-partial-sub").textContent =
+            partialCount > 0 ? `${partialCount} pending follow-up` : "all clear";
 
           // Low stock
           const stockEl    = document.getElementById("hk-stock");
@@ -7136,7 +7189,7 @@
           // Recent jobs table
           const tbody = document.getElementById("home-recent-tbody");
           if (!d.recentJobs.length) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">No completed jobs yet</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">No completed jobs yet</td></tr>`;
           } else {
             tbody.innerHTML = d.recentJobs.map(j => {
               const dateStr = j.date
@@ -7146,17 +7199,14 @@
                 <td class="dim">${dateStr}</td>
                 <td class="bright" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(j.address||"—")}</td>
                 <td style="color:var(--purple)">${esc(j.technician||"—")}</td>
-                <td style="text-align:right;color:var(--green)">$${parseFloat(j.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
               </tr>`;
             }).join("");
           }
         } catch(e) {
           // Server offline — show what we can from memory
-          document.getElementById("hk-revenue").textContent = "—";
-          document.getElementById("hk-tech").textContent = "—";
           document.getElementById("hk-stock").textContent = "—";
           document.getElementById("home-recent-tbody").innerHTML =
-            `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Server offline — showing board data only</td></tr>`;
+            `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">Server offline — showing board data only</td></tr>`;
         }
         // Performance graph — independent fetch, always runs
         loadPerfGraph();
@@ -8230,8 +8280,6 @@
       async function _runCrEquipment(from, to) {
         const empty   = document.getElementById("cr-empty-equipment");
         const tblWrap = document.getElementById("cr-tbl-equipment");
-        const tbody   = document.getElementById("cr-tbody-equipment");
-        const thead   = document.getElementById("cr-thead-equipment");
         empty.textContent = "Loading...";
         tblWrap.style.display = "none";
         const selected = getCrSelectedItems();
@@ -8255,14 +8303,32 @@
           ).join("");
           summaryEl.style.display = "";
 
-          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>`;
-          tbody.innerHTML = _crData.equipment.map(r => `<tr>
-            <td class="amber" style="white-space:nowrap">${r.date}</td>
-            <td>${esc(r.address)}</td>
-            <td style="color:var(--ice)">${esc(r.items_list)}</td>
-          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
-            <td colspan="3" style="color:var(--text-dim)">${_crData.equipment.length} records</td>
-          </tr>`;
+          const eqGroups = [];
+          const eqMap = {};
+          _crData.equipment.forEach(item => {
+            const key = `${item.date}|${item.address}`;
+            if (!eqMap[key]) { eqMap[key] = { date: item.date, address: item.address, items: [] }; eqGroups.push(eqMap[key]); }
+            eqMap[key].items.push(item);
+          });
+          tblWrap.innerHTML = eqGroups.map((g, gi) => `
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+                <input type="checkbox" class="restock-group-cb" checked data-group="eq-${gi}" onchange="restockToggleGroup(this)" style="accent-color:var(--amber)" />
+                <span style="color:var(--amber);font-size:11px;font-family:monospace;white-space:nowrap">${g.date}</span>
+                <span style="font-size:12px;font-weight:600">${esc(g.address)}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px 18px;padding-left:22px">
+                ${g.items.map(item => `
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text)">
+                    <input type="checkbox" class="restock-cb" checked data-id="${item.job_item_id}" data-group="eq-${gi}"
+                      data-name="${item.item_name.replace(/"/g,'&quot;')}" data-qty="${Math.round(item.quantity)}"
+                      onchange="restockSyncGroup('eq-${gi}')" style="accent-color:var(--amber)" />
+                    ${esc(item.item_name)}${item.quantity > 1 ? `<span style="color:var(--text-dim);margin-left:2px">x${Math.round(item.quantity)}</span>` : ""}
+                  </label>
+                `).join("")}
+              </div>
+            </div>
+          `).join("");
           empty.textContent = "";
           tblWrap.style.display = "";
         } catch(e) { empty.textContent = "Error: " + e.message; }
@@ -8271,8 +8337,6 @@
       async function _runCrRefrigerant(from, to) {
         const empty   = document.getElementById("cr-empty-refrigerant");
         const tblWrap = document.getElementById("cr-tbl-refrigerant");
-        const tbody   = document.getElementById("cr-tbody-refrigerant");
-        const thead   = document.getElementById("cr-thead-refrigerant");
         empty.textContent = "Loading...";
         tblWrap.style.display = "none";
         const selectedRef = getCrSelectedRefTypes();
@@ -8282,19 +8346,36 @@
           if (!res.ok) throw new Error(await res.text());
           _crData.refrigerant = await res.json();
           if (!_crData.refrigerant.length) { empty.textContent = "No results for the selected range."; return; }
-          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Type</th><th style="text-align:right">oz</th><th style="text-align:right">lbs</th></tr>`;
+          const refGroups = [];
+          const refMap = {};
+          _crData.refrigerant.forEach(item => {
+            const key = `${item.date}|${item.address}`;
+            if (!refMap[key]) { refMap[key] = { date: item.date, address: item.address, items: [] }; refGroups.push(refMap[key]); }
+            refMap[key].items.push(item);
+          });
           const totalOz = _crData.refrigerant.reduce((s, r) => s + r.oz_used, 0);
-          tbody.innerHTML = _crData.refrigerant.map(r => `<tr>
-            <td class="amber">${r.date}</td>
-            <td>${esc(r.address)}</td>
-            <td style="color:var(--ice)">${esc(r.ref_type)}</td>
-            <td style="text-align:right">${r.oz_used}</td>
-            <td style="text-align:right;color:var(--amber)">${r.lbs_display}</td>
-          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
-            <td colspan="3" style="color:var(--text-dim)">TOTAL — ${_crData.refrigerant.length} records</td>
-            <td style="text-align:right">${totalOz.toFixed(1)}</td>
-            <td style="text-align:right;color:var(--amber)">${(totalOz/16).toFixed(2)} lb</td>
-          </tr>`;
+          tblWrap.innerHTML = refGroups.map((g, gi) => `
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+                <input type="checkbox" class="restock-group-cb" checked data-group="ref-${gi}" onchange="restockToggleGroup(this)" style="accent-color:var(--amber)" />
+                <span style="color:var(--amber);font-size:11px;font-family:monospace;white-space:nowrap">${g.date}</span>
+                <span style="font-size:12px;font-weight:600">${esc(g.address)}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px 18px;padding-left:22px">
+                ${g.items.map(item => `
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text)">
+                    <input type="checkbox" class="restock-cb" checked data-id="${item.job_item_id}" data-group="ref-${gi}"
+                      data-name="${item.ref_type.replace(/"/g,'&quot;')}" data-qty="${item.oz_used}"
+                      onchange="restockSyncGroup('ref-${gi}')" style="accent-color:var(--amber)" />
+                    <span style="color:var(--ice)">${esc(item.ref_type)}</span>
+                    <span style="color:var(--text-dim);font-size:11px">${item.oz_used} oz · ${item.lbs_display}</span>
+                  </label>
+                `).join("")}
+              </div>
+            </div>
+          `).join("") + `<div style="padding:8px 10px;border-top:1px solid var(--border);margin-top:4px;font-size:11px;color:var(--text-dim);font-weight:600">
+            TOTAL — ${_crData.refrigerant.length} records · ${totalOz.toFixed(1)} oz · ${(totalOz/16).toFixed(2)} lb
+          </div>`;
           empty.textContent = "";
           tblWrap.style.display = "";
         } catch(e) { empty.textContent = "Error: " + e.message; }
@@ -8347,6 +8428,32 @@
       // Keep runCustomReport as alias for legacy callers (export/print still reference _crTab)
       function runCustomReport() { runAllCustomReports(); }
 
+      async function crMarkRestocked() {
+        const checked = Array.from(document.querySelectorAll(".restock-cb:checked"));
+        const ids = checked.map(cb => parseInt(cb.dataset.id)).filter(n => !isNaN(n));
+        if (!ids.length) { alert("No items selected."); return; }
+        try {
+          const r = await fetch(`${API_BASE}/restock/mark`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          const d = await r.json();
+          const toast = document.createElement("div");
+          toast.textContent = `${d.count} item(s) added to inventory`;
+          toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--green-dim,#0d2a1a);color:var(--green);border:1px solid var(--green);padding:10px 16px;border-radius:4px;font-size:12px;z-index:9999";
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+          const groupIds = new Set(checked.map(cb => cb.dataset.group));
+          checked.forEach(cb => cb.closest("label").remove());
+          groupIds.forEach(gid => {
+            const groupCb = document.querySelector(`.restock-group-cb[data-group="${gid}"]`);
+            if (groupCb && !document.querySelector(`.restock-cb[data-group="${gid}"]`))
+              groupCb.parentElement.parentElement.remove();
+          });
+        } catch(e) { alert("Error: " + e.message); }
+      }
+
       function exportCustomReportCSV() {
         const from = document.getElementById("cr-from").value;
         const to   = document.getElementById("cr-to").value;
@@ -8357,8 +8464,8 @@
           sections.push(..._crData.income.map(r => `${r.date},"${r.address}",${r.total}`));
         }
         if (_crData.equipment.length) {
-          sections.push("\n# Equipment Used\nDate,Address,Equipment");
-          sections.push(..._crData.equipment.map(r => `${r.date},"${r.address}","${r.items_list}"`));
+          sections.push("\n# Equipment Used\nDate,Address,Item,Qty");
+          sections.push(..._crData.equipment.map(r => `${r.date},"${r.address}","${r.item_name}",${Math.round(r.quantity)}`));
         }
         if (_crData.refrigerant.length) {
           sections.push("\n# Refrigerant\nDate,Address,Type,oz,lbs");
@@ -8396,11 +8503,18 @@
         }
         if (chkEquipment && _crData.equipment.length) {
           const eqSum = _crData.equipmentSummary || [];
+          const eqByJob = {};
+          _crData.equipment.forEach(r => {
+            const key = `${r.date}|${r.address}`;
+            if (!eqByJob[key]) eqByJob[key] = { date: r.date, address: r.address, items: [] };
+            eqByJob[key].items.push(r.quantity > 1 ? `${r.item_name} x${Math.round(r.quantity)}` : r.item_name);
+          });
+          const eqJobs = Object.values(eqByJob);
           const summaryRows = eqSum.map(s => `<tr><td>${s.item}</td><td class="num">${s.qty}</td></tr>`).join("")
-            + `<tr class="total"><td>${eqSum.length} models</td><td class="num">${_crData.equipment.length} jobs</td></tr>`;
+            + `<tr class="total"><td>${eqSum.length} models</td><td class="num">${eqJobs.length} jobs</td></tr>`;
           sections += buildSection("Equipment Summary", "<tr><th>Model</th><th>Qty</th></tr>", summaryRows);
-          const detailRows = _crData.equipment.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`).join("")
-            + `<tr class="total"><td colspan="3">${_crData.equipment.length} records</td></tr>`;
+          const detailRows = eqJobs.map(g => `<tr><td>${g.date}</td><td>${g.address}</td><td>${g.items.join(", ")}</td></tr>`).join("")
+            + `<tr class="total"><td colspan="3">${eqJobs.length} records</td></tr>`;
           sections += buildSection("Equipment Detail", "<tr><th>Date</th><th>Address</th><th>Equipment</th></tr>", detailRows);
         }
         if (chkRefrigerant && _crData.refrigerant.length) {
@@ -8475,12 +8589,22 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       }
 
       async function loadRestockPending() {
+        const fromEl = document.getElementById("restock-from");
+        const toEl   = document.getElementById("restock-to");
+        if (fromEl && !fromEl.value) {
+          const d = new Date(); d.setDate(d.getDate() - 30);
+          fromEl.value = d.toISOString().slice(0, 10);
+        }
+        if (toEl && !toEl.value) toEl.value = new Date().toISOString().slice(0, 10);
+        const from = fromEl ? fromEl.value : "";
+        const to   = toEl   ? toEl.value   : "";
         const list     = document.getElementById("restock-list");
         const printBtn = document.getElementById("restock-print-btn");
         list.innerHTML = '<div style="color:var(--text-dim);font-size:11px">Loading...</div>';
         printBtn.style.display = "none";
         try {
-          const res = await fetch(`${API_BASE}/restock/pending`);
+          const params = from && to ? `?from=${from}&to=${to}` : "";
+          const res = await fetch(`${API_BASE}/restock/pending${params}`);
           if (!res.ok) throw new Error(await res.text());
           const items = await res.json();
           if (!items.length) {
@@ -8673,7 +8797,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       async function _loadQuickStats() {
         document.getElementById("rev-tbody").innerHTML =
-          `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
+          `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
         document.getElementById("tech-tbody").innerHTML =
           `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
         document.getElementById("rev-chart").innerHTML = "";
@@ -9253,11 +9377,13 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       function filterHistory() {
         const q = document.getElementById("gs-input").value.toLowerCase();
-        const filtered = _histAllJobs.filter((j) =>
-          `${j.address} ${j.technician} ${j.notes} ${j.date}`
+        const partialOnly = document.getElementById("hist-partial-only")?.checked;
+        const filtered = _histAllJobs.filter((j) => {
+          if (partialOnly && !j.is_partial) return false;
+          return `${j.address} ${j.technician} ${j.notes} ${j.date}`
             .toLowerCase()
-            .includes(q)
-        );
+            .includes(q);
+        });
         renderHistoryTable(filtered);
       }
 
@@ -9273,7 +9399,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
             (j) => `
     <tr style="cursor:pointer" onclick="showHistDetail(${j.id})">
       <td class="amber">${esc(j.date || "")}</td>
-      <td class="bright">${esc(j.address || "")}</td>
+      <td class="bright">${esc(j.address || "")}${j.is_partial ? ' <span style="font-size:9px;background:var(--amber);color:#000;padding:1px 5px;border-radius:2px;margin-left:4px;font-family:var(--head);letter-spacing:.05em">PARTIAL</span>' : ""}</td>
       <td class="dim">${esc(j.technician || "—")}</td>
       <td class="dim" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         ${esc(j.notes || "")}
@@ -9288,11 +9414,26 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
           })">Detail</button>
         <button type="button" class="btn btn-ghost btn-sm" title="View property history"
           onclick="event.stopPropagation();openPropertySearch('${esc(j.address || "").replace(/'/g,"\\'")}')">🏠</button>
+        <button type="button" class="btn btn-ghost btn-sm"
+          title="${j.is_partial ? "Remove partial flag" : "Mark as partial"}"
+          style="${j.is_partial ? "color:var(--amber)" : ""}"
+          onclick="event.stopPropagation();toggleHistPartial(${j.id},${j.is_partial ? 0 : 1})">${j.is_partial ? "⚠️" : "○"}</button>
       </td>
     </tr>
   `
           )
           .join("");
+      }
+
+      async function toggleHistPartial(id, newVal) {
+        await fetch(`${API_BASE}/jobs/${id}/partial`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_partial: newVal }),
+        });
+        const job = _histAllJobs.find(j => j.id === id);
+        if (job) job.is_partial = newVal;
+        filterHistory();
       }
 
       async function showHistDetail(jobId) {
