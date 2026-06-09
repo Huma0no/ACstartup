@@ -436,8 +436,8 @@
             </div>
             <div class="settings-group">
               <p class="settings-label">System 1</p>
-              <input type="text" id="ej-indoor" placeholder="Indoor model" autocomplete="off" />
-              <input type="text" id="ej-outdoor" placeholder="Outdoor model" autocomplete="off" />
+              <input type="text" id="ej-indoor" placeholder="Indoor model" list="ej-indoor-list" />
+              <input type="text" id="ej-outdoor" placeholder="Outdoor model" list="ej-outdoor-list" />
             </div>
             <div class="settings-group">
               <label class="toggle-row">
@@ -447,13 +447,15 @@
             </div>
             <div id="ej-system2-group" class="settings-group hidden">
               <p class="settings-label">System 2</p>
-              <input type="text" id="ej-indoor2" placeholder="Indoor model" autocomplete="off" />
-              <input type="text" id="ej-outdoor2" placeholder="Outdoor model" autocomplete="off" />
+              <input type="text" id="ej-indoor2" placeholder="Indoor model" list="ej-indoor-list" />
+              <input type="text" id="ej-outdoor2" placeholder="Outdoor model" list="ej-outdoor-list" />
             </div>
             <div class="btn-row">
               <button type="submit" class="btn-primary">Save</button>
               <button type="button" id="edit-job-cancel" class="btn-secondary">Cancel</button>
             </div>
+            <datalist id="ej-indoor-list"></datalist>
+            <datalist id="ej-outdoor-list"></datalist>
           </form>
         </div>
       </div>

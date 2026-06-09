@@ -91,6 +91,8 @@ import {
   getOutdoorSeriesGroups,
   getIndoorModel,
   getOutdoorModel,
+  INDOOR_CATALOG,
+  OUTDOOR_CATALOG,
   SERIES_LINKS,
   OUTDOOR_LINKS,
   FINISH_SERVICE_PRICE,
@@ -2879,6 +2881,14 @@ function init() {
 
   buildAddJobSection();
   wireEvents();
+  const _inList  = document.getElementById("ej-indoor-list");
+  const _outList = document.getElementById("ej-outdoor-list");
+  Object.keys(INDOOR_CATALOG).forEach((m) => {
+    const o = document.createElement("option"); o.value = m; _inList.appendChild(o);
+  });
+  Object.keys(OUTDOOR_CATALOG).forEach((m) => {
+    const o = document.createElement("option"); o.value = m; _outList.appendChild(o);
+  });
   initTsPanel();
   renderJobs();
   renderWorkspace();
