@@ -1487,6 +1487,14 @@ function _confirmOtherInline(ctx) {
 }
 
 function wireEvents() {
+  function _openModal(id) {
+    const m = document.getElementById(id);
+    m.showModal();
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+      m.style.cssText += "display:flex;flex-direction:column;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,calc(100dvw - 32px));max-height:calc(100dvh - 64px);margin:0;overflow:hidden";
+    }
+  }
+
   // Tab buttons
   document
     .querySelectorAll(".tab-btn")
@@ -1510,7 +1518,7 @@ function wireEvents() {
   // Header — modals & drawer
   document.getElementById("btn-settings").addEventListener("click", () => {
     renderSettingsModal();
-    document.getElementById("settings-modal").showModal();
+    _openModal("settings-modal");
   });
   document.getElementById("settings-modal").addEventListener("click", (e) => {
     if (e.target === document.getElementById("settings-modal"))
@@ -1567,7 +1575,7 @@ function wireEvents() {
       }
       body.querySelector("#qc-lineset").addEventListener("input", calc);
       body.querySelector("#qc-config").addEventListener("change", calc);
-      document.getElementById("quick-calc-modal").showModal();
+      _openModal("quick-calc-modal");
     });
   document.getElementById("quick-calc-modal").addEventListener("click", (e) => {
     if (e.target === document.getElementById("quick-calc-modal"))
