@@ -13,6 +13,7 @@ import {
 } from "./settings.js";
 import {
   createJob,
+  updateJob,
   removeJob,
   getJobById,
   getAllJobs,
@@ -1505,6 +1506,21 @@ function wireEvents() {
     if (b) { b.style.display = "none"; }
   }
 
+  function openJobEditModal(job) {
+    document.getElementById("ej-address").value     = job.address || "";
+    document.getElementById("ej-builder").value     = job.builder || "";
+    document.getElementById("ej-subdivision").value = job.subdivision || "";
+    document.getElementById("ej-indoor").value      = job.system1?.indoor || "";
+    document.getElementById("ej-outdoor").value     = job.system1?.outdoor || "";
+    const two = job.isTwoSystems || !!(job.system2?.indoor || job.system2?.outdoor);
+    document.getElementById("ej-two-systems").checked = two;
+    document.getElementById("ej-system2-group").classList.toggle("hidden", !two);
+    document.getElementById("ej-indoor2").value     = job.system2?.indoor || "";
+    document.getElementById("ej-outdoor2").value    = job.system2?.outdoor || "";
+    document.getElementById("edit-job-modal").dataset.jobId = job.id;
+    _openModal("edit-job-modal");
+  }
+
   // Tab buttons
   document
     .querySelectorAll(".tab-btn")
@@ -1594,6 +1610,37 @@ function wireEvents() {
     .addEventListener("click", () =>
       _closeModal("quick-calc-modal")
     );
+  document.getElementById("edit-job-modal-backdrop").addEventListener("click", () => {
+    _closeModal("edit-job-modal");
+  });
+  document.getElementById("edit-job-close").addEventListener("click", () => {
+    _closeModal("edit-job-modal");
+  });
+  document.getElementById("edit-job-cancel").addEventListener("click", () => {
+    _closeModal("edit-job-modal");
+  });
+  document.getElementById("ej-two-systems").addEventListener("change", (e) => {
+    document.getElementById("ej-system2-group").classList.toggle("hidden", !e.target.checked);
+  });
+  document.getElementById("edit-job-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const jobId = document.getElementById("edit-job-modal").dataset.jobId;
+    const job = getJobById(jobId);
+    if (!job) return;
+    job.address     = document.getElementById("ej-address").value.trim().toUpperCase();
+    job.builder     = document.getElementById("ej-builder").value.trim();
+    job.subdivision = document.getElementById("ej-subdivision").value.trim().toUpperCase();
+    job.system1     = { ...job.system1, indoor: document.getElementById("ej-indoor").value.trim(), outdoor: document.getElementById("ej-outdoor").value.trim() };
+    const two = document.getElementById("ej-two-systems").checked;
+    job.isTwoSystems = two;
+    job.system2 = two
+      ? { ...(job.system2 || {}), indoor: document.getElementById("ej-indoor2").value.trim(), outdoor: document.getElementById("ej-outdoor2").value.trim() }
+      : null;
+    updateJob(job);
+    renderJobs();
+    _closeModal("edit-job-modal");
+    toast("Job updated", "success");
+  });
   document
     .getElementById("btn-open-troubleshoot")
     .addEventListener("click", () => {
@@ -1696,7 +1743,8 @@ function wireEvents() {
       return;
     }
     if (edit) {
-      toast("Edit not yet implemented", "info");
+      const j = getJobById(edit.dataset.edit);
+      if (j) openJobEditModal(j);
       return;
     }
     if (maps) {
