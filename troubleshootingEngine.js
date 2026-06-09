@@ -5,8 +5,8 @@
 
 import {
   faultCodes,
-  heaters,
-  unidadesExteriores,
+  indoorCatalog,
+  outdoorCatalog,
   thermostats,
   accessories,
   zoningBoards,
@@ -43,8 +43,8 @@ export const SYMPTOM_LABELS = {
 // BUILD EQUIPMENT CONTEXT FROM APP STATE
 // ─────────────────────────────────────────────
 export function buildContext(state) {
-  const heater  = state.heaterModel  ? heaters[state.heaterModel]               : null;
-  const outdoor = state.outdoorModel ? unidadesExteriores[state.outdoorModel]    : null;
+  const heater  = state.heaterModel  ? indoorCatalog[state.heaterModel]          : null;
+  const outdoor = state.outdoorModel ? outdoorCatalog[state.outdoorModel]        : null;
   const tstat   = state.selectedThermostat ? thermostats[state.selectedThermostat] : null;
 
   const accs = state.selectedAccessories || [];

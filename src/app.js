@@ -1489,10 +1489,20 @@ function _confirmOtherInline(ctx) {
 function wireEvents() {
   function _openModal(id) {
     const m = document.getElementById(id);
-    m.showModal();
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-      m.style.cssText += "display:flex;flex-direction:column;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,calc(100dvw - 32px));max-height:calc(100dvh - 64px);margin:0;overflow:hidden";
-    }
+    const b = document.getElementById(id + "-backdrop");
+    m.style.display = "flex";
+    m.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    if (b) { b.style.display = "block"; }
+  }
+
+  function _closeModal(id) {
+    const m = document.getElementById(id);
+    const b = document.getElementById(id + "-backdrop");
+    m.style.display = "none";
+    m.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (b) { b.style.display = "none"; }
   }
 
   // Tab buttons
@@ -1520,14 +1530,13 @@ function wireEvents() {
     renderSettingsModal();
     _openModal("settings-modal");
   });
-  document.getElementById("settings-modal").addEventListener("click", (e) => {
-    if (e.target === document.getElementById("settings-modal"))
-      document.getElementById("settings-modal").close();
+  document.getElementById("settings-modal-backdrop").addEventListener("click", () => {
+    _closeModal("settings-modal");
   });
   document
     .getElementById("settings-close")
     .addEventListener("click", () =>
-      document.getElementById("settings-modal").close()
+      _closeModal("settings-modal")
     );
   document
     .getElementById("btn-open-quick-calc")
@@ -1577,14 +1586,13 @@ function wireEvents() {
       body.querySelector("#qc-config").addEventListener("change", calc);
       _openModal("quick-calc-modal");
     });
-  document.getElementById("quick-calc-modal").addEventListener("click", (e) => {
-    if (e.target === document.getElementById("quick-calc-modal"))
-      document.getElementById("quick-calc-modal").close();
+  document.getElementById("quick-calc-modal-backdrop").addEventListener("click", () => {
+    _closeModal("quick-calc-modal");
   });
   document
     .getElementById("quick-calc-close")
     .addEventListener("click", () =>
-      document.getElementById("quick-calc-modal").close()
+      _closeModal("quick-calc-modal")
     );
   document
     .getElementById("btn-open-troubleshoot")

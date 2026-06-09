@@ -7,7 +7,7 @@ import {
   SYMPTOM,
   SYMPTOM_LABELS,
 } from "./troubleshootingEngine.js";
-import { getJobById } from "./jobs.js";
+import { getJobById, getAllJobs } from "./jobs.js";
 import { getApiKey, getSettings } from "./settings.js";
 import { getActiveJobId } from "./storage.js";
 import { initChat } from "./ai.js";
@@ -16,7 +16,7 @@ import { initChat } from "./ai.js";
 // Module state
 // ---------------------------------------------------------------------------
 
-let _job     = null;
+let _job     = null;   // currently selected job object
 let _symptom = null;
 let _result  = null;
 
@@ -46,32 +46,32 @@ function _closeDrawer() {
 // ---------------------------------------------------------------------------
 
 function _populate() {
-  const id = getActiveJobId();
-  _job = id ? getJobById(id) : null;
-
-  // Header
-  document.getElementById("ts-job-addr").textContent = _job ? _job.address : "Generic mode";
-  const chipsEl = document.getElementById("ts-context-chips");
-  chipsEl.innerHTML = "";
-  if (_job) {
-    const indoor  = _job.system1?.indoor;
-    const outdoor = _job.system1?.outdoor;
-    if (indoor)  chipsEl.appendChild(_chip(indoor));
-    if (outdoor) chipsEl.appendChild(_chip(outdoor));
+  // Pre-select active job if none explicitly chosen
+  if (!_job) {
+    const id = getActiveJobId();
+    _job = id ? getJobById(id) : null;
   }
+
+  _renderJobSection();
+  _renderContextChips();
 
   // Symptom grid
   const grid = document.getElementById("ts-symptom-grid");
   grid.innerHTML = "";
-  for (const [key, label] of Object.entries(SYMPTOM_LABELS)) {
+  const entries = Object.entries(SYMPTOM_LABELS);
+  entries.forEach(([key, label], i) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ts-symptom-btn";
     btn.dataset.symptom = key;
     btn.textContent = label;
+    // Last button spans 2 columns when count is odd
+    if (i === entries.length - 1 && entries.length % 2 !== 0) {
+      btn.style.gridColumn = "span 2";
+    }
     btn.addEventListener("click", () => selectSymptom(key));
     grid.appendChild(btn);
-  }
+  });
 
   // Reset view
   document.getElementById("ts-fault-row").classList.add("hidden");
@@ -81,9 +81,163 @@ function _populate() {
   _result  = null;
 }
 
-function _chip(text) {
+// ---------------------------------------------------------------------------
+// Job section — picker or active card
+// ---------------------------------------------------------------------------
+
+function _renderJobSection() {
+  const section = document.getElementById("ts-job-section");
+  section.innerHTML = "";
+
+  const jobs = getAllJobs();
+
+  if (_job) {
+    section.appendChild(_buildJobCard(_job, jobs.length > 1));
+  } else if (jobs.length > 0) {
+    section.appendChild(_buildJobPicker(jobs));
+  }
+
+  section.appendChild(_buildGenericBadge(
+    jobs.length === 0
+      ? "No jobs registered — diagnosis will not be equipment-specific"
+      : "Or continue without selecting a job"
+  ));
+}
+
+function _buildJobCard(job, showChangeBtn) {
+  const card = document.createElement("div");
+  card.className = "ts-active-job";
+
+  const addr = document.createElement("div");
+  addr.className = "ts-active-job-address";
+  addr.textContent = job.address;
+  card.appendChild(addr);
+
+  const meta = document.createElement("div");
+  meta.className = "ts-active-job-meta";
+
+  const ctx = _buildJobContext(job);
+
+  if (job.system1?.indoor)       meta.appendChild(_chip(job.system1.indoor));
+  if (job.system1?.outdoor)      meta.appendChild(_chip(job.system1.outdoor, "outdoor"));
+  if (ctx.isA2L)                 meta.appendChild(_chip("A2L", "a2l"));
+  if (job.jobThermostat?.type)   meta.appendChild(_chip(job.jobThermostat.type, "tstat"));
+  if (ctx.hasZoning)             meta.appendChild(_chip("Zoning", "acc"));
+  if (ctx.hasFloatSwitch)        meta.appendChild(_chip("Float Switch", "acc"));
+  if (ctx.hasTraneHarness)       meta.appendChild(_chip("Harness", "a2l"));
+  if (meta.children.length === 0) {
+    const warn = document.createElement("span");
+    warn.className = "ts-no-equip-warning";
+    warn.textContent = "⚠️ Sin equipo registrado";
+    meta.appendChild(warn);
+  }
+
+  card.appendChild(meta);
+
+  if (showChangeBtn) {
+    const changeBtn = document.createElement("button");
+    changeBtn.type = "button";
+    changeBtn.className = "ts-job-change-btn";
+    changeBtn.textContent = "Cambiar job →";
+    changeBtn.addEventListener("click", () => {
+      _job = null;
+      _resetToSymptomSelection();
+      _renderJobSection();
+      _renderContextChips();
+    });
+    card.appendChild(changeBtn);
+  }
+
+  return card;
+}
+
+function _buildJobPicker(jobs) {
+  const wrapper = document.createElement("div");
+
+  const label = document.createElement("p");
+  label.className = "ts-section-label";
+  label.textContent = "Selecciona el job que estás trabajando:";
+  wrapper.appendChild(label);
+
+  const list = document.createElement("div");
+  list.className = "ts-job-picker";
+
+  jobs.forEach(job => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "ts-job-picker-item";
+
+    const addrEl = document.createElement("span");
+    addrEl.className = "ts-job-picker-address";
+    addrEl.textContent = job.address;
+
+    const parts = [job.system1?.indoor, job.system1?.outdoor].filter(Boolean);
+    const equipEl = document.createElement("div");
+    equipEl.className = "ts-job-picker-equip";
+    equipEl.textContent = parts.length > 0 ? parts.join(" + ") : "Sin equipo registrado";
+
+    item.appendChild(addrEl);
+    item.appendChild(equipEl);
+
+    item.addEventListener("click", () => {
+      _job = job;
+      _resetToSymptomSelection();
+      _renderJobSection();
+      _renderContextChips();
+      document.getElementById("ts-symptom-section").classList.remove("hidden");
+    });
+
+    list.appendChild(item);
+  });
+
+  wrapper.appendChild(list);
+  return wrapper;
+}
+
+function _buildGenericBadge(subtitle) {
+  const badge = document.createElement("div");
+  badge.className = "ts-generic-badge";
+  badge.innerHTML = `
+    <span class="ts-generic-icon">⚡</span>
+    <div>
+      <div class="ts-generic-title">Generic Mode</div>
+      <div class="ts-generic-sub">${esc(subtitle)}</div>
+    </div>
+  `;
+  return badge;
+}
+
+// ---------------------------------------------------------------------------
+// Context chips (header)
+// ---------------------------------------------------------------------------
+
+function _renderContextChips() {
+  const container = document.getElementById("ts-context-chips");
+  container.innerHTML = "";
+  document.getElementById("ts-job-addr").textContent = _job ? _job.address : "Generic mode";
+
+  if (!_job) {
+    container.appendChild(_chip("Selecciona un job"));
+    return;
+  }
+
+  const ctx = _buildJobContext(_job);
+  if (ctx.heaterModel)  container.appendChild(_chip(ctx.heaterModel));
+  if (ctx.outdoorModel) container.appendChild(_chip(ctx.outdoorModel, "outdoor"));
+  if (ctx.isA2L)        container.appendChild(_chip("⚠️ A2L", "a2l"));
+  if (ctx.hasZoning)    container.appendChild(_chip("Zoning", "acc"));
+  if (!ctx.heaterModel && !ctx.outdoorModel) {
+    container.appendChild(_chip(_job.address.split(" ").slice(0, 3).join(" ")));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Chip helper
+// ---------------------------------------------------------------------------
+
+function _chip(text, variant) {
   const s = document.createElement("span");
-  s.className = "chip chip-sm chip-secondary";
+  s.className = "ts-job-chip" + (variant ? " ts-chip-" + variant : "");
   s.textContent = text;
   return s;
 }
@@ -94,6 +248,11 @@ function _chip(text) {
 
 function selectSymptom(symptom) {
   _symptom = symptom;
+
+  document.querySelectorAll(".ts-symptom-btn").forEach(btn => {
+    btn.classList.toggle("ts-active", btn.dataset.symptom === symptom);
+  });
+
   document.getElementById("ts-fault-row").classList.toggle(
     "hidden", symptom !== SYMPTOM.FAULT_CODE
   );
@@ -140,38 +299,89 @@ function renderResults(result) {
 
   const list = document.getElementById("ts-steps-list");
   list.innerHTML = "";
-  result.steps.forEach(s => {
-    const li = document.createElement("li");
-    li.className = "ts-step-item";
 
-    const action = document.createElement("span");
-    action.className = "ts-step-action";
-    action.textContent = s.action;
-    li.appendChild(action);
-
-    if (s.tool) {
-      const tool = document.createElement("div");
-      tool.className = "ts-step-tool";
-      tool.textContent = `🔧 ${s.tool}`;
-      li.appendChild(tool);
-    }
-
-    if (s.branches) {
-      li.appendChild(_buildBranchEl(s.branches));
-    }
-
-    list.appendChild(li);
-  });
-
-  const notes = document.getElementById("ts-equipment-notes");
-  const filled = (result.equipmentNotes || []).filter(n => n.text);
-  if (filled.length) {
-    notes.innerHTML = filled
-      .map(n => `<strong>${esc(n.label)}:</strong> ${esc(n.text)}`)
-      .join("<br>");
-    notes.classList.remove("hidden");
+  if (result.steps.length === 0) {
+    const empty = document.createElement("p");
+    empty.style.cssText = "font-size:0.83em;opacity:0.6;";
+    empty.textContent = "No hay pasos específicos para esta combinación.";
+    list.appendChild(empty);
   } else {
-    notes.classList.add("hidden");
+    const header = document.createElement("div");
+    header.className = "ts-steps-header";
+    header.innerHTML = `
+      <span class="ts-steps-label">Pasos — toca para marcar</span>
+      <button type="button" class="ts-steps-reset" id="ts-steps-reset-btn">↺ Reset</button>
+    `;
+    list.appendChild(header);
+
+    result.steps.forEach(s => {
+      const item = document.createElement("div");
+      item.className = "ts-step-item";
+
+      const numEl = document.createElement("div");
+      numEl.className = "ts-step-num";
+      numEl.innerHTML = `<span class="ts-step-num-inner">${s.step}</span>`;
+
+      const content = document.createElement("div");
+      content.className = "ts-step-content";
+
+      const action = document.createElement("div");
+      action.className = "ts-step-action";
+      action.textContent = s.action;
+      content.appendChild(action);
+
+      if (s.detail) {
+        const detail = document.createElement("div");
+        detail.className = "ts-step-detail";
+        detail.textContent = s.detail;
+        content.appendChild(detail);
+      }
+
+      if (s.tool) {
+        const tool = document.createElement("span");
+        tool.className = "ts-step-tool";
+        tool.textContent = `🔧 ${s.tool}`;
+        content.appendChild(tool);
+      }
+
+      if (s.branches) {
+        content.appendChild(_buildBranchEl(s.branches));
+      }
+
+      item.appendChild(numEl);
+      item.appendChild(content);
+
+      item.addEventListener("click", e => {
+        if (e.target.closest(".ts-branch-btn, .ts-branch-substeps")) return;
+        item.classList.toggle("ts-checked");
+      });
+
+      list.appendChild(item);
+    });
+
+    document.getElementById("ts-steps-reset-btn").addEventListener("click", e => {
+      e.stopPropagation();
+      list.querySelectorAll(".ts-step-item").forEach(el => el.classList.remove("ts-checked"));
+    });
+  }
+
+  // Equipment notes as cards
+  const notesEl = document.getElementById("ts-equipment-notes");
+  const filled  = (result.equipmentNotes || []).filter(n => n.text);
+  if (filled.length) {
+    notesEl.innerHTML = "";
+    filled.forEach(n => {
+      const card = document.createElement("div");
+      card.className = "ts-note-item";
+      card.innerHTML = `
+        <div class="ts-note-label">${esc(n.label)}</div>
+        <div class="ts-note-text">${esc(n.text)}</div>
+      `;
+      notesEl.appendChild(card);
+    });
+    notesEl.classList.remove("hidden");
+  } else {
+    notesEl.classList.add("hidden");
   }
 }
 
@@ -191,41 +401,49 @@ function _buildBranchEl(branches) {
   const btns = document.createElement("div");
   btns.className = "ts-branch-btns";
 
-  const sub = document.createElement("ol");
+  const sub = document.createElement("div");
   sub.className = "ts-branch-substeps";
   sub.style.display = "none";
 
-  function showBranch(side) {
-    sub.innerHTML = "";
-    sub.style.display = "";
-    side.steps.forEach(s => {
-      const li2 = document.createElement("li");
-      li2.className = "ts-step-item";
-      const a = document.createElement("span");
-      a.className = "ts-step-action";
-      a.textContent = s.action;
-      li2.appendChild(a);
-      if (s.tool) {
-        const t = document.createElement("div");
-        t.className = "ts-step-tool";
-        t.textContent = `🔧 ${s.tool}`;
-        li2.appendChild(t);
-      }
-      sub.appendChild(li2);
+  function showBranch(chosen, other, stepsData) {
+    // Toggle off if same branch clicked again
+    if (chosen.classList.contains("ts-branch-active")) {
+      chosen.classList.remove("ts-branch-active");
+      sub.style.display = "none";
+      sub.innerHTML = "";
+      return;
+    }
+    yBtn.classList.remove("ts-branch-active");
+    nBtn.classList.remove("ts-branch-active");
+    chosen.classList.add("ts-branch-active");
+
+    sub.innerHTML = stepsData.map(s => `
+      <div class="ts-branch-step">
+        <div class="ts-branch-step-num"><span>${s.step}</span></div>
+        <div class="ts-branch-step-body">
+          <div class="ts-branch-step-action">${esc(s.action)}</div>
+          ${s.detail ? `<div class="ts-step-detail">${esc(s.detail)}</div>` : ""}
+          ${s.tool   ? `<span class="ts-step-tool">🔧 ${esc(s.tool)}</span>` : ""}
+        </div>
+      </div>
+    `).join("");
+    sub.style.display = "flex";
+    sub.querySelectorAll(".ts-branch-step").forEach(el => {
+      el.addEventListener("click", () => el.classList.toggle("ts-checked"));
     });
   }
 
   const yBtn = document.createElement("button");
   yBtn.type = "button";
-  yBtn.className = "btn-secondary ts-branch-yes";
-  yBtn.textContent = `Yes — ${branches.yes.label}`;
-  yBtn.addEventListener("click", () => showBranch(branches.yes));
+  yBtn.className = "ts-branch-btn ts-branch-yes";
+  yBtn.textContent = `✓ ${branches.yes.label}`;
+  yBtn.addEventListener("click", () => showBranch(yBtn, nBtn, branches.yes.steps));
 
   const nBtn = document.createElement("button");
   nBtn.type = "button";
-  nBtn.className = "btn-secondary ts-branch-no";
-  nBtn.textContent = `No — ${branches.no.label}`;
-  nBtn.addEventListener("click", () => showBranch(branches.no));
+  nBtn.className = "ts-branch-btn ts-branch-no";
+  nBtn.textContent = `✗ ${branches.no.label}`;
+  nBtn.addEventListener("click", () => showBranch(nBtn, yBtn, branches.no.steps));
 
   btns.appendChild(yBtn);
   btns.appendChild(nBtn);
@@ -256,12 +474,17 @@ function _handleAskAi() {
 // ---------------------------------------------------------------------------
 
 function _handleReset() {
-  document.getElementById("ts-results-section").classList.add("hidden");
+  _resetToSymptomSelection();
   document.getElementById("ts-symptom-section").classList.remove("hidden");
-  document.getElementById("ts-fault-row").classList.add("hidden");
-  document.getElementById("ts-steps-list").innerHTML = "";
+}
+
+function _resetToSymptomSelection() {
   _symptom = null;
   _result  = null;
+  document.querySelectorAll(".ts-symptom-btn").forEach(btn => btn.classList.remove("ts-active"));
+  document.getElementById("ts-fault-row").classList.add("hidden");
+  document.getElementById("ts-results-section").classList.add("hidden");
+  document.getElementById("ts-steps-list").innerHTML = "";
 }
 
 // ---------------------------------------------------------------------------
@@ -291,4 +514,9 @@ export function initTsPanel() {
   });
   document.getElementById("ts-ask-ai-btn").addEventListener("click", _handleAskAi);
   document.getElementById("ts-reset-btn").addEventListener("click", _handleReset);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && document.getElementById("ts-drawer").classList.contains("ts-open")) {
+      _closeDrawer();
+    }
+  });
 }
