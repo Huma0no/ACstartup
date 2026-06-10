@@ -409,6 +409,14 @@ function jobCardHTML(job, ci) {
     .filter(Boolean)
     .join("");
 
+  const _hist = job.addressHistory;
+  const historyHTML = (_hist && _hist.length)
+    ? `<div class="job-history">
+  <button class="chip chip-sm chip-history" data-toggle-history="${esc(job.id)}" style="border-color:var(--subdivision-${ci})">History (${_hist.length})</button>
+  <div class="job-history-entries" style="border-color:var(--subdivision-${ci})">${_hist.map((h) => `<div class="job-history-entry">${esc(h)}</div>`).join("")}</div>
+</div>`
+    : "";
+
   return `
 <li class="job-item${inProg ? " expanded" : ""}" data-id="${esc(job.id)}"
     style="border-left-color:var(--subdivision-${ci})">
@@ -434,6 +442,7 @@ function jobCardHTML(job, ci) {
       </div>
     </div>
     ${equipCards ? `<div class="equip-grid">${equipCards}</div>` : ""}
+    ${historyHTML}
     <button class="btn-start-job" data-start="${esc(job.id)}">
       ${inProg ? "Continue →" : "Start →"}
     </button>
@@ -1717,7 +1726,12 @@ function wireEvents() {
     const item = e.target.closest(".job-item");
     const clearCompleted  = e.target.closest("[data-clear-completed]");
     const toggleSummary   = e.target.closest("[data-toggle-summary]");
+    const toggleHistory   = e.target.closest("[data-toggle-history]");
 
+    if (toggleHistory) {
+      toggleHistory.nextElementSibling?.classList.toggle("open");
+      return;
+    }
     if (toggleSummary) {
       const li = document.getElementById("load-sheet-summary");
       const body = li?.querySelector(".load-sheet-body");

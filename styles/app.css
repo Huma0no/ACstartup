@@ -1217,6 +1217,38 @@ input[name="builder"] {
   display: flex;
 }
 
+.job-history {
+  margin-top: var(--space-2);
+}
+
+.job-history-entries {
+  background: var(--color-accent-soft);
+  border: 1px solid;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.job-history-entries.open {
+  max-height: 600px;
+}
+
+.job-history-entry {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+}
+
+.job-history-entry:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
 /* Equipment grid (expanded) */
 .equip-grid {
   display: grid;
