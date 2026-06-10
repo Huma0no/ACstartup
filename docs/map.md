@@ -508,7 +508,7 @@ Export JSON → Dispatch
 |---|---|---|
 | 1 | Mapa interactivo de dependencias | docs/ |
 | 2 | Comunicación en tiempo real PWA ↔ Dispatch | Fase 4 |
-| 3 | `heaterModel` → `indoorModel` en workspace.js y data_dictionary.md | workspace.js / docs |
+| 3 | ✅ `heaterModel` → `indoorModel` — legacy mapping handled at import boundary via `normalizeLegacyJob()` in `importer.js`; internal code already uses `system1.indoor` consistently | importer.js |
 | 4 | `aiApiKey` stored as plaintext in localStorage — acceptable for offline-first, revisit in Phase 4 | settings.js |
 | 5 | ✅ Imágenes indoor ML180UH — 6 archivos renombrados a uppercase vía `git mv -f` para coincidir con el catálogo. Falla en Netlify (Linux, case-sensitive) resuelta. | data.js / images/ |
 | 6 | ✅ SC out-of-range warnings — inline warning span after subcoolingValue field; `getSubcoolingDefault()` wired up to auto-fill `oemSubcoolingGoal` on workspace load (8°F Goodman GL*, 10°F all others). Per-model precision via catalog data deferred (Option A). | app.js / utils.js / styles/app.css |
