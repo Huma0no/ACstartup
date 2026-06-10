@@ -6471,6 +6471,12 @@
       }
 
       function buildRecordSummary(record) {
+        if (record.report_text && record.report_text.trim()) {
+          const prefix = record.date ? `${record.date} — ` : "";
+          return record.technician
+            ? `${prefix}${record.technician}: ${record.report_text.trim()}`
+            : `${prefix}${record.report_text.trim()}`;
+        }
         const parts = [];
         if (record.date) parts.push(record.date);
         if (record.address) parts.push(record.address);

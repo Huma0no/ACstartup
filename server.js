@@ -235,7 +235,7 @@ app.post("/api/import", async (req, res) => {
     for (const job of jobs) {
       // Extraer datos básicos
       const state = job.savedState || {};
-      const address = job.address;
+      const address = (job.address || "").trim();
       const date = job.date || state.date || new Date().toISOString().split("T")[0];
 
       // Calcular total desde los ítems
@@ -484,7 +484,7 @@ app.post("/api/jobs/batch-history", (req, res) => {
 
   addresses.forEach((addr) => {
     const sql = `
-      SELECT j.id, j.date, j.technician, j.notes,
+      SELECT j.id, j.date, j.technician, j.notes, j.report_text,
              j.indoor_model, j.outdoor_model,
              j.indoor_model_2, j.outdoor_model_2,
              j.weight_in_json, j.weight_in_2_json,
@@ -496,7 +496,7 @@ app.post("/api/jobs/batch-history", (req, res) => {
                 'price',     ji.price
              )) FROM job_items ji WHERE ji.job_id = j.id) AS items_json
       FROM jobs j
-      WHERE j.address = ?
+      WHERE TRIM(j.address) = TRIM(?)
       ORDER BY j.date DESC
     `;
     db.all(sql, [addr], (err, rows) => {
