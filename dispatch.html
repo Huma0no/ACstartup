@@ -1812,35 +1812,23 @@
                 style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
             </div>
 
-            <!-- Equipment: series → model (PWA style) -->
+            <!-- Equipment flat selects -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <!-- Furnace -->
               <div style="display:flex;flex-direction:column;gap:5px">
                 <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Furnace / AHU</label>
-                <select id="nj-furnace-series" onchange="njLoadModels('furnace')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-furnace" disabled onchange="njModelSelected('furnace',this)"
+                <select id="nj-furnace" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
                   style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
                   <option value="">Select model…</option>
                 </select>
-                <button type="button" id="nj-furnace-reset" onclick="njResetSeries('furnace')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
               </div>
               <!-- Outdoor -->
               <div style="display:flex;flex-direction:column;gap:5px">
                 <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Outdoor Unit</label>
-                <select id="nj-outdoor-series" onchange="njLoadModels('outdoor')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-outdoor" disabled onchange="njModelSelected('outdoor',this)"
+                <select id="nj-outdoor" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
                   style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
                   <option value="">Select model…</option>
                 </select>
-                <button type="button" id="nj-outdoor-reset" onclick="njResetSeries('outdoor')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
               </div>
             </div>
 
@@ -1858,30 +1846,18 @@
               <!-- Furnace 2 -->
               <div style="display:flex;flex-direction:column;gap:5px">
                 <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Furnace / AHU — Sys 2</label>
-                <select id="nj-furnace2-series" onchange="njLoadModels('furnace2')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-furnace2" disabled onchange="njModelSelected('furnace2',this)"
+                <select id="nj-furnace2" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
                   style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
                   <option value="">Select model…</option>
                 </select>
-                <button type="button" id="nj-furnace2-reset" onclick="njResetSeries('furnace2')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
               </div>
               <!-- Outdoor 2 -->
               <div style="display:flex;flex-direction:column;gap:5px">
                 <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Outdoor Unit — Sys 2</label>
-                <select id="nj-outdoor2-series" onchange="njLoadModels('outdoor2')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-outdoor2" disabled onchange="njModelSelected('outdoor2',this)"
+                <select id="nj-outdoor2" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
                   style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
                   <option value="">Select model…</option>
                 </select>
-                <button type="button" id="nj-outdoor2-reset" onclick="njResetSeries('outdoor2')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
               </div>
             </div>
 
@@ -5899,56 +5875,23 @@
         "DC6VSS SERIES": ["DC6VSS2410","DC6VSS3010","DC6VSS3610","DC6VSS4210","DC6VSS4810","DC6VSS6010"],
       };
 
-      // ── New Job: series → model selectors ──
-      function njInitSeriesSelects() {
+      // ── New Job: populate flat model selects ──
+      function njBuildFlatSelects() {
         const map = { furnace: NJ_HEATER_DATA, outdoor: NJ_OUTDOOR_DATA, furnace2: NJ_HEATER_DATA, outdoor2: NJ_OUTDOOR_DATA };
         ["furnace", "outdoor", "furnace2", "outdoor2"].forEach(field => {
-          const sel = document.getElementById(`nj-${field}-series`);
+          const sel = document.getElementById(`nj-${field}`);
           if (!sel || sel.options.length > 1) return;
-          Object.keys(map[field]).forEach(series => {
-            const opt = document.createElement("option");
-            opt.value = series; opt.textContent = series;
-            sel.appendChild(opt);
+          Object.entries(map[field]).forEach(([series, models]) => {
+            const grp = document.createElement("optgroup");
+            grp.label = series;
+            models.forEach(m => {
+              const opt = document.createElement("option");
+              opt.value = m; opt.textContent = m;
+              grp.appendChild(opt);
+            });
+            sel.appendChild(grp);
           });
         });
-      }
-
-      function njLoadModels(field) {
-        const data    = (field === "furnace" || field === "furnace2") ? NJ_HEATER_DATA : NJ_OUTDOOR_DATA;
-        const series  = document.getElementById(`nj-${field}-series`).value;
-        const modelSel = document.getElementById(`nj-${field}`);
-        const resetBtn = document.getElementById(`nj-${field}-reset`);
-        modelSel.innerHTML = '<option value="">Select model…</option>';
-        if (!series) {
-          modelSel.disabled = true;
-          modelSel.style.color = "var(--text-dim)";
-          if (resetBtn) resetBtn.style.display = "none";
-          return;
-        }
-        (data[series] || []).forEach(m => {
-          const opt = document.createElement("option");
-          opt.value = m; opt.textContent = m;
-          modelSel.appendChild(opt);
-        });
-        modelSel.disabled = false;
-        modelSel.style.color = "var(--text)";
-        if (resetBtn) resetBtn.style.display = "none";
-      }
-
-      function njModelSelected(field, sel) {
-        const resetBtn = document.getElementById(`nj-${field}-reset`);
-        if (resetBtn) resetBtn.style.display = sel.value ? "" : "none";
-        if (sel.value) sel.style.color = "var(--amber)";
-        else sel.style.color = "var(--text)";
-      }
-
-      function njResetSeries(field) {
-        const seriesSel = document.getElementById(`nj-${field}-series`);
-        const modelSel  = document.getElementById(`nj-${field}`);
-        const resetBtn  = document.getElementById(`nj-${field}-reset`);
-        if (seriesSel) seriesSel.value = "";
-        if (modelSel)  { modelSel.innerHTML = '<option value="">Select model…</option>'; modelSel.disabled = true; modelSel.style.color = "var(--text-dim)"; }
-        if (resetBtn)  resetBtn.style.display = "none";
       }
 
       // ── New Job: address autocomplete from history ──
@@ -5994,21 +5937,16 @@
         if (addrInput) addrInput.value = r.address;
         if (r.subdivision) { const el = document.getElementById("nj-subdivision"); if (el) el.value = r.subdivision; }
         if (r.builder)     { const el = document.getElementById("nj-builder");     if (el) el.value = r.builder;     }
-        if (r.indoor_model)  njAutoFillEquip("furnace", r.indoor_model,  NJ_HEATER_DATA);
-        if (r.outdoor_model) njAutoFillEquip("outdoor", r.outdoor_model, NJ_OUTDOOR_DATA);
+        if (r.indoor_model)  njAutoFillEquip("furnace", r.indoor_model);
+        if (r.outdoor_model) njAutoFillEquip("outdoor", r.outdoor_model);
         dd.style.display = "none";
       }
 
-      function njAutoFillEquip(field, model, data) {
-        const seriesSel = document.getElementById(`nj-${field}-series`);
-        const modelSel  = document.getElementById(`nj-${field}`);
-        if (!seriesSel || !modelSel) return;
-        const series = Object.entries(data).find(([, models]) => models.includes(model))?.[0];
-        if (!series) return;
-        seriesSel.value = series;
-        njLoadModels(field);
+      function njAutoFillEquip(field, model) {
+        const modelSel = document.getElementById(`nj-${field}`);
+        if (!modelSel) return;
         modelSel.value = model;
-        njModelSelected(field, modelSel);
+        modelSel.style.color = model ? "var(--amber)" : "var(--text-dim)";
       }
 
       document.addEventListener("click", (e) => {
@@ -6222,7 +6160,7 @@
           b.style.color = b.style.borderColor = b.style.background = "";
         });
         // Reset equipment selects (sys 1 + sys 2)
-        ["furnace","outdoor","furnace2","outdoor2"].forEach(f => njResetSeries(f));
+        ["furnace","outdoor","furnace2","outdoor2"].forEach(f => { const el = document.getElementById(`nj-${f}`); if (el) { el.value = ""; el.style.color = "var(--text-dim)"; } });
         // Reset tstat + acc
         const ts = document.getElementById("nj-tstat"); if (ts) ts.value = "";
         const tq = document.getElementById("nj-tstat-qty"); if (tq) tq.value = "1";
@@ -8796,7 +8734,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       // Wire Quick Stats lazy load on first open + init new job selects
       document.addEventListener("DOMContentLoaded", () => {
-        njInitSeriesSelects();
+        njBuildFlatSelects();
         if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
         const det = document.querySelector("#panel-reports details");
         if (det) {
