@@ -6,6 +6,36 @@ import { getJobById, updateJob } from "./jobs.js";
 // Required fields per architecture.md §9
 const REQUIRED_JOB_FIELDS = ["id", "date", "address", "subdivision", "builder", "system1"];
 
+function normalizeLegacyJob(raw) {
+  if (raw.system1) return raw;
+  const today = new Date().toISOString().split("T")[0];
+  return {
+    id:             raw.id || crypto.randomUUID(),
+    date:           raw.savedState?.date || today,
+    address:        raw.address       || "",
+    subdivision:    raw.subdivision   || "",
+    builder:        raw.builder       || "",
+    techName:       raw.techName      || "",
+    notes:          raw.savedState?.notes || raw.details || "",
+    system1: {
+      indoor:  raw.heaterModel  || "",
+      outdoor: raw.outdoorModel || "",
+    },
+    system2: (raw.heaterModel2 || raw.outdoorModel2)
+      ? { indoor: raw.heaterModel2 || "", outdoor: raw.outdoorModel2 || "" }
+      : null,
+    isTwoSystems:   !!(raw.isTwoSystems || raw.heaterModel2 || raw.outdoorModel2),
+    jobThermostat:  raw.savedState?.selectedThermostat || null,
+    jobAccessories: raw.savedState?.selectedAccessories?.map((a) => a.name) || [],
+    addressHistory: raw.addressHistory || [],
+    contactName:    raw.contactName   || "",
+    contactPhone:   raw.contactPhone  || "",
+    orderNumber:    raw.orderNumber   || "",
+    scheduledTime:  raw.scheduledTime || "",
+    cityState:      raw.cityState     || "",
+  };
+}
+
 function validateJob(job) {
   for (const field of REQUIRED_JOB_FIELDS) {
     if (job[field] == null || job[field] === "") {
@@ -38,7 +68,7 @@ export function importFromJSON(jsonString) {
   const result = { imported: 0, skipped: 0, errors: [] };
 
   for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
+    const job = normalizeLegacyJob(jobs[i]);
 
     const validationError = validateJob(job);
     if (validationError) {
