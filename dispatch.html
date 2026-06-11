@@ -4712,12 +4712,21 @@
       }
 
       // Build item rows HTML for edit mode
-      function _compItemRowsHtml(ss) {
-        const items = [
-          ...(ss.selectedServices || []).map(i => ({ name: i.name, price: i.basePrice, type: "Service" })),
-          ...(ss.selectedAccessories || []).map(i => ({ name: i.name, price: i.basePrice, type: "Accessory" })),
-          ...(ss.selectedFixes || []).map(i => ({ name: i.name, price: i.basePrice, type: "Fix" })),
-        ];
+      function _compItemRowsHtml(ss, j) {
+        const useSavedState = ss && (
+          ss.selectedServices?.length || ss.selectedAccessories?.length || ss.selectedFixes?.length
+        );
+        const items = useSavedState
+          ? [
+              ...(ss.selectedServices    || []).map(i => ({ name: i.name, price: i.basePrice, type: "Service" })),
+              ...(ss.selectedAccessories || []).map(i => ({ name: i.name, price: i.basePrice, type: "Accessory" })),
+              ...(ss.selectedFixes       || []).map(i => ({ name: i.name, price: i.basePrice, type: "Fix" })),
+            ]
+          : [
+              ...(j?.services    || []).map(i => ({ name: i.displayName || i.name, price: i.price, type: "Service" })),
+              ...(j?.accessories || []).map(i => ({ name: i.displayName || i.name, price: i.price, type: "Accessory" })),
+              ...(j?.fixes       || []).map(i => ({ name: i.displayName || i.name, price: i.price, type: "Fix" })),
+            ];
         return items.map(item => `
           <div data-item-row style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
             <input type="text" value="${esc(item.name)}" data-field="name"
@@ -4900,7 +4909,7 @@
           <!-- Items -->
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
                       color:var(--text-dim);margin-bottom:6px">Items</div>
-          <div id="ce-items-${idx}" style="margin-bottom:8px">${_compItemRowsHtml(ss)}</div>
+          <div id="ce-items-${idx}" style="margin-bottom:8px">${_compItemRowsHtml(ss, j)}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
             <input type="text" id="ce-new-name-${idx}" placeholder="Item name"
               style="flex:2;min-width:90px;font-size:12px;padding:4px 6px;background:var(--bg2);

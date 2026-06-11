@@ -235,6 +235,8 @@ app.post("/api/import", async (req, res) => {
     for (const job of jobs) {
       // Extraer datos básicos
       const state = job.savedState || {};
+      const useSavedState = state.selectedServices?.length ||
+        state.selectedAccessories?.length || state.selectedFixes?.length;
       const address = (job.address || "").trim();
       const date = job.date || state.date || new Date().toISOString().split("T")[0];
 
@@ -315,27 +317,22 @@ app.post("/api/import", async (req, res) => {
           await runStmt(updateInv, [qty, `%${state.selectedThermostat.name}%`]);
         }
 
-        // 3. Procesar Servicios (NUEVO)
-        if (state.selectedServices) {
-          for (const srv of state.selectedServices) {
-            await runStmt(insertItem, [
-              jobId,
-              "Service",
-              srv.name,
-              1, // Cantidad 1 por defecto para servicios
-              srv.basePrice || 0, 0,
-            ]);
+        // 3. Procesar Servicios
+        if (useSavedState) {
+          for (const srv of (state.selectedServices || [])) {
+            await runStmt(insertItem, [jobId, "Service", srv.name, 1, srv.basePrice || 0, 0]);
+          }
+        } else {
+          for (const srv of (job.services || [])) {
+            await runStmt(insertItem, [jobId, "Service", srv.displayName || srv.name, 1, srv.price || 0, 0]);
           }
         }
 
         // 4. Procesar Accesorios
-        if (state.selectedAccessories) {
-          for (const acc of state.selectedAccessories) {
+        if (useSavedState) {
+          for (const acc of (state.selectedAccessories || [])) {
             await runStmt(insertItem, [
-              jobId,
-              "Accessory",
-              acc.name,
-              1,
+              jobId, "Accessory", acc.name, 1,
               acc.price || acc.basePrice || 0,
               acc.techSupplied !== false ? 1 : 0,
             ]);
@@ -343,18 +340,27 @@ app.post("/api/import", async (req, res) => {
               await runStmt(updateInv, [1, `%${acc.name}%`]);
             }
           }
+        } else {
+          for (const acc of (job.accessories || [])) {
+            await runStmt(insertItem, [
+              jobId, "Accessory", acc.displayName || acc.name, 1,
+              acc.price || 0,
+              acc.techSupplied ? 1 : 0,
+            ]);
+            if (acc.techSupplied) {
+              await runStmt(updateInv, [1, `%${acc.name}%`]);
+            }
+          }
         }
 
-        // 4. Procesar Fixes
-        if (state.selectedFixes) {
-          for (const fix of state.selectedFixes) {
-            await runStmt(insertItem, [
-              jobId,
-              "Fix",
-              fix.name,
-              1,
-              fix.basePrice || 0, 0,
-            ]);
+        // 5. Procesar Fixes
+        if (useSavedState) {
+          for (const fix of (state.selectedFixes || [])) {
+            await runStmt(insertItem, [jobId, "Fix", fix.name, 1, fix.basePrice || 0, 0]);
+          }
+        } else {
+          for (const fix of (job.fixes || [])) {
+            await runStmt(insertItem, [jobId, "Fix", fix.displayName || fix.name, 1, fix.price || 0, 0]);
           }
         }
       } catch (e) {
