@@ -410,10 +410,18 @@ function jobCardHTML(job, ci) {
     .join("");
 
   const _hist = job.addressHistory;
-  const historyHTML = (_hist && _hist.length)
+  const _note = job.dispatchNote;
+  const histPair = (_hist && _hist.length)
+    ? `<button class="chip chip-sm chip-history" data-toggle-history="${esc(job.id)}" style="border-color:var(--subdivision-${ci})">History</button>
+  <div class="job-history-entries" style="border-color:var(--subdivision-${ci})">${_hist.map((h) => `<div class="job-history-entry">${esc(h)}</div>`).join("")}</div>`
+    : "";
+  const notePair = _note
+    ? `<button class="chip chip-sm chip-history" data-toggle-history="${esc(job.id)}-note" style="border-color:var(--subdivision-${ci})">Dispatch Note</button>
+  <div class="job-history-entries" style="border-color:var(--subdivision-${ci})"><div class="job-history-entry">${esc(_note)}</div></div>`
+    : "";
+  const historyHTML = (histPair || notePair)
     ? `<div class="job-history">
-  <button class="chip chip-sm chip-history" data-toggle-history="${esc(job.id)}" style="border-color:var(--subdivision-${ci})">History (${_hist.length})</button>
-  <div class="job-history-entries" style="border-color:var(--subdivision-${ci})">${_hist.map((h) => `<div class="job-history-entry">${esc(h)}</div>`).join("")}</div>
+  ${histPair}${notePair}
 </div>`
     : "";
 

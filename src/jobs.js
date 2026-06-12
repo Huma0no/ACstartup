@@ -34,6 +34,7 @@ export function createJob(data) {
     system2:        data.system2        || null,
     savedState:     null,
     addressHistory: data.addressHistory || [],
+    dispatchNote:   data.dispatchNote   || "",
   };
   saveJob(job);
   return job;
