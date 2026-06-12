@@ -342,13 +342,15 @@ export function saveProgress(job = null) {
 export function buildCompletion(job, prices = DEFAULT_PRICES) {
   const s = _state;
   const totals = calculateTotals(s, prices);
+  const now = new Date();
 
   return {
     jobId:              job.id,
     address:            job.address,
     subdivision:        job.subdivision,
     builder:            job.builder,
-    timestamp:          new Date().toISOString(),
+    timestamp:          now.toISOString(),
+    date:               now.toISOString().slice(0, 10),
     isTwoSystems:       s.isTwoSystems,
     isTemporary:        s.isTemporary,
     refrigerant:        "",         // resolved by caller from equipment data
