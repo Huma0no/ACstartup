@@ -1884,7 +1884,7 @@
                 <option value="Ecobee">Ecobee</option>
                 <option value="Daikin One">Daikin One</option>
                 <option value="TH2110">TH2110</option>
-                <option value="Otro">Other</option>
+                <option value="Other">Other</option>
               </select>
               <select id="nj-tstat-qty" style="width:56px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 4px;font-size:12px;font-family:var(--mono);text-align:center">
                 <option value="1">1</option><option value="2">2</option>
@@ -2500,20 +2500,6 @@
               <!-- COL 1: Equipment -->
               <div style="display:flex;flex-direction:column;gap:10px">
                 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);border-bottom:1px solid var(--border);padding-bottom:6px">⚙ Equipment Used</div>
-                <div>
-                  <div class="label" style="margin-bottom:5px">Equipment &amp; Accessories</div>
-                <details>
-                  <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;color:var(--text-dim);user-select:none">
-                    <span style="font-size:11px">Filter models</span>
-                    <span style="display:flex;gap:6px;align-items:center">
-                      <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px" onclick="event.preventDefault();crCheckAll(true)">All</button>
-                      <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px" onclick="event.preventDefault();crCheckAll(false)">None</button>
-                      <span style="font-size:10px;opacity:.5">▾</span>
-                    </span>
-                  </summary>
-                  <div id="cr-eq-checklist" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:8px 10px;max-height:160px;overflow-y:auto"></div>
-                </details>
-                </div>
                 <div id="cr-equipment-summary" style="display:none;margin-bottom:6px">
                   <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Summary</div>
                   <div id="cr-equipment-summary-body" style="display:flex;flex-direction:column;gap:2px"></div>
@@ -3234,6 +3220,17 @@
       const STORE = "dispatch_v1";
       const TECH_STORE = "dispatch_techs_v1";
       const API_BASE = "http://localhost:3000/api";
+
+      const TSTAT_OPTIONS = ["T-4","T-6","T-10","T-8321","Ecobee","Daikin One","TH2110"];
+      function buildTstatOptions(selected, includeBlank = false) {
+        const isOther = selected && !TSTAT_OPTIONS.includes(selected);
+        let opts = includeBlank ? `<option value="">— none —</option>` : "";
+        TSTAT_OPTIONS.forEach(t => {
+          opts += `<option value="${t}"${t === selected ? " selected" : ""}>${t}</option>`;
+        });
+        opts += `<option value="Other"${isOther ? " selected" : ""}>Other</option>`;
+        return opts;
+      }
 
       let jobs = [];
       let techs = [];
@@ -4895,19 +4892,24 @@
           </div>
 
           <!-- Thermostat -->
-          <div data-cef style="display:${ss.selectedThermostat?.name ? 'block' : 'none'};margin-bottom:10px">
+          <div data-cef style="margin-bottom:10px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
                         color:var(--text-dim);margin-bottom:4px">Thermostat</div>
-            <div style="display:flex;gap:6px;align-items:center">
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <input type="number" id="ce-tstat-qty-${idx}" value="${ss.thermostatQuantity || 1}"
                 min="1" step="1"
                 style="width:52px;font-size:12px;padding:4px 6px;background:var(--bg2);
                        border:1px solid var(--border2);border-radius:3px;color:var(--text);
                        text-align:center" />
-              <input type="text" id="ce-tstat-name-${idx}"
-                value="${esc(ss.selectedThermostat?.name || '')}"
-                placeholder="Name (blank = none)"
-                style="flex:1;font-size:12px;padding:4px 6px;background:var(--bg2);
+              <select id="ce-tstat-name-${idx}"
+                onchange="document.getElementById('ce-tstat-other-${idx}').style.display=this.value==='Other'?'inline-block':'none'"
+                style="flex:1;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text)">
+                ${buildTstatOptions(ss.selectedThermostat?.name || '', true)}
+              </select>
+              <input type="text" id="ce-tstat-other-${idx}" placeholder="Specify tstat…"
+                value="${esc((ss.selectedThermostat?.name && !TSTAT_OPTIONS.includes(ss.selectedThermostat.name)) ? ss.selectedThermostat.name : '')}"
+                style="display:${(ss.selectedThermostat?.name && !TSTAT_OPTIONS.includes(ss.selectedThermostat.name)) ? 'inline-block' : 'none'};flex:1;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);
                        border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
             </div>
           </div>
@@ -5107,7 +5109,10 @@
         j.savedState.notes = document.getElementById(`ce-notes-${idx}`).value.trim();
 
         // Thermostat
-        const tstatName = document.getElementById(`ce-tstat-name-${idx}`).value.trim();
+        const tstatSel = document.getElementById(`ce-tstat-name-${idx}`).value;
+        const tstatName = tstatSel === "Other"
+          ? document.getElementById(`ce-tstat-other-${idx}`).value.trim()
+          : tstatSel;
         j.savedState.selectedThermostat = tstatName ? { name: tstatName } : null;
         j.savedState.thermostatQuantity = parseInt(document.getElementById(`ce-tstat-qty-${idx}`).value) || 1;
 
@@ -7689,7 +7694,18 @@
               </tr></thead>
               <tbody>
                 ${record.items.map(i => `<tr data-item-id="${i.id}" style="border-bottom:1px solid var(--border)">
-                  <td style="padding:3px 4px"><input type="text" value="${esc(i.item_name)}" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="item_name" /></td>
+                  <td style="padding:3px 4px">${i.category === "Thermostat"
+                    ? `<select style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)"
+                         onchange="(function(s){var td=s.closest('td');td.querySelector('.hd-tstat-ot').style.display=s.value==='Other'?'inline-block':'none';if(s.value!=='Other')td.querySelector('[data-field=item_name]').value=s.value})(this)">
+                         ${buildTstatOptions(i.item_name)}
+                       </select>
+                       <input type="text" class="hd-tstat-ot" placeholder="Specify tstat…"
+                         style="display:${!TSTAT_OPTIONS.includes(i.item_name) && i.item_name ? 'inline-block' : 'none'};width:100%;margin-top:2px;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)"
+                         value="${esc(!TSTAT_OPTIONS.includes(i.item_name) ? i.item_name : '')}"
+                         oninput="this.closest('td').querySelector('[data-field=item_name]').value=this.value" />
+                       <input type="hidden" data-field="item_name" value="${esc(i.item_name)}" />`
+                    : `<input type="text" value="${esc(i.item_name)}" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="item_name" />`
+                  }</td>
                   <td style="padding:3px 4px"><select data-field="category" style="background:transparent;border:none;color:var(--text-dim);font-size:11px;width:100%">${["Service","Accessory","Fix","Thermostat","Refrigerant"].map(c=>`<option value="${c}" ${i.category===c?"selected":""}>${c}</option>`).join("")}</select></td>
                   <td style="padding:3px 4px;text-align:right"><input type="number" value="${i.quantity}" min="0" step="any" style="width:48px;text-align:right;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="quantity" /></td>
                   <td style="padding:3px 4px;text-align:right"><input type="number" value="${i.price}" min="0" step="any" style="width:52px;text-align:right;background:transparent;border:none;color:var(--amber);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="price" /></td>
@@ -8212,31 +8228,6 @@
       // ═══════════════════════════════════════
       let _crData = { income: [], equipment: [], refrigerant: [] };
 
-      const CR_EQUIPMENT_GROUPS = [
-        { label: "Tstats", items: ["T-4","T-6","T-10","T-8321","Ecobee","Daikin One","TH2110","Otro"] },
-        { label: "Zone Boards", items: ["HZ322","UT3000","Harmony"] },
-        { label: "Accessories", items: ["Float Switch","RDS","DAPC","Bypass Damper","Trane Harness","A2L R32 Sensor","A2L R445B Sensor"] },
-      ];
-
-      function buildCrChecklist() {
-        const container = document.getElementById("cr-eq-checklist");
-        container.innerHTML = CR_EQUIPMENT_GROUPS.map(g => `
-          <div style="grid-column:1/-1;font-size:9px;letter-spacing:.08em;color:var(--text-dim);text-transform:uppercase;margin-top:6px;margin-bottom:2px">${g.label}</div>
-          ${g.items.map(item => `
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px;white-space:nowrap">
-              <input type="checkbox" class="cr-eq-cb" value="${item}" checked style="accent-color:var(--amber);cursor:pointer" />
-              ${item}
-            </label>`).join("")}
-        `).join("");
-      }
-
-      function crCheckAll(state) {
-        document.querySelectorAll(".cr-eq-cb").forEach(cb => cb.checked = state);
-      }
-
-      function getCrSelectedItems() {
-        return Array.from(document.querySelectorAll(".cr-eq-cb:checked")).map(cb => cb.value);
-      }
 
       function crRefCheckAll(state) {
         document.querySelectorAll(".cr-ref-cb").forEach(cb => cb.checked = state);
@@ -8261,10 +8252,8 @@
         const tblWrap = document.getElementById("cr-tbl-equipment");
         empty.textContent = "Loading...";
         tblWrap.style.display = "none";
-        const selected = getCrSelectedItems();
-        if (!selected.length) { empty.textContent = "Select at least one item."; return; }
         try {
-          const res = await fetch(`${API_BASE}/reports/custom/equipment?from=${from}&to=${to}&items=${encodeURIComponent(selected.join(","))}`);
+          const res = await fetch(`${API_BASE}/reports/custom/equipment?from=${from}&to=${to}`);
           if (!res.ok) throw new Error(await res.text());
           const eqData = await res.json();
           _crData.equipment = eqData.rows || eqData;
@@ -8763,7 +8752,6 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       // Wire Quick Stats lazy load on first open + init new job selects
       document.addEventListener("DOMContentLoaded", () => {
         njBuildFlatSelects();
-        if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
         const det = document.querySelector("#panel-reports details");
         if (det) {
           let loaded = false;
@@ -8771,7 +8759,6 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
             if (det.open && !loaded) { loaded = true; await _loadQuickStats(); }
           });
         }
-        if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
       });
 
       async function _loadQuickStats() {

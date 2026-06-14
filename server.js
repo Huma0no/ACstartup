@@ -6,6 +6,13 @@ const path = require("path");
 const app = express();
 const port = 3000;
 
+const TECH_SUPPLIED_ACCESSORIES = [
+  "HZ322", "UT3000", "Harmony", "DAPC", "Float Switch",
+  "LP Kit Lennox 1stg", "LP Kit Lennox 2stg",
+  "LP Kit Goodman", "RDS",
+];
+// mirrors src/data.js TECH_SUPPLIED_ACCESSORIES — keep in sync if that list changes
+
 // Solo permite acceso desde localhost
 app.use(cors({ origin: ["http://localhost:3000", "null", "http://127.0.0.1:3000"] }));
 app.use(express.json());
@@ -312,9 +319,16 @@ app.post("/api/import", async (req, res) => {
             "Thermostat",
             state.selectedThermostat.name,
             qty,
-            0, 0,
+            0, 1,
           ]);
           await runStmt(updateInv, [qty, `%${state.selectedThermostat.name}%`]);
+        } else if (job.selectedThermostat?.name) {
+          await runStmt(insertItem, [
+            jobId, "Thermostat",
+            job.selectedThermostat.name,
+            job.thermostatQuantity || 1,
+            0, 1,
+          ]);
         }
 
         // 3. Procesar Servicios
@@ -334,16 +348,16 @@ app.post("/api/import", async (req, res) => {
             await runStmt(insertItem, [
               jobId, "Accessory", acc.name, 1,
               acc.price || acc.basePrice || 0,
-              acc.techSupplied !== false ? 1 : 0,
+              TECH_SUPPLIED_ACCESSORIES.includes(acc.name) ? 1 : 0,
             ]);
-            if (acc.techSupplied !== false) {
+            if (TECH_SUPPLIED_ACCESSORIES.includes(acc.name)) {
               await runStmt(updateInv, [1, `%${acc.name}%`]);
             }
           }
         } else {
           for (const acc of (job.accessories || [])) {
             await runStmt(insertItem, [
-              jobId, "Accessory", acc.displayName || acc.name, 1,
+              jobId, "Accessory", acc.name, 1,
               acc.price || 0,
               acc.techSupplied ? 1 : 0,
             ]);
@@ -360,7 +374,7 @@ app.post("/api/import", async (req, res) => {
           }
         } else {
           for (const fix of (job.fixes || [])) {
-            await runStmt(insertItem, [jobId, "Fix", fix.displayName || fix.name, 1, fix.price || 0, 0]);
+            await runStmt(insertItem, [jobId, "Fix", fix.name, 1, fix.price || 0, 0]);
           }
         }
       } catch (e) {
@@ -1152,21 +1166,16 @@ app.get("/api/reports/custom/income", (req, res) => {
 // CR-2. EQUIPMENT REPORT — date, address, item, qty (Thermostat + Accessory)
 // Accepts comma-separated ?items= list for checklist multi-select
 app.get("/api/reports/custom/equipment", (req, res) => {
-  const { from, to, items } = req.query;
+  const { from, to } = req.query;
   if (!from || !to) return res.status(400).json({ error: "from and to dates required" });
-
-  const selected = items ? items.split(",").map(s => s.trim()).filter(Boolean) : [];
-  if (!selected.length) return res.json({ rows: [], summary: [] });
-
-  const placeholders = selected.map(() => "?").join(",");
 
   const sqlRows = `
     SELECT ji.id AS job_item_id, j.date, j.address, ji.item_name, ji.quantity
     FROM job_items ji
     JOIN jobs j ON ji.job_id = j.id
-    WHERE ji.category IN ('Thermostat', 'Accessory')
-      AND j.date BETWEEN ? AND ?
-      AND ji.item_name IN (${placeholders})
+    WHERE j.date BETWEEN ? AND ?
+      AND ji.tech_supplied = 1
+      AND ji.category IN ('Accessory', 'Thermostat')
       AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
     ORDER BY j.date DESC, j.id ASC, ji.item_name ASC
   `;
@@ -1175,17 +1184,17 @@ app.get("/api/reports/custom/equipment", (req, res) => {
     SELECT ji.item_name AS item, SUM(ji.quantity) AS qty
     FROM job_items ji
     JOIN jobs j ON ji.job_id = j.id
-    WHERE ji.category IN ('Thermostat', 'Accessory')
-      AND j.date BETWEEN ? AND ?
-      AND ji.item_name IN (${placeholders})
+    WHERE j.date BETWEEN ? AND ?
+      AND ji.tech_supplied = 1
+      AND ji.category IN ('Accessory', 'Thermostat')
       AND ji.id NOT IN (SELECT job_item_id FROM restock_items)
     GROUP BY ji.item_name
     ORDER BY qty DESC
   `;
 
-  db.all(sqlRows, [from, to, ...selected], (err, rows) => {
+  db.all(sqlRows, [from, to], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    db.all(sqlSummary, [from, to, ...selected], (err2, summary) => {
+    db.all(sqlSummary, [from, to], (err2, summary) => {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json({ rows, summary });
     });

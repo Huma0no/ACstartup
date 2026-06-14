@@ -126,6 +126,53 @@ shows the technician's pending job list.
 
 ---
 
+## Fase D7 — Edit Homologation & Equipment Bug
+
+**Status:** Pending
+
+### D7.1 — Equipment fields not saved (resolved — non-issue)
+Investigated: data is saved correctly on import. The Edit modal
+within IMPORT PWA simply doesn't preview Equipment fields before
+confirming — cosmetic only, no fix needed.
+
+### D7.2 — Full editability, both views
+Import PWA Edit y History Edit deben tener el mismo set de
+campos editables: Address, Subdivision, Builder, Equipment
+(Sys1 + Sys2 si isTwoSystems), Refrigerant, isTwoSystems,
+isTemporary, isPartial, reportText, Notes, y todos los items
+(Service/Accessory/Fix/Thermostat). Sin restricciones por
+procedencia del dato.
+
+### D7.3 — Thermostat dropdown (consistencia para restock)
+selectedThermostat.name pasa de texto libre a dropdown con
+lista canónica (misma de src/data.js: Ecobee, T-6, T-10,
+TH2110, Daikin One, etc.) + opción "Other" con texto libre.
+Motivo: el restock report agrupa por item_name; nombres
+inconsistentes ("T-10"/"T10"/"T 10") fragmentan el conteo de
+restock de termostatos tech-supplied.
+
+### D7.4 — Thermostat row: qty editable, sin precio propio
+La fila Thermostat permite editar qty (refleja thermostatQuantity)
+pero no tiene price editable — el precio del tstat está
+implícito en el Service, no en el item Thermostat.
+
+### D7.5 — Service displayName no debe incluir info de tstat
+"System Prestarted 2 Ecobee tstats" → "Prestart System"
+(o equivalente limpio). El conteo/nombre del tstat ya vive en
+el row Thermostat separado. Revisar dónde el PWA genera este
+displayName concatenado.
+
+### D7.6 — +ADD solo Service/Accessory/Fix
+Botón +ADD no incluye categoría Thermostat (se edita vía D7.4).
+Al agregar un item, recalcular el total automáticamente.
+
+### D7.7 — edit_log (reemplaza "Edited by")
+Tabla edit_log: job_id, timestamp, resumen del cambio,
+source ('dispatch' | 'import'). Reemplaza el campo manual
+"Edited by". History muestra mini-historial expandible por job
+(ej. "12-06 20:15 — editado desde Import PWA").
+---
+
 ## Payments Section
 
 **Status:** Purpose unclear — needs audit before deciding
@@ -141,6 +188,7 @@ before planning changes.
 |---|---|---|---|
 | jobs | is_partial | INTEGER | 0 |
 | restock_items | quantity | REAL | 1 |
+| edit_log | (tabla nueva) | — | — |
 
 ---
 
@@ -153,6 +201,7 @@ before planning changes.
 5. D4 — RESTOCK module (complex)
 6. D2B — INCOME panel (future)
 7. D6 — Additional features (future)
+8. D7 — Edit homologation & equipment bug (pending)
 
 ---
 

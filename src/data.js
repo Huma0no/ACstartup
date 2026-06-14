@@ -134,7 +134,7 @@ export const CUSTOM_PRICE_FIXES = [FIXES.OTRO];
 // THERMOSTATS
 // ---------------------------------------------------------------------------
 
-export const THERMOSTATS = ["T-6", "T-10", "Ecobee", "Daikin One", "TH2110"];
+export const THERMOSTATS = ["T-4", "T-6", "T-10", "T-8321", "Ecobee", "Daikin One", "TH2110"];
 
 // ---------------------------------------------------------------------------
 // BUILDERS
