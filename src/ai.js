@@ -40,8 +40,13 @@ function buildSystemPrompt(job) {
     }
   }
 
-  appendSystem("System 1", job.system1);
-  appendSystem("System 2", job.system2);
+  const sysList = Array.isArray(job.systems) && job.systems.length > 0
+    ? job.systems
+    : [job.system1, job.system2].filter(Boolean);
+
+  sysList.forEach((sys, idx) => {
+    appendSystem(`System ${idx + 1}`, sys);
+  });
 
   return HVAC_BASE_PROMPT + "\n\n" + lines.join("\n");
 }

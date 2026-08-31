@@ -3,7 +3,7 @@
 
 import {
   SERVICES, ACCESSORIES, FIXES,
-  STANDALONE_SERVICES, TWO_SYSTEMS_ACCESSORIES, TECH_SUPPLIED_ACCESSORIES, ACCESSORY_COMPANIONS, ZONE_BOARDS,
+  STANDALONE_SERVICES, SCALABLE_ACCESSORIES, TWO_SYSTEMS_ACCESSORIES, TECH_SUPPLIED_ACCESSORIES, ACCESSORY_COMPANIONS, ZONE_BOARDS,
   CUSTOM_PRICE_ACCESSORIES, CUSTOM_PRICE_FIXES,
   DEFAULT_PRICES, ACCESSORY_DISPLAY, FIX_DISPLAY, FINISH_SERVICE_PRICE,
 } from "./data.js";
@@ -11,7 +11,7 @@ import {
   saveWorkspaceState, getWorkspaceState, clearWorkspaceState,
   saveImageToDB, getImageFromDB, deleteImageFromDB, clearImagesFromDB,
 } from "./storage.js";
-import { compressImage, getGpsFromImage } from "./utils.js";
+import { processImageWithGps } from "./utils.js";
 import { updateJob } from "./jobs.js";
 
 // ---------------------------------------------------------------------------
@@ -36,9 +36,60 @@ export function initWorkspace(job) {
     _state = saved;
     return;
   }
+
+  // Normalize systems from job
+  let systems = [];
+  if (Array.isArray(job.systems) && job.systems.length > 0) {
+    systems = job.systems.map((s, idx) => ({
+      id: s.id || `sys_${idx + 1}`,
+      indoor: s.indoor || "",
+      outdoor: s.outdoor || "",
+      coil: s.coil || "",
+      links: s.links || {},
+      serviceType: s.serviceType || null,
+      weightInData: s.weightInData || (idx === 0 ? job.weightInData : idx === 1 ? job.weightInData2 : null) || null,
+      accessories: s.accessories || [],
+    }));
+  } else if (job.system1) {
+    systems.push({
+      id: "sys_1",
+      indoor: job.system1.indoor || "",
+      outdoor: job.system1.outdoor || "",
+      coil: "",
+      links: job.system1.links || {},
+      serviceType: job.system1.serviceType || job.serviceType || null,
+      weightInData: job.weightInData || null,
+      accessories: [],
+    });
+    if (job.system2 || job.isTwoSystems) {
+      systems.push({
+        id: "sys_2",
+        indoor: job.system2?.indoor || "",
+        outdoor: job.system2?.outdoor || "",
+        coil: "",
+        links: job.system2?.links || {},
+        serviceType: job.system2?.serviceType || null,
+        weightInData: job.weightInData2 || null,
+        accessories: [],
+      });
+    }
+  } else {
+    systems.push({
+      id: "sys_1",
+      indoor: "",
+      outdoor: "",
+      coil: "",
+      links: {},
+      serviceType: job.serviceType || null,
+      weightInData: null,
+      accessories: [],
+    });
+  }
+
   _state = {
     jobId:               job.id,
-    isTwoSystems:        job.isTwoSystems || false,
+    systems,
+    isTwoSystems:        systems.length === 2,
     isTemporary:         false,
     selectedServices:    [],
     selectedThermostat:  null,
@@ -47,10 +98,10 @@ export function initWorkspace(job) {
     customAccessories:   [], // [{ name, price }] for OTRO / OUT_OF_TOWN
     selectedFixes:       [],
     customFixes:         [], // [{ name, price }] for OTRO
-    system2:             null,
-    weightInData:        null,
-    weightInData2:       null,
-    notes:               "",
+    system2:             systems[1] || null,
+    weightInData:        systems[0]?.weightInData || null,
+    weightInData2:       systems[1]?.weightInData || null,
+    notes:               job.notes || "",
     sitePhotoMeta:       [],
   };
   for (const name of (job.jobAccessories || []))
@@ -63,6 +114,11 @@ export function initWorkspace(job) {
 
 export function getState() {
   return _state;
+}
+
+export function setSystemService(systemIndex, serviceType) {
+  if (!_state || !_state.systems || !_state.systems[systemIndex]) return;
+  _state.systems[systemIndex].serviceType = serviceType || null;
 }
 
 export function clearWorkspace() {
@@ -84,6 +140,13 @@ export function clearWorkspace() {
 export function toggleService(name) {
   const s = _state;
   const already = s.selectedServices.includes(name);
+
+  // Clear any per-system overrides so global selection applies across all systems by default
+  if (Array.isArray(s.systems)) {
+    s.systems.forEach((sys) => {
+      sys.serviceType = null;
+    });
+  }
 
   if (name === SERVICES.CANCEL) {
     s.selectedServices = already ? [] : [SERVICES.CANCEL];
@@ -189,16 +252,83 @@ export function toggleFix(name, customPrice = null) {
 // ---------------------------------------------------------------------------
 
 export function setOption(name, value) {
-  if (name === "isTwoSystems") _state.isTwoSystems = value;
-  if (name === "isTemporary")  _state.isTemporary  = value;
+  if (name === "isTwoSystems") {
+    _state.isTwoSystems = value;
+    if (value && _state.systems.length < 2) {
+      addSystem();
+    } else if (!value && _state.systems.length > 1) {
+      while (_state.systems.length > 1) {
+        removeSystem(_state.systems.length - 1);
+      }
+    }
+  }
+  if (name === "isTemporary") _state.isTemporary = value;
 }
 
 // ---------------------------------------------------------------------------
-// System 2 models — set in-field when job had no system2 defined
+// Dynamic Systems Management
 // ---------------------------------------------------------------------------
 
+function _syncLegacySystemFields() {
+  if (!_state) return;
+  _state.isTwoSystems = _state.systems.length === 2;
+  _state.system2 = _state.systems[1] || null;
+  _state.weightInData = _state.systems[0]?.weightInData || null;
+  _state.weightInData2 = _state.systems[1]?.weightInData || null;
+}
+
+export function addSystem(data = {}) {
+  if (!_state) return null;
+  if (!Array.isArray(_state.systems)) _state.systems = [];
+  const idx = _state.systems.length + 1;
+  const sys = {
+    id: data.id || `sys_${idx}`,
+    indoor: data.indoor || "",
+    outdoor: data.outdoor || "",
+    coil: data.coil || "",
+    links: data.links || {},
+    weightInData: data.weightInData || null,
+    accessories: data.accessories || [],
+  };
+  _state.systems.push(sys);
+  _syncLegacySystemFields();
+  return sys;
+}
+
+export function removeSystem(index) {
+  if (!_state || !Array.isArray(_state.systems)) return;
+  if (index > 0 && index < _state.systems.length) {
+    _state.systems.splice(index, 1);
+    _syncLegacySystemFields();
+  }
+}
+
+export function updateSystem(index, data) {
+  if (!_state || !Array.isArray(_state.systems)) return;
+  if (_state.systems[index]) {
+    Object.assign(_state.systems[index], data);
+    _syncLegacySystemFields();
+  }
+}
+
+export function setSystemModels(index, indoor = "", coil = "", outdoor = "") {
+  if (!_state || !Array.isArray(_state.systems)) return;
+  if (_state.systems[index]) {
+    _state.systems[index].indoor = indoor;
+    _state.systems[index].coil = coil;
+    _state.systems[index].outdoor = outdoor;
+    _syncLegacySystemFields();
+  }
+}
+
+// Legacy alias for System 2
 export function setSystem2Models(indoor = "", coil = "", outdoor = "") {
-  _state.system2 = { indoor, coil, outdoor };
+  if (!_state) return;
+  if (_state.systems.length < 2) {
+    addSystem({ indoor, coil, outdoor });
+  } else {
+    setSystemModels(1, indoor, coil, outdoor);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -206,8 +336,13 @@ export function setSystem2Models(indoor = "", coil = "", outdoor = "") {
 // ---------------------------------------------------------------------------
 
 export function setWeightInData(data, system = 1) {
-  if (system === 1) _state.weightInData  = data;
-  else              _state.weightInData2 = data;
+  if (!_state) return;
+  const idx = typeof system === "number" ? system - 1 : 0;
+  if (_state.systems && _state.systems[idx]) {
+    _state.systems[idx].weightInData = data;
+  }
+  if (idx === 0) _state.weightInData  = data;
+  else if (idx === 1) _state.weightInData2 = data;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,11 +351,11 @@ export function setWeightInData(data, system = 1) {
 
 export function setNotes(text) { _state.notes = text; }
 
-export function addSitePhoto(slug, label, file) {
-  _sitePhotos[slug] = { file, label };
+export function addSitePhoto(slug, label, file, gps = null, gpsSource = null) {
+  _sitePhotos[slug] = { file, label, gps, gpsSource };
   if (!_state.sitePhotoMeta.some((m) => m.slug === slug))
     _state.sitePhotoMeta.push({ slug, label });
-  saveImageToDB(_dbKey("site_" + slug), file, null);
+  saveImageToDB(_dbKey("site_" + slug), file, gps);
 }
 
 export function removeSitePhoto(slug) {
@@ -234,18 +369,26 @@ export function getSitePhotos() { return _sitePhotos; }
 export function getSitePhotoCount() { return Object.keys(_sitePhotos).length; }
 
 export function getPhotoCount() {
-  const wi = ["weight", "fan", "weight2", "fan2"].filter((k) => _photos[k] !== null).length;
+  const wi = Object.keys(_photos).filter((k) => _photos[k] !== null).length;
   return wi + Object.keys(_sitePhotos).length;
 }
 
 export function getAllPhotos() {
   const result = [];
-  const labels = { weight: "Scale Sys1", fan: "FanSpeed Sys1", weight2: "Scale Sys2", fan2: "FanSpeed Sys2" };
-  for (const [key, label] of Object.entries(labels)) {
-    if (_photos[key]) result.push({ file: _photos[key].file, label });
+  for (const [key, item] of Object.entries(_photos)) {
+    if (item?.file) {
+      let label = "Photo";
+      if (key === "weight" || key === "weight_1") label = "Scale Sys1";
+      else if (key === "fan" || key === "fan_1") label = "FanSpeed Sys1";
+      else if (key === "weight2" || key === "weight_2") label = "Scale Sys2";
+      else if (key === "fan2" || key === "fan_2") label = "FanSpeed Sys2";
+      else if (key.startsWith("weight_")) label = `Scale Sys${key.replace("weight_", "")}`;
+      else if (key.startsWith("fan_")) label = `FanSpeed Sys${key.replace("fan_", "")}`;
+      result.push({ file: item.file, label, gps: item.gps, gpsSource: item.gpsSource });
+    }
   }
-  for (const { file, label } of Object.values(_sitePhotos)) {
-    result.push({ file, label });
+  for (const { file, label, gps, gpsSource } of Object.values(_sitePhotos)) {
+    if (file) result.push({ file, label, gps, gpsSource });
   }
   return result;
 }
@@ -254,7 +397,7 @@ export async function initSitePhotos() {
   _sitePhotos = {};
   for (const { slug, label } of (_state?.sitePhotoMeta || [])) {
     const data = await getImageFromDB(_dbKey("site_" + slug));
-    if (data?.file) _sitePhotos[slug] = { file: data.file, label };
+    if (data?.file) _sitePhotos[slug] = { file: data.file, label, gps: data.gps, gpsSource: data.gps ? "exif" : null };
   }
   return _sitePhotos;
 }
@@ -264,41 +407,73 @@ export async function initSitePhotos() {
 // prices: DEFAULT_PRICES structure, merged with user settings by caller
 // ---------------------------------------------------------------------------
 
+// prices: DEFAULT_PRICES structure, merged with user settings by caller
+// ---------------------------------------------------------------------------
+
 export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
-  const { selectedServices, selectedAccessories, customAccessories,
-          selectedFixes, customFixes, isTwoSystems } = state;
+  const { selectedServices = [], selectedAccessories = [], customAccessories = [],
+          selectedFixes = [], customFixes = [], systems = [], isTwoSystems } = state;
+  const sysList = Array.isArray(systems) && systems.length > 0
+    ? systems
+    : [{ id: "sys_1" }, ...(isTwoSystems ? [{ id: "sys_2" }] : [])];
+  const sysCount = sysList.length || (isTwoSystems ? 2 : 1);
 
   // Rule 6: Cancel → everything is $0
   if (selectedServices.includes(SERVICES.CANCEL)) {
     return { service: 0, accessory: 0, fix: 0, total: 0 };
   }
 
-  // --- Service ---
-  const hasFinish   = selectedServices.includes(SERVICES.FINISH);
-  const hasAC       = selectedServices.includes(SERVICES.AC);
-  const hasHeat     = selectedServices.includes(SERVICES.HEAT);
-  const hasPrestart = selectedServices.includes(SERVICES.PRESTART);
-  const hasDriveRun = selectedServices.includes(SERVICES.DRIVE_RUN);
+  const getSingleServicePrice = (svcName) => {
+    if (!svcName) return 0;
+    if (svcName === SERVICES.FINISH) return FINISH_SERVICE_PRICE;
+    if (svcName === SERVICES.AC_HEAT) return prices.SERVICE[SERVICES.AC_HEAT] ?? 30;
+    if (svcName === SERVICES.AC) return prices.SERVICE[SERVICES.AC] ?? 30;
+    if (svcName === SERVICES.HEAT) return prices.SERVICE[SERVICES.HEAT] ?? 30;
+    if (svcName === SERVICES.PRESTART) return prices.SERVICE[SERVICES.PRESTART] ?? 20;
+    if (svcName === SERVICES.DRIVE_RUN) return prices.SERVICE[SERVICES.DRIVE_RUN] ?? 10;
+    return prices.SERVICE[svcName] ?? 0;
+  };
+
+  const getGlobalSingleServicePrice = () => {
+    const hasFinish   = selectedServices.includes(SERVICES.FINISH);
+    const hasAC       = selectedServices.includes(SERVICES.AC);
+    const hasHeat     = selectedServices.includes(SERVICES.HEAT);
+    const hasPrestart = selectedServices.includes(SERVICES.PRESTART);
+    const hasDriveRun = selectedServices.includes(SERVICES.DRIVE_RUN);
+
+    if (hasFinish) {
+      return (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0;
+    } else if (hasAC && hasHeat) {
+      return prices.SERVICE[SERVICES.AC_HEAT] ?? 30;
+    } else if (hasAC) {
+      return prices.SERVICE[SERVICES.AC] ?? 30;
+    } else if (hasHeat) {
+      return prices.SERVICE[SERVICES.HEAT] ?? 30;
+    } else if (hasPrestart) {
+      return prices.SERVICE[SERVICES.PRESTART] ?? 20;
+    } else if (hasDriveRun) {
+      return prices.SERVICE[SERVICES.DRIVE_RUN] ?? 10;
+    }
+    return 0;
+  };
+
+  const hasExplicitPerSystem = sysList.some(s => s.serviceType);
 
   let service = 0;
-  if (hasFinish) {
-    service = (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0;
-  } else if (hasAC && hasHeat) {
-    // Rule 1: AC + Heat combined = $30, not $60
-    service = prices.SERVICE[SERVICES.AC_HEAT];
-  } else if (hasAC) {
-    service = prices.SERVICE[SERVICES.AC];
-  } else if (hasHeat) {
-    service = prices.SERVICE[SERVICES.HEAT];
-  } else if (hasPrestart) {
-    service = prices.SERVICE[SERVICES.PRESTART];
-  } else if (hasDriveRun) {
-    service = prices.SERVICE[SERVICES.DRIVE_RUN];
+  if (hasExplicitPerSystem) {
+    for (const s of sysList) {
+      if (s.serviceType) {
+        service += getSingleServicePrice(s.serviceType);
+      } else {
+        service += getGlobalSingleServicePrice();
+      }
+    }
+  } else {
+    service = getGlobalSingleServicePrice() * sysCount;
   }
-  // Rule 2: 2 Systems doubles service price
-  if (isTwoSystems) service *= 2;
 
   // --- Accessories ---
+  const hasFinish = selectedServices.includes(SERVICES.FINISH) || sysList.some(s => s.serviceType === SERVICES.FINISH);
   let accessory = 0;
   for (const name of selectedAccessories) {
     let price = prices.ACCESSORY[name] ?? 0;
@@ -306,8 +481,8 @@ export function calculateTotals(state = _state, prices = DEFAULT_PRICES) {
     if (name === ACCESSORIES.WEIGHT_IN_DATA && hasFinish) {
       price += prices.WEIGHT_IN_FINISH_ADDON;
     }
-    // Rule 2: selected accessories double with 2 Systems
-    if (isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
+    // Multi-system multiplier for scalable accessories
+    if (sysCount > 1 && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= sysCount;
     accessory += price;
   }
 
@@ -344,6 +519,33 @@ export function buildCompletion(job, prices = DEFAULT_PRICES) {
   const totals = calculateTotals(s, prices);
   const now = new Date();
 
+  const systems = Array.isArray(s.systems) && s.systems.length > 0
+    ? s.systems
+    : (Array.isArray(job.systems) && job.systems.length > 0
+        ? job.systems
+        : [
+            {
+              id: "sys_1",
+              indoor: job.system1?.indoor || "",
+              outdoor: job.system1?.outdoor || "",
+              links: job.system1?.links || {},
+              serviceType: job.system1?.serviceType || null,
+              weightInData: s.weightInData,
+              accessories: [],
+            },
+            ...((s.isTwoSystems || s.system2)
+              ? [{
+                  id: "sys_2",
+                  indoor: (s.system2 ?? job.system2)?.indoor || "",
+                  outdoor: (s.system2 ?? job.system2)?.outdoor || "",
+                  links: (s.system2 ?? job.system2)?.links || {},
+                  serviceType: (s.system2 ?? job.system2)?.serviceType || null,
+                  weightInData: s.weightInData2,
+                  accessories: [],
+                }]
+              : [])
+          ]);
+
   return {
     jobId:              job.id,
     address:            job.address,
@@ -351,20 +553,21 @@ export function buildCompletion(job, prices = DEFAULT_PRICES) {
     builder:            job.builder,
     timestamp:          now.toISOString(),
     date:               now.toISOString().slice(0, 10),
-    isTwoSystems:       s.isTwoSystems,
+    systems,
+    isTwoSystems:       systems.length === 2,
     isTemporary:        s.isTemporary,
     refrigerant:        "",         // resolved by caller from equipment data
-    outdoor:            job.system1?.outdoor || "",
-    indoor:             job.system1?.indoor || "",
-    outdoor2:           (s.system2 ?? job.system2)?.outdoor || null,
-    indoor2:            (s.system2 ?? job.system2)?.indoor || null,
-    services:           _buildServiceItems(s, totals.service),
+    outdoor:            systems[0]?.outdoor || job.system1?.outdoor || "",
+    indoor:             systems[0]?.indoor  || job.system1?.indoor  || "",
+    outdoor2:           systems[1]?.outdoor || (s.system2 ?? job.system2)?.outdoor || null,
+    indoor2:            systems[1]?.indoor  || (s.system2 ?? job.system2)?.indoor  || null,
+    services:           _buildServiceItems(s, totals.service, prices),
     selectedThermostat: s.selectedThermostat ? { name: s.selectedThermostat, techSupplied: true } : null,
     thermostatQuantity: s.thermostatQuantity,
     accessories:        _buildAccessoryItems(s, prices),
     fixes:              _buildFixItems(s, prices),
-    weightInData:       s.weightInData,
-    weightInData2:      s.weightInData2,
+    weightInData:       systems[0]?.weightInData || s.weightInData,
+    weightInData2:      systems[1]?.weightInData || s.weightInData2,
     notes:              s.notes,
     sitePhotoMeta:      s.sitePhotoMeta,
     totals,
@@ -376,63 +579,123 @@ export function buildCompletion(job, prices = DEFAULT_PRICES) {
 // Internal builders — only called by buildCompletion
 // ---------------------------------------------------------------------------
 
-function _buildServiceItems(s, serviceTotal) {
+function _buildServiceItems(s, serviceTotal, prices = DEFAULT_PRICES) {
   if (s.selectedServices.includes(SERVICES.CANCEL)) {
     return [{ name: SERVICES.CANCEL, displayName: "service canceled", price: 0 }];
   }
 
-  const hasFinish = s.selectedServices.includes(SERVICES.FINISH);
-  const hasAC     = s.selectedServices.includes(SERVICES.AC);
-  const hasHeat   = s.selectedServices.includes(SERVICES.HEAT);
+  const systems = Array.isArray(s.systems) && s.systems.length > 0
+    ? s.systems
+    : [{ id: "sys_1" }, ...(s.isTwoSystems ? [{ id: "sys_2" }] : [])];
+  const sysCount = systems.length || (s.isTwoSystems ? 2 : 1);
 
-  let name, displayName;
+  const formatSingleService = (svcName) => {
+    if (!svcName) return { name: "", label: "", price: 0 };
+    if (svcName === SERVICES.FINISH) {
+      return { name: SERVICES.FINISH, label: "Finish/", price: FINISH_SERVICE_PRICE };
+    }
+    if (svcName === SERVICES.AC_HEAT) {
+      return { name: SERVICES.AC_HEAT, label: s.isTemporary ? "AC & Heat started (Temporarily)" : "AC & Heat started", price: prices.SERVICE[SERVICES.AC_HEAT] ?? 30 };
+    }
+    if (svcName === SERVICES.AC) {
+      return { name: SERVICES.AC, label: s.isTemporary ? "AC (Temporarily) started" : "AC started", price: prices.SERVICE[SERVICES.AC] ?? 30 };
+    }
+    if (svcName === SERVICES.HEAT) {
+      return { name: SERVICES.HEAT, label: s.isTemporary ? "Heat (Temporarily) started" : "Heat started", price: prices.SERVICE[SERVICES.HEAT] ?? 30 };
+    }
+    if (svcName === SERVICES.PRESTART) {
+      return { name: SERVICES.PRESTART, label: "System Prestarted", price: prices.SERVICE[SERVICES.PRESTART] ?? 20 };
+    }
+    if (svcName === SERVICES.DRIVE_RUN) {
+      return { name: SERVICES.DRIVE_RUN, label: "Drive Run", price: prices.SERVICE[SERVICES.DRIVE_RUN] ?? 10 };
+    }
+    return { name: svcName, label: svcName, price: prices.SERVICE[svcName] ?? 0 };
+  };
 
-  if (hasFinish) {
-    name = SERVICES.FINISH;
-    const combo = hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
-    displayName = combo
-      ? `Finish/ ${combo} started${s.isTemporary ? " (Temporarily)" : ""}`
-      : "Finish/";
-  } else if (hasAC && hasHeat) {
-    name = SERVICES.AC_HEAT;
-    displayName = s.isTemporary ? "AC & Heat started (Temporarily)" : "AC & Heat started";
-  } else if (hasAC) {
-    name = SERVICES.AC;
-    // Rule 7: Temporarily modifies text only, not price
-    displayName = s.isTemporary ? "AC (Temporarily) started" : "AC started";
-  } else if (hasHeat) {
-    name = SERVICES.HEAT;
-    displayName = s.isTemporary ? "Heat (Temporarily) started" : "Heat started";
-  } else if (s.selectedServices.includes(SERVICES.PRESTART)) {
-    name = SERVICES.PRESTART;
-    displayName = "System Prestarted";
-  } else if (s.selectedServices.includes(SERVICES.DRIVE_RUN)) {
-    name = SERVICES.DRIVE_RUN;
-    displayName = "Drive Run";
-  } else {
+  const getGlobalServiceInfo = () => {
+    const hasFinish = s.selectedServices.includes(SERVICES.FINISH);
+    const hasAC     = s.selectedServices.includes(SERVICES.AC);
+    const hasHeat   = s.selectedServices.includes(SERVICES.HEAT);
+
+    if (hasFinish) {
+      const combo = hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
+      const label = combo
+        ? `Finish/ ${combo} started${s.isTemporary ? " (Temporarily)" : ""}`
+        : "Finish/";
+      return { name: SERVICES.FINISH, label, price: (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0 };
+    } else if (hasAC && hasHeat) {
+      return { name: SERVICES.AC_HEAT, label: s.isTemporary ? "AC & Heat started (Temporarily)" : "AC & Heat started", price: prices.SERVICE[SERVICES.AC_HEAT] ?? 30 };
+    } else if (hasAC) {
+      return { name: SERVICES.AC, label: s.isTemporary ? "AC (Temporarily) started" : "AC started", price: prices.SERVICE[SERVICES.AC] ?? 30 };
+    } else if (hasHeat) {
+      return { name: SERVICES.HEAT, label: s.isTemporary ? "Heat (Temporarily) started" : "Heat started", price: prices.SERVICE[SERVICES.HEAT] ?? 30 };
+    } else if (s.selectedServices.includes(SERVICES.PRESTART)) {
+      return { name: SERVICES.PRESTART, label: "System Prestarted", price: prices.SERVICE[SERVICES.PRESTART] ?? 20 };
+    } else if (s.selectedServices.includes(SERVICES.DRIVE_RUN)) {
+      return { name: SERVICES.DRIVE_RUN, label: "Drive Run", price: prices.SERVICE[SERVICES.DRIVE_RUN] ?? 10 };
+    }
+    return { name: "", label: "", price: 0 };
+  };
+
+  const globalInfo = getGlobalServiceInfo();
+  const perSystemServices = systems.map((sys) => {
+    if (sys.serviceType) {
+      return formatSingleService(sys.serviceType);
+    }
+    return globalInfo;
+  });
+
+  if (perSystemServices.every(p => !p.name)) {
     return [];
   }
 
-  if (s.isTwoSystems) displayName += " (2 Systems)";
+  const firstSvc = perSystemServices[0];
+  const allIdentical = perSystemServices.every(p => p.name === firstSvc.name && p.label === firstSvc.label);
 
+  let tstatSuffix = "";
   if (s.selectedThermostat) {
     const qty   = s.thermostatQuantity;
     const label = qty === 1 ? "tstat" : "tstats";
-    displayName += ` ${qty} ${s.selectedThermostat} ${label}`;
+    tstatSuffix = ` ${qty} ${s.selectedThermostat} ${label}`;
   }
 
-  return [{ name, displayName, price: serviceTotal }];
+  if (allIdentical) {
+    let displayName = firstSvc.label;
+    if (sysCount > 1) displayName += ` (${sysCount} Systems)`;
+    displayName += tstatSuffix;
+    return [{ name: firstSvc.name, displayName, price: serviceTotal }];
+  }
+
+  // Mixed services: return sequential per-system service items
+  const items = perSystemServices.map((svc, idx) => ({
+    name: svc.name,
+    displayName: `Sys ${idx + 1}: ${svc.label}`,
+    price: svc.price,
+    systemIndex: idx,
+  }));
+
+  if (tstatSuffix) {
+    items[items.length - 1].displayName += tstatSuffix;
+  }
+
+  return items;
 }
 
 function _buildAccessoryItems(s, prices) {
   const items = [];
   const hasFinish = s.selectedServices.includes(SERVICES.FINISH);
+  const sysCount = Array.isArray(s.systems) && s.systems.length > 0
+    ? s.systems.length
+    : (s.isTwoSystems ? 2 : 1);
+  const scalable = SCALABLE_ACCESSORIES || TWO_SYSTEMS_ACCESSORIES;
 
   for (const name of s.selectedAccessories) {
     let price = prices.ACCESSORY[name] ?? 0;
     if (name === ACCESSORIES.WEIGHT_IN_DATA && hasFinish) price += prices.WEIGHT_IN_FINISH_ADDON;
-    if (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name)) price *= 2;
-    const displayName = (ACCESSORY_DISPLAY[name]?.report || name.toLowerCase()) + (s.isTwoSystems && TWO_SYSTEMS_ACCESSORIES.includes(name) ? " (2 sys)" : "");
+    const isScalable = scalable.includes(name);
+    if (sysCount > 1 && isScalable) price *= sysCount;
+    const suffix = (sysCount > 1 && isScalable) ? ` (${sysCount} sys)` : "";
+    const displayName = (ACCESSORY_DISPLAY[name]?.report || name.toLowerCase()) + suffix;
     items.push({ name, displayName, price, techSupplied: TECH_SUPPLIED_ACCESSORIES.includes(name) });
   }
 
@@ -474,7 +737,7 @@ function _clearSlot(key, objectUrl, previewContainer) {
   _onWeighInPhotoChange?.();
 }
 
-function _showPreview(key, file, gps) {
+function _showPreview(key, file, gps, gpsSource) {
   const container = document.getElementById(`photo-preview-${key}`);
   if (!container) return;
 
@@ -486,7 +749,9 @@ function _showPreview(key, file, gps) {
 
   const img = document.createElement("img");
   img.src = objectUrl;
-  img.style.cssText = "width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);";
+  img.setAttribute("data-lightbox-src", objectUrl);
+  img.style.cssText = "width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);cursor:pointer;";
+  img.title = "Click to enlarge";
 
   const clearBtn = document.createElement("button");
   clearBtn.type = "button";
@@ -501,8 +766,10 @@ function _showPreview(key, file, gps) {
 
   if (gps) {
     const chip = document.createElement("span");
-    chip.textContent = "EXIF";
-    chip.style.cssText = "font-size:var(--font-size-xs);color:var(--color-text-secondary);";
+    chip.className = "img-gps-chip";
+    chip.textContent = gpsSource === "device" ? "📍 GPS" : "📍 EXIF";
+    chip.title = gpsSource === "device" ? `Device GPS: ${gps.lat}, ${gps.lon}` : `EXIF GPS: ${gps.lat}, ${gps.lon}`;
+    chip.style.cssText = "font-size:var(--font-size-xs);color:var(--color-accent, #38bdf8);font-weight:600;";
     wrap.appendChild(chip);
   }
 
@@ -512,11 +779,10 @@ function _showPreview(key, file, gps) {
 
 async function _handleFile(file, key) {
   try {
-    const gps        = await getGpsFromImage(file);
-    const compressed = await compressImage(file, 0.8, 1600);
-    _photos[key]     = { file: compressed, gps };
-    await saveImageToDB(_dbKey(key), compressed, gps);
-    _showPreview(key, compressed, gps);
+    const { file: processedFile, gps, gpsSource } = await processImageWithGps(file, 0.8, 1600);
+    _photos[key]     = { file: processedFile, gps, gpsSource };
+    await saveImageToDB(_dbKey(key), processedFile, gps);
+    _showPreview(key, processedFile, gps, gpsSource);
   } catch (e) {
     console.error("Error processing photo:", e);
     _photos[key] = null;
@@ -602,22 +868,35 @@ function _setupPhotoRow(containerId, keys, includeNTC) {
 }
 
 async function _restorePhotos() {
-  for (const key of ["weight", "fan", "weight2", "fan2"]) {
+  const keysToRestore = Object.keys(_photos);
+  for (let i = 1; i <= 8; i++) {
+    keysToRestore.push(i === 1 ? "weight" : (i === 2 ? "weight2" : `weight_${i}`));
+    keysToRestore.push(i === 1 ? "fan"    : (i === 2 ? "fan2"    : `fan_${i}`));
+  }
+  const uniqueKeys = [...new Set(keysToRestore)];
+  for (const key of uniqueKeys) {
     const data = await getImageFromDB(_dbKey(key));
     if (data?.file) {
-      _photos[key] = { file: data.file, gps: data.gps };
-      _showPreview(key, data.file, data.gps);
+      const gpsSource = data.gps ? (data.gpsSource || "exif") : null;
+      _photos[key] = { file: data.file, gps: data.gps, gpsSource };
+      _showPreview(key, data.file, data.gps, gpsSource);
     }
   }
 }
 
 export function onWeighInPhotoChange(cb) { _onWeighInPhotoChange = cb; }
 
-export function initWeighInPhotos(address) {
-  if (_photoRowsInitialized) return;
+export function initWeighInPhotos(address, systemCount = 1) {
   _dbPrefix = address.replace(/[^a-z0-9]/gi, "_").toLowerCase().slice(0, 24);
-  _setupPhotoRow("wi-photo-row-1", ["weight", "fan"], "wi-new-total-charge");
-  _setupPhotoRow("wi-photo-row-2", ["weight2", "fan2"], "wi-new-total-charge-2");
+  const count = Math.max(1, systemCount || 1);
+  for (let i = 1; i <= count; i++) {
+    const kWeight = i === 1 ? "weight" : (i === 2 ? "weight2" : `weight_${i}`);
+    const kFan    = i === 1 ? "fan"    : (i === 2 ? "fan2"    : `fan_${i}`);
+    _SLOT_LABELS[kWeight] = "Scale";
+    _SLOT_LABELS[kFan] = "Fan Speed";
+    const ntcId = i === 1 ? "wi-new-total-charge" : `wi-new-total-charge-${i}`;
+    _setupPhotoRow(`wi-photo-row-${i}`, [kWeight, kFan], ntcId);
+  }
   _restorePhotos();
   _photoRowsInitialized = true;
 }

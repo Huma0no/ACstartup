@@ -1,4 +1,4 @@
-const CACHE_NAME = "field-ops-v1";
+const CACHE_NAME = "field-ops-v2";
 const ASSETS = [
   "./index.html",
   "./styles/app.css",
@@ -16,6 +16,9 @@ const ASSETS = [
   "./src/lv.js",
   "./src/ai.js",
   "./src/importer.js",
+  "./src/tsPanel.js",
+  "./src/troubleshootingEngine.js",
+  "./src/equipmentData.js",
   "./icons/icon-192x192.png",
   "./icons/icon-512x512.png",
   "./images/lv/acc-aprilair.png",
@@ -77,7 +80,16 @@ self.addEventListener("fetch", (event) => {
     );
   } else {
     event.respondWith(
-      caches.match(event.request).then((response) => response || fetch(event.request))
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      })
     );
   }
 });

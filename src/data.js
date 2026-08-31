@@ -64,8 +64,8 @@ export const ACCESSORIES = {
   OTRO:              "Other",
 };
 
-// Accessories whose price doubles when isTwoSystems = true
-export const TWO_SYSTEMS_ACCESSORIES = [
+// Accessories whose price scales dynamically by system count (sysCount)
+export const SCALABLE_ACCESSORIES = [
   ACCESSORIES.FLOAT_SWITCH,
   ACCESSORIES.RDS,
   ACCESSORIES.TRANE_HARNESS,
@@ -75,6 +75,9 @@ export const TWO_SYSTEMS_ACCESSORIES = [
   ACCESSORIES.LP_KIT_GOODMAN,
   ACCESSORIES.WEIGHT_IN_DATA,
 ];
+
+// Backward-compatibility alias for 2-system references
+export const TWO_SYSTEMS_ACCESSORIES = SCALABLE_ACCESSORIES;
 
 // Accessories that auto-activate when their trigger is selected (and auto-deactivate when trigger is removed)
 export const ACCESSORY_COMPANIONS = {
@@ -415,12 +418,12 @@ export const OUTDOOR_CATALOG = {
   "ML17KC2-060": { uType: "Condenser",  btu: 60000, freon: "R-454B",   series: "ML17KC2", FactoryCharge: 149 },
 
   // --- Trane 4TTR (R-410A) ---
-  "4TTR6024N1000AA": { uType: "Condenser", btu: 24000, freon: "R-410A", series: "4TTR", FactoryCharge: 148 },
-  "4TTR5042A1000AA": { uType: "Condenser", btu: 42000, freon: "R-410A", series: "4TTR", FactoryCharge: 130 },
-  "4TTR5048A1000AA": { uType: "Condenser", btu: 48000, freon: "R-410A", series: "4TTR", FactoryCharge: 114 },
-  "4TTR5060A1000AA": { uType: "Condenser", btu: 60000, freon: "R-410A", series: "4TTR", FactoryCharge: 152 },
+  "4TTR5042": { uType: "Condenser", btu: 42000, freon: "R-410A", series: "4TTR", FactoryCharge: 130 },
+  "4TTR5048": { uType: "Condenser", btu: 48000, freon: "R-410A", series: "4TTR", FactoryCharge: 114 },
+  "4TTR5060": { uType: "Condenser", btu: 60000, freon: "R-410A", series: "4TTR", FactoryCharge: 152 },
+  "4TTR6024": { uType: "Condenser", btu: 24000, freon: "R-410A", series: "4TTR", FactoryCharge: 148 },
 
-  // --- Trane 5TTR (R-454B) ---
+  // --- Trane 5TTR50 (R-454B) ---
   "5TTR5018": { uType: "Condenser", btu: 18000, freon: "R-454B", series: "5TTR", FactoryCharge: 60,  revisedCharge: null },
   "5TTR5024": { uType: "Condenser", btu: 24000, freon: "R-454B", series: "5TTR", FactoryCharge: 58,  revisedCharge: 83  }, // verified
   "5TTR5030": { uType: "Condenser", btu: 30000, freon: "R-454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: null },
@@ -428,6 +431,15 @@ export const OUTDOOR_CATALOG = {
   "5TTR5042": { uType: "Condenser", btu: 42000, freon: "R-454B", series: "5TTR", FactoryCharge: 81,  revisedCharge: null },
   "5TTR5048": { uType: "Condenser", btu: 48000, freon: "R-454B", series: "5TTR", FactoryCharge: 106, revisedCharge: 130 }, // verified 07/16/25
   "5TTR5060": { uType: "Condenser", btu: 60000, freon: "R-454B", series: "5TTR", FactoryCharge: 95,  revisedCharge: 119 }, // verified 07/16/25
+
+  // --- Trane 5TTR60 (R-454B) ---
+  "5TTR6018": { uType: "Condenser", btu: 18000, freon: "R-454B", series: "5TTR", FactoryCharge: 60,  revisedCharge: null },
+  "5TTR6024": { uType: "Condenser", btu: 24000, freon: "R-454B", series: "5TTR", FactoryCharge: 58,  revisedCharge: 83  },
+  "5TTR6030": { uType: "Condenser", btu: 30000, freon: "R-454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: null },
+  "5TTR6036": { uType: "Condenser", btu: 36000, freon: "R-454B", series: "5TTR", FactoryCharge: 56,  revisedCharge: 80  },
+  "5TTR6042": { uType: "Condenser", btu: 42000, freon: "R-454B", series: "5TTR", FactoryCharge: 81,  revisedCharge: null },
+  "5TTR6048": { uType: "Condenser", btu: 48000, freon: "R-454B", series: "5TTR", FactoryCharge: 106, revisedCharge: 130 },
+  "5TTR6060": { uType: "Condenser", btu: 60000, freon: "R-454B", series: "5TTR", FactoryCharge: 95,  revisedCharge: 119 },
 
   // --- Goodman GLXS4BA (R-32) ---
   GLXS4BA1810AA: { uType: "Condenser", btu: 18000, freon: "R-32", series: "GLXS4BA", FactoryCharge: 53  },
@@ -588,8 +600,29 @@ export const PRODUCT_LINKS = {
 // SERIES GROUP FUNCTIONS — derive optgroup data from catalog order. No duplication.
 // ---------------------------------------------------------------------------
 
-export function getIndoorModel(model)  { return INDOOR_CATALOG[model]  || null; }
-export function getOutdoorModel(model) { return OUTDOOR_CATALOG[model] || null; }
+export function getIndoorModel(model) {
+  if (!model) return null;
+  const s = String(model).trim();
+  if (INDOOR_CATALOG[s]) return INDOOR_CATALOG[s];
+  const upper = s.toUpperCase();
+  if (INDOOR_CATALOG[upper]) return INDOOR_CATALOG[upper];
+  for (const key of Object.keys(INDOOR_CATALOG)) {
+    if (upper.startsWith(key.toUpperCase())) return INDOOR_CATALOG[key];
+  }
+  return null;
+}
+
+export function getOutdoorModel(model) {
+  if (!model) return null;
+  const s = String(model).trim();
+  if (OUTDOOR_CATALOG[s]) return OUTDOOR_CATALOG[s];
+  const upper = s.toUpperCase();
+  if (OUTDOOR_CATALOG[upper]) return OUTDOOR_CATALOG[upper];
+  for (const key of Object.keys(OUTDOOR_CATALOG)) {
+    if (upper.startsWith(key.toUpperCase())) return OUTDOOR_CATALOG[key];
+  }
+  return null;
+}
 
 export function getIndoorSeriesGroups() {
   const order = [];
@@ -618,3 +651,25 @@ export const AI_MODELS = {
   openai:    "gpt-4o",
   google:    "gemini-2.0-flash",
 };
+
+// ---------------------------------------------------------------------------
+// FACTORY LINE CONFIGURATIONS
+// Used for lineset adjustment calculations in Weigh-In, Quick Calc, and modals.
+// factoryLength: base pre-charge length in feet
+// multiplier: oz per additional lineset foot (0.47 for Trane, 0.60 for others)
+// freon: refrigerant type
+// isRevised: boolean flag indicating if this config uses outdoor unit's revisedCharge
+// ---------------------------------------------------------------------------
+
+export const FACTORY_LINE_CONFIGS = {
+  "10ft (Trane)":              { factoryLength: 10, multiplier: 0.47, freon: "R-454B", isRevised: false },
+  "15ft Trane":                { factoryLength: 15, multiplier: 0.47, freon: "R-454B", isRevised: false },
+  "25ft Trane revisedCharge":  { factoryLength: 25, multiplier: 0.47, freon: "R-454B", isRevised: true  },
+  "15ft Daikin":               { factoryLength: 15, multiplier: 0.60, freon: "R-32",   isRevised: false },
+  "15ft Goodman":              { factoryLength: 15, multiplier: 0.60, freon: "R-32",   isRevised: false },
+  "15ft Lennox":               { factoryLength: 15, multiplier: 0.60, freon: "R-454B", isRevised: false },
+  "30ft Lennox revisedCharge": { factoryLength: 30, multiplier: 0.60, freon: "R-454B", isRevised: true  },
+};
+
+export const LINE_CONFIG_OPTIONS = ["", ...Object.keys(FACTORY_LINE_CONFIGS)];
+

@@ -1,5 +1,26 @@
+import { FACTORY_LINE_CONFIGS } from "./data.js";
+
+export function formatLbOz(oz) {
+  if (isNaN(oz) || oz == null || oz === "") return "—";
+  const num = parseFloat(oz);
+  const lbs = Math.floor(num / 16);
+  const remOz = parseFloat((num % 16).toFixed(2));
+  if (lbs > 0 && remOz > 0) return `${lbs} lb ${remOz} oz`;
+  if (lbs > 0) return `${lbs} lb`;
+  return `${remOz} oz`;
+}
+
 export function ouncesToPoundsAndOunces(oz) {
-  return `${oz} oz (${(oz / 16).toFixed(2)} lb)`;
+  if (isNaN(oz) || oz == null || oz === "") return "—";
+  const num = parseFloat(oz);
+  const lbs = Math.floor(num / 16);
+  const remOz = parseFloat((num % 16).toFixed(2));
+  const lbOz = lbs > 0 && remOz > 0
+    ? `${lbs} lb ${remOz} oz`
+    : lbs > 0
+    ? `${lbs} lb`
+    : `${remOz} oz`;
+  return `${num} oz (${lbOz})`;
 }
 
 export function getSubcoolingDefault(modelNumber) {
@@ -8,15 +29,10 @@ export function getSubcoolingDefault(modelNumber) {
 
 export function calculateApproxAdjust(linesetLength, lineConfig) {
   if (isNaN(linesetLength) || !lineConfig) return null;
+  const cfg = FACTORY_LINE_CONFIGS[lineConfig];
+  if (!cfg) return null;
 
-  let factoryLength = 15;
-  if      (lineConfig.includes("10ft")) factoryLength = 10;
-  else if (lineConfig.includes("25ft")) factoryLength = 25;
-  else if (lineConfig.includes("30ft")) factoryLength = 30;
-  else if (lineConfig.includes("15ft")) factoryLength = 15;
-
-  const multiplier = lineConfig.toLowerCase().includes("trane") ? 0.47 : 0.6;
-  return ((linesetLength - factoryLength) * multiplier).toFixed(2);
+  return ((linesetLength - cfg.factoryLength) * cfg.multiplier).toFixed(2);
 }
 
 export function calculateCFM(btu) {
@@ -57,6 +73,20 @@ function _loadHeic2Any() {
   return _heic2anyPromise;
 }
 
+let _piexifPromise = null;
+export function loadPiexif() {
+  if (_piexifPromise) return _piexifPromise;
+  _piexifPromise = new Promise((resolve, reject) => {
+    if (window.piexif) return resolve(window.piexif);
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.js";
+    script.onload = () => resolve(window.piexif);
+    script.onerror = (e) => { _piexifPromise = null; reject(e); };
+    document.head.appendChild(script);
+  });
+  return _piexifPromise;
+}
+
 export async function getGpsFromImage(file) {
   if (!file) return null;
   try {
@@ -70,6 +100,120 @@ export async function getGpsFromImage(file) {
     console.warn("Error extracting GPS with exifr:", e);
     return null;
   }
+}
+
+export async function getDeviceCoordinates(timeout = 6000) {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
+  try {
+    const pos = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout,
+        maximumAge: 30000,
+      });
+    });
+    return {
+      lat: pos.coords.latitude.toFixed(6),
+      lon: pos.coords.longitude.toFixed(6),
+    };
+  } catch (e) {
+    console.warn("Device GPS unavailable:", e);
+    return null;
+  }
+}
+
+export async function addGpsToImage(file, lat, lon) {
+  if (!file || lat == null || lon == null) return file;
+  const latNum = parseFloat(lat);
+  const lonNum = parseFloat(lon);
+  if (isNaN(latNum) || isNaN(lonNum)) return file;
+
+  try {
+    await loadPiexif();
+    const piexif = window.piexif;
+    if (!piexif) return file;
+
+    const toDMS = (deg) => {
+      const d = Math.floor(Math.abs(deg));
+      const minFloat = (Math.abs(deg) - d) * 60;
+      const m = Math.floor(minFloat);
+      const s = Math.round((minFloat - m) * 60 * 10000) / 10000;
+      return [
+        [d, 1],
+        [m, 1],
+        [Math.round(s * 10000), 10000],
+      ];
+    };
+
+    const latDMS = toDMS(latNum);
+    const lonDMS = toDMS(lonNum);
+    const latRef = latNum >= 0 ? "N" : "S";
+    const lonRef = lonNum >= 0 ? "E" : "W";
+
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    let exifObj = { "0th": {}, Exif: {}, GPS: {}, Interop: {}, "1st": {}, thumbnail: null };
+    try {
+      exifObj = piexif.load(dataUrl);
+    } catch {
+      // Clean structure if canvas JPEG has no existing EXIF
+    }
+    if (!exifObj["GPS"]) exifObj["GPS"] = {};
+
+    exifObj["GPS"][piexif.GPSIFD.GPSVersionID] = [2, 2, 0, 0];
+    exifObj["GPS"][piexif.GPSIFD.GPSLatitudeRef] = latRef;
+    exifObj["GPS"][piexif.GPSIFD.GPSLatitude] = latDMS;
+    exifObj["GPS"][piexif.GPSIFD.GPSLongitudeRef] = lonRef;
+    exifObj["GPS"][piexif.GPSIFD.GPSLongitude] = lonDMS;
+
+    const exifStr = piexif.dump(exifObj);
+    const newJpeg = piexif.insert(exifStr, dataUrl);
+    const byteString = atob(newJpeg.split(",")[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+
+    const originalName = file.name || "image.jpg";
+    const newName = originalName.replace(/\.[^/.]+$/, "") + ".jpg";
+    return new File([ab], newName, { type: "image/jpeg", lastModified: Date.now() });
+  } catch (e) {
+    console.error("Error injecting GPS into image:", e);
+    return file;
+  }
+}
+
+export async function processImageWithGps(file, quality = 0.8, maxWidth = 1600) {
+  if (!file) return { file: null, gps: null, gpsSource: null };
+
+  // 1. Try to extract GPS from EXIF of original file
+  let gps = await getGpsFromImage(file);
+  let gpsSource = gps ? "exif" : null;
+
+  // 2. If no EXIF GPS, fallback to device coordinates in real time
+  if (!gps) {
+    const devCoords = await getDeviceCoordinates();
+    if (devCoords) {
+      gps = devCoords;
+      gpsSource = "device";
+    }
+  }
+
+  // 3. Compress & standardize image to JPEG
+  let compressed = await compressImage(file, quality, maxWidth);
+
+  // 4. Re-inject EXIF GPS metadata if coordinates are present
+  if (gps && gps.lat && gps.lon) {
+    compressed = await addGpsToImage(compressed, gps.lat, gps.lon);
+  }
+
+  return { file: compressed, gps, gpsSource };
 }
 
 export async function compressImage(file, quality = 0.8, maxWidth = 1600) {

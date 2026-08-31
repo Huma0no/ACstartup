@@ -16,9 +16,10 @@ import { initChat } from "./ai.js";
 // Module state
 // ---------------------------------------------------------------------------
 
-let _job     = null;   // currently selected job object
-let _symptom = null;
-let _result  = null;
+let _job         = null;   // currently selected job object
+let _systemIndex = 0;      // currently selected system index for multi-system jobs
+let _symptom     = null;
+let _result      = null;
 
 // ---------------------------------------------------------------------------
 // Drawer open / close
@@ -113,13 +114,46 @@ function _buildJobCard(job, showChangeBtn) {
   addr.textContent = job.address;
   card.appendChild(addr);
 
+  const systems = Array.isArray(job.systems) && job.systems.length > 0
+    ? job.systems
+    : [
+        { indoor: job.system1?.indoor || "", outdoor: job.system1?.outdoor || "" },
+        ...((job.system2 || job.isTwoSystems) ? [{ indoor: job.system2?.indoor || "", outdoor: job.system2?.outdoor || "" }] : [])
+      ];
+
+  if (_systemIndex >= systems.length) _systemIndex = 0;
+
+  if (systems.length > 1) {
+    const sysTabs = document.createElement("div");
+    sysTabs.className = "ts-system-tabs";
+    sysTabs.style.cssText = "display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;";
+    systems.forEach((sys, sIdx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `btn btn-sm ${sIdx === _systemIndex ? "btn-primary" : "btn-secondary"}`;
+      btn.style.cssText = "font-size:11px;padding:3px 8px;";
+      btn.textContent = `System ${sIdx + 1}${sys.indoor || sys.outdoor ? ` (${sys.indoor || sys.outdoor})` : ""}`;
+      btn.addEventListener("click", () => {
+        _systemIndex = sIdx;
+        _renderJobSection();
+        _renderContextChips();
+        if (_symptom) {
+          _runDiagnosis();
+        }
+      });
+      sysTabs.appendChild(btn);
+    });
+    card.appendChild(sysTabs);
+  }
+
   const meta = document.createElement("div");
   meta.className = "ts-active-job-meta";
 
   const ctx = _buildJobContext(job);
+  const targetSys = systems[_systemIndex] || systems[0] || {};
 
-  if (job.system1?.indoor)       meta.appendChild(_chip(job.system1.indoor));
-  if (job.system1?.outdoor)      meta.appendChild(_chip(job.system1.outdoor, "outdoor"));
+  if (targetSys.indoor)          meta.appendChild(_chip(targetSys.indoor));
+  if (targetSys.outdoor)         meta.appendChild(_chip(targetSys.outdoor, "outdoor"));
   if (ctx.isA2L)                 meta.appendChild(_chip("A2L", "a2l"));
   if (job.jobThermostat?.type)   meta.appendChild(_chip(job.jobThermostat.type, "tstat"));
   if (ctx.hasZoning)             meta.appendChild(_chip("Zoning", "acc"));
@@ -141,6 +175,7 @@ function _buildJobCard(job, showChangeBtn) {
     changeBtn.textContent = "Cambiar job →";
     changeBtn.addEventListener("click", () => {
       _job = null;
+      _systemIndex = 0;
       _resetToSymptomSelection();
       _renderJobSection();
       _renderContextChips();
@@ -171,16 +206,19 @@ function _buildJobPicker(jobs) {
     addrEl.className = "ts-job-picker-address";
     addrEl.textContent = job.address;
 
-    const parts = [job.system1?.indoor, job.system1?.outdoor].filter(Boolean);
+    const parts = Array.isArray(job.systems) && job.systems.length > 0
+      ? job.systems.map(s => [s.indoor, s.outdoor].filter(Boolean).join("/")).filter(Boolean)
+      : [job.system1?.indoor, job.system1?.outdoor].filter(Boolean);
     const equipEl = document.createElement("div");
     equipEl.className = "ts-job-picker-equip";
-    equipEl.textContent = parts.length > 0 ? parts.join(" + ") : "Sin equipo registrado";
+    equipEl.textContent = parts.length > 0 ? parts.join(" | ") : "Sin equipo registrado";
 
     item.appendChild(addrEl);
     item.appendChild(equipEl);
 
     item.addEventListener("click", () => {
       _job = job;
+      _systemIndex = 0;
       _resetToSymptomSelection();
       _renderJobSection();
       _renderContextChips();
@@ -221,7 +259,15 @@ function _renderContextChips() {
     return;
   }
 
+  const systems = Array.isArray(_job.systems) && _job.systems.length > 0
+    ? _job.systems
+    : [
+        { indoor: _job.system1?.indoor || "", outdoor: _job.system1?.outdoor || "" },
+        ...((_job.system2 || _job.isTwoSystems) ? [{ indoor: _job.system2?.indoor || "", outdoor: _job.system2?.outdoor || "" }] : [])
+      ];
+
   const ctx = _buildJobContext(_job);
+  if (systems.length > 1) container.appendChild(_chip(`Sys ${_systemIndex + 1}`));
   if (ctx.heaterModel)  container.appendChild(_chip(ctx.heaterModel));
   if (ctx.outdoorModel) container.appendChild(_chip(ctx.outdoorModel, "outdoor"));
   if (ctx.isA2L)        container.appendChild(_chip("⚠️ A2L", "a2l"));
@@ -271,15 +317,34 @@ function runDiagnosis(symptom, faultCode) {
   renderResults(_result);
 }
 
-function _buildJobContext(job) {
+function _runDiagnosis() {
+  if (!_symptom) return;
+  const faultCode = document.getElementById("ts-fault-input")?.value?.trim() || "";
+  runDiagnosis(_symptom, faultCode);
+}
+
+export function buildContextFromJob(job, sysIdx = 0) {
   if (!job) return buildContext({});
+  const systems = Array.isArray(job.systems) && job.systems.length > 0
+    ? job.systems
+    : [
+        { indoor: job.system1?.indoor || "", outdoor: job.system1?.outdoor || "" },
+        ...((job.system2 || job.isTwoSystems) ? [{ indoor: job.system2?.indoor || "", outdoor: job.system2?.outdoor || "" }] : [])
+      ];
+  const targetSys = systems[sysIdx] || systems[0] || {};
   return buildContext({
-    heaterModel:         job.system1?.indoor                           || "",
-    outdoorModel:        job.system1?.outdoor                         || "",
-    selectedThermostat:  job.jobThermostat?.type                      || null,
+    heaterModel:         targetSys.indoor                           || "",
+    outdoorModel:        targetSys.outdoor                          || "",
+    selectedThermostat:  job.jobThermostat?.type                    || null,
     selectedAccessories: (job.jobAccessories || []).map(a => a.name ?? a),
-    isTwoSystems:        job.isTwoSystems                             || false,
+    isTwoSystems:        systems.length === 2,
+    systemsCount:        systems.length,
+    systemIndex:         sysIdx,
   });
+}
+
+function _buildJobContext(job) {
+  return buildContextFromJob(job, _systemIndex);
 }
 
 // ---------------------------------------------------------------------------

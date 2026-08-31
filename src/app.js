@@ -35,6 +35,7 @@ import {
   clearWorkspace,
   setOption,
   toggleService,
+  setSystemService,
   setThermostat,
   toggleAccessory,
   toggleFix,
@@ -59,7 +60,7 @@ import {
 import {
   ouncesToPoundsAndOunces,
   calculateApproxAdjust,
-  compressImage,
+  processImageWithGps,
   calculateCFM,
   getSubcoolingDefault,
 } from "./utils.js";
@@ -96,6 +97,8 @@ import {
   SERIES_LINKS,
   OUTDOOR_LINKS,
   FINISH_SERVICE_PRICE,
+  FACTORY_LINE_CONFIGS,
+  LINE_CONFIG_OPTIONS,
 } from "./data.js";
 
 // ---------------------------------------------------------------------------
@@ -284,8 +287,10 @@ function jobCardHTML(job, ci) {
   const ts = job.timeSensitive
     ? `<span class="badge badge-danger">Urgent</span>`
     : "";
-  const s1 = job.system1 || {};
-  const s2 = job.system2;
+  const sysList = Array.isArray(job.systems) && job.systems.length > 0
+    ? job.systems
+    : [job.system1, job.system2].filter(Boolean);
+  const sysCount = sysList.length;
 
   // Col 1 Row 2 of job-top grid — tstat, zone boards, LP Kit, 2-systems only
   const _zoneAndLp = [
@@ -314,8 +319,8 @@ function jobCardHTML(job, ci) {
             ACCESSORY_DISPLAY[a]?.label || a.toLowerCase()
           )}</span>`
       ),
-    job.isTwoSystems &&
-      `<span class="chip chip-sm chip-secondary">2 Systems</span>`,
+    sysCount > 1 &&
+      `<span class="chip chip-sm chip-secondary">${sysCount} Systems</span>`,
   ]
     .filter(Boolean)
     .join("");
@@ -327,8 +332,11 @@ function jobCardHTML(job, ci) {
     const cfm  = dOut ? calculateCFM(dOut.btu) : null;
     const sc   =
       dOut?.oemSubcoolingGoal != null ? `${dOut.oemSubcoolingGoal} °F` : "—";
+    const factoryChargeStr = dOut?.FactoryCharge != null
+      ? ouncesToPoundsAndOunces(dOut.FactoryCharge)
+      : "—";
     const rev  = dOut?.freon === "R-454B"
-      ? (dOut.revisedCharge != null ? `${dOut.revisedCharge} oz` : "—")
+      ? (dOut.revisedCharge != null ? ouncesToPoundsAndOunces(dOut.revisedCharge) : "—")
       : "N/A";
     const esp = (dIn?.pESP != null && dIn.pESP !== 9.9)
       ? `ESP ~${dIn.pESP}" wc`
@@ -358,9 +366,7 @@ function jobCardHTML(job, ci) {
       <div class="equip-row">
         <div class="equip-cell">
           <div class="equip-cell-label">Factory</div>
-          <div class="equip-cell-value">${
-            dOut?.FactoryCharge ? `${dOut.FactoryCharge} oz` : "—"
-          }</div>
+          <div class="equip-cell-value">${factoryChargeStr}</div>
         </div>
         <div class="equip-cell">
           <div class="equip-cell-label">Revised</div>
@@ -400,12 +406,8 @@ function jobCardHTML(job, ci) {
       </div>
     </div>`;
   };
-  const equipCards = [
-    _equipCard(s1.indoor, s1.outdoor, "System 1"),
-    job.isTwoSystems && s2
-      ? _equipCard(s2.indoor, s2.outdoor, "System 2")
-      : "",
-  ]
+  const equipCards = sysList
+    .map((sys, idx) => _equipCard(sys.indoor, sys.outdoor, `System ${idx + 1}`))
     .filter(Boolean)
     .join("");
 
@@ -477,8 +479,8 @@ function openWorkspace(job) {
   _showSection("section-service");
   updateActiveJobBar();
   initSitePhotos().then((stored) => {
-    for (const [slug, { file, label }] of Object.entries(stored)) {
-      _renderSitePhotoThumb(slug, label, file);
+    for (const [slug, { file, label, gps, gpsSource }] of Object.entries(stored)) {
+      _renderSitePhotoThumb(slug, label, file, gps, gpsSource);
     }
     _updatePhotoCount();
   });
@@ -501,16 +503,6 @@ const WI_FIELDS = [
   ["subcoolingValue", "Subcooling °F"],
   ["oemSubcoolingGoal", "OEM SC Goal °F"],
   ["subcoolingDeviation", "SC Deviation °F"],
-];
-
-const LINE_CONFIG_OPTIONS = [
-  "",
-  "10ft (Trane)",
-  "25ft Trane revisedCharge",
-  "15ft Daikin",
-  "15ft Goodman",
-  "15ft Lennox",
-  "30ft Lennox revisedCharge",
 ];
 
 const FIX_GROUPS = [
@@ -593,17 +585,65 @@ function renderWorkspace() {
           sel.includes(n) ? " ws-btn-active" : ""
         }" data-service="${esc(n)}">${esc(n)}</button>`
     ).join("");
+  const sysCount = Array.isArray(state.systems) && state.systems.length > 0
+    ? state.systems.length
+    : (state.isTwoSystems ? 2 : 1);
   const _showTwoSys = sel.some((s) => [SERVICES.AC, SERVICES.HEAT, SERVICES.FINISH, SERVICES.PRESTART].includes(s));
   const _showTemp   = sel.some((s) => [SERVICES.AC, SERVICES.HEAT].includes(s));
+  const sysControl = sysCount > 2
+    ? `<span class="chip chip-sm chip-secondary" style="font-weight:bold">${sysCount} Systems</span>`
+    : `<label class="toggle-row"><span>2 Systems</span><input type="checkbox" id="ws-two-systems"${(state.isTwoSystems || sysCount === 2) ? " checked" : ""}></label>`;
+
   document.getElementById("ac-heat-options").innerHTML =
-    (_showTwoSys ? `<label class="toggle-row"><span>2 Systems</span>
-      <input type="checkbox" id="ws-two-systems"${
-        state.isTwoSystems ? " checked" : ""
-      }></label>` : "") +
+    (_showTwoSys ? sysControl : "") +
     (_showTemp ? `<label class="toggle-row"><span>Temporarily</span>
       <input type="checkbox" id="ws-temporarily"${
         state.isTemporary ? " checked" : ""
       }></label>` : "");
+
+  // Per-System Service Override Expander (for multi-system mixed services)
+  const perSysContainer = document.getElementById("per-system-services-container");
+  if (perSysContainer) {
+    if (sysCount > 1 && !sel.includes(SERVICES.CANCEL)) {
+      const hasOverrides = state.systems.some((s) => s.serviceType);
+      perSysContainer.innerHTML = `
+        <details class="ws-per-sys-details" ${hasOverrides ? "open" : ""} style="margin-top:var(--space-2);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2)">
+          <summary style="font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);color:var(--color-primary);cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between">
+            <span>⚙️ Per-System Services (${sysCount} Systems)</span>
+            <span style="font-size:10px;color:var(--color-text-muted);font-weight:normal">${hasOverrides ? "Mixed Active" : "Click to Override"}</span>
+          </summary>
+          <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-2)">
+            ${state.systems.map((sys, idx) => `
+              <div class="ws-sys-service-row" style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);padding:var(--space-1) 0;border-bottom:1px solid var(--color-border-subtle)">
+                <div style="font-size:var(--font-size-xs)">
+                  <strong>System ${idx + 1}</strong>
+                  <span style="color:var(--color-text-muted);margin-left:4px">${[sys.indoor, sys.outdoor].filter(Boolean).join(" / ") || "Unit"}</span>
+                </div>
+                <select class="ws-sys-svc-override" data-sys-idx="${idx}" style="font-size:var(--font-size-xs);padding:2px 6px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);color:var(--color-text)">
+                  <option value="">Default (${sel.join(" & ") || "Inherit"})</option>
+                  ${[SERVICES.AC, SERVICES.HEAT, SERVICES.AC_HEAT, SERVICES.PRESTART, SERVICES.FINISH, SERVICES.DRIVE_RUN].map((svc) => `
+                    <option value="${esc(svc)}"${sys.serviceType === svc ? " selected" : ""}>${esc(svc)}</option>
+                  `).join("")}
+                </select>
+              </div>
+            `).join("")}
+          </div>
+        </details>
+      `;
+      perSysContainer.querySelectorAll(".ws-sys-svc-override").forEach((selEl) => {
+        selEl.addEventListener("change", (e) => {
+          const sIdx = parseInt(e.target.dataset.sysIdx, 10);
+          setSystemService(sIdx, e.target.value || null);
+          saveProgress(_activeJob);
+          updatePriceDisplay();
+          updateAccordionSummaries();
+          renderWorkspace();
+        });
+      });
+    } else {
+      perSysContainer.innerHTML = "";
+    }
+  }
 
   // Step 3 — Thermostat
   const tsel = state.selectedThermostat;
@@ -745,68 +785,76 @@ function renderWorkspace() {
     `<div class="ws-fix-grid">${_standaloneHTML}${_groupsHTML}</div>${_customFixChips}`;
 
   // Step 5 — Weight-In
-  const s1 = job.system1 || {};
-  let wiData1 = state.weightInData || {};
-  const _wiOutdoor = getOutdoorModel(s1.outdoor);
-  if (_wiOutdoor) {
-    const _needFc = !wiData1.factoryChargeOz && _wiOutdoor.FactoryCharge;
-    const _needAdj = !wiData1.approxAdjustOz;
-    if (_needFc || _needAdj) {
-      if (_needFc)
-        wiData1 = {
-          ...wiData1,
-          factoryChargeOz: String(_wiOutdoor.FactoryCharge),
-        };
-      if (_needAdj) {
-        const _lc = wiData1.factoryLineConfig || "";
-        const _adj = _lc.includes("revisedCharge")
+  const rawSystems = Array.isArray(state.systems) && state.systems.length > 0
+    ? state.systems
+    : [
+        { indoor: state.heaterModel || job.system1?.indoor, outdoor: state.outdoorModel || job.system1?.outdoor, weightInData: state.weightInData },
+        ...((state.isTwoSystems || state.heaterModel2 || state.outdoorModel2 || job.system2) ? [{
+          indoor: state.heaterModel2 || job.system2?.indoor,
+          outdoor: state.outdoorModel2 || job.system2?.outdoor,
+          weightInData: state.weightInData2
+        }] : [])
+      ];
+
+  const wiContainer = document.getElementById("wi-systems-container");
+  if (wiContainer) {
+    wiContainer.innerHTML = rawSystems.map((sys, idx) => {
+      const sysNum = idx + 1;
+      const attr = sysNum === 1 ? "data-wi" : (sysNum === 2 ? "data-wi2" : `data-wi-${sysNum}`);
+      let wiData = { ...(sys.weightInData || (sysNum === 1 ? state.weightInData : (sysNum === 2 ? state.weightInData2 : {})) || {}) };
+      const _wiOutdoor = getOutdoorModel(sys.outdoor);
+      if (_wiOutdoor) {
+        const _cfg = FACTORY_LINE_CONFIGS[wiData.factoryLineConfig];
+        const _baseCharge = (_cfg?.isRevised && _wiOutdoor.revisedCharge)
           ? _wiOutdoor.revisedCharge
           : _wiOutdoor.FactoryCharge;
-        if (_adj) wiData1 = { ...wiData1, approxAdjustOz: String(_adj) };
-      }
-      setWeightInData(wiData1, 1);
-    }
-  }
-  if (_wiOutdoor && !wiData1.oemSubcoolingGoal) {
-    wiData1 = {
-      ...wiData1,
-      oemSubcoolingGoal: String(getSubcoolingDefault(s1.outdoor)),
-    };
-    setWeightInData(wiData1, 1);
-  }
-  const _wiLc = wiData1.factoryLineConfig || "";
-  const _wiBc = _wiOutdoor
-    ? _wiLc.includes("revisedCharge")
-      ? _wiOutdoor.revisedCharge
-      : _wiOutdoor.FactoryCharge
-    : 0;
-  const _wiAdj = parseFloat(wiData1.adjustedOz);
-  const _wiNewTotalTxt =
-    _wiBc && !isNaN(_wiAdj) ? ouncesToPoundsAndOunces(_wiBc + _wiAdj) : "—";
-  document.getElementById("wi-fields-sys1").innerHTML =
-    `<div class="wi-system-header"><span class="step-label">System 1</span>` +
-    `<div class="wi-model-chips">` +
-    (s1.indoor ? `<span class="chip chip-sm">${esc(s1.indoor)}</span>` : "") +
-    (s1.outdoor ? `<span class="chip chip-sm">${esc(s1.outdoor)}</span>` : "") +
-    `</div></div>` +
-    wiGridHTML(wiData1, "data-wi");
-  const _sys2Fields = document.getElementById("wi-fields-sys2");
-  const _sys2PhotoRow = document.getElementById("wi-photo-row-2");
-  const _showSys2 = state.isTwoSystems || !!(job.system2?.indoor || job.system2?.outdoor);
-  _sys2Fields.innerHTML = _showSys2
-    ? `<div class="wi-system-header"><span class="step-label">System 2</span>` +
-      `<div class="wi-model-chips">` +
-      (job.system2?.indoor ? `<span class="chip chip-sm">${esc(job.system2.indoor)}</span>` : "") +
-      (job.system2?.outdoor ? `<span class="chip chip-sm">${esc(job.system2.outdoor)}</span>` : "") +
-      `</div></div>` +
-      wiGridHTML(state.weightInData2, "data-wi2")
-    : "";
-  _sys2Fields.classList.toggle("hidden", !_showSys2);
-  _sys2PhotoRow.classList.toggle("hidden", !_showSys2);
-  const _ntcEl = document.getElementById("wi-new-total-charge");
-  if (_ntcEl) _ntcEl.textContent = _wiNewTotalTxt;
 
-  // Step 7 — Notes & Photos
+        let _changed = false;
+        if ((wiData.factoryChargeOz == null || wiData.factoryChargeOz === "") && _baseCharge != null) {
+          wiData.factoryChargeOz = String(_baseCharge);
+          _changed = true;
+        }
+        if (wiData.oemSubcoolingGoal == null || wiData.oemSubcoolingGoal === "") {
+          wiData.oemSubcoolingGoal = String(getSubcoolingDefault(sys.outdoor));
+          _changed = true;
+        }
+        if ((wiData.approxAdjustOz == null || wiData.approxAdjustOz === "") && wiData.linesetLength && wiData.factoryLineConfig) {
+          const calcAdj = calculateApproxAdjust(parseFloat(wiData.linesetLength), wiData.factoryLineConfig);
+          if (calcAdj !== null) {
+            wiData.approxAdjustOz = calcAdj;
+            _changed = true;
+          }
+        }
+        if (_changed) {
+          setWeightInData(wiData, sysNum);
+        }
+      }
+
+      return `
+        <div id="wi-fields-sys${sysNum}" class="wi-system-block" data-sys-num="${sysNum}">
+          <div class="wi-system-header">
+            <span class="step-label">System ${sysNum}</span>
+            <div class="wi-model-chips">
+              ${sys.indoor ? `<span class="chip chip-sm">${esc(sys.indoor)}</span>` : ""}
+              ${sys.outdoor ? `<span class="chip chip-sm">${esc(sys.outdoor)}</span>` : ""}
+            </div>
+          </div>
+          ${wiGridHTML(wiData, attr)}
+          <div id="wi-photo-row-${sysNum}"></div>
+        </div>
+      `;
+    }).join("");
+
+    initWeighInPhotos(state.address || job.address || "default", rawSystems.length);
+
+    rawSystems.forEach((sys, idx) => {
+      const sysNum = idx + 1;
+      const wiData = sys.weightInData || (sysNum === 1 ? state.weightInData : (sysNum === 2 ? state.weightInData2 : {})) || {};
+      _renderNewTotalCharge(wiData, sysNum);
+    });
+  }
+
+  // Step 6 — Notes & Photos
   document.getElementById("notes-input").value = state.notes || "";
   updatePriceDisplay();
   updateAccordionSummaries();
@@ -834,14 +882,15 @@ function updateAccordionSummaries() {
 function _updatePhotoCount() {
   const n = getPhotoCount();
   const btn = document.getElementById("btn-download-site-photos");
-  btn.textContent = `Download All Photos (${n})`;
-  btn.disabled = n === 0;
+  if (btn) {
+    btn.textContent = `Download All Photos (${n})`;
+    btn.disabled = n === 0;
+  }
 }
 
-function _renderSitePhotoThumb(slug, label, file) {
+function _renderSitePhotoThumb(slug, label, file, gps = null, gpsSource = null) {
   const slot = document.getElementById(`site-slot-${slug}`);
   if (!slot) return;
-
   const existing = document.getElementById(`site-thumb-${slug}`);
   if (existing) {
     const prev = existing.querySelector("img");
@@ -857,13 +906,25 @@ function _renderSitePhotoThumb(slug, label, file) {
 
   const img = document.createElement("img");
   img.src = objectUrl;
+  img.setAttribute("data-lightbox-src", objectUrl);
   img.style.cssText =
-    "width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);";
+    "width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);cursor:pointer;";
+  img.title = "Click to enlarge";
 
   const labelSpan = document.createElement("span");
   labelSpan.textContent = label;
   labelSpan.style.cssText =
     "font-size:var(--font-size-xs);color:var(--color-text-secondary);";
+
+  if (gps) {
+    const chip = document.createElement("span");
+    chip.className = "img-gps-chip";
+    chip.textContent = gpsSource === "device" ? "📍 GPS" : "📍 EXIF";
+    chip.title = gpsSource === "device" ? `Device GPS: ${gps.lat}, ${gps.lon}` : `EXIF GPS: ${gps.lat}, ${gps.lon}`;
+    chip.style.cssText = "font-size:var(--font-size-xs);color:var(--color-accent, #38bdf8);font-weight:600;";
+    labelSpan.appendChild(document.createTextNode(" "));
+    labelSpan.appendChild(chip);
+  }
 
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
@@ -898,10 +959,10 @@ function _makeSiteSlot(slug, label) {
     const file = fileInput.files[0];
     if (!file) return;
     fileInput.value = "";
-    const compressed = await compressImage(file);
-    addSitePhoto(slug, label, compressed);
+    const { file: processedFile, gps, gpsSource } = await processImageWithGps(file);
+    addSitePhoto(slug, label, processedFile, gps, gpsSource);
     saveProgress(_activeJob);
-    _renderSitePhotoThumb(slug, label, compressed);
+    _renderSitePhotoThumb(slug, label, processedFile, gps, gpsSource);
     _updatePhotoCount();
   });
 
@@ -973,12 +1034,12 @@ function _initSitePhotoPresets() {
       label.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
     otherFileInput.value = "";
     _pendingLabel = "";
-    const compressed = await compressImage(file);
+    const { file: processedFile, gps, gpsSource } = await processImageWithGps(file);
     const slot = _makeSiteSlot(slug, label);
     container.insertBefore(slot, otherWrap);
-    addSitePhoto(slug, label, compressed);
+    addSitePhoto(slug, label, processedFile, gps, gpsSource);
     saveProgress(_activeJob);
-    _renderSitePhotoThumb(slug, label, compressed);
+    _renderSitePhotoThumb(slug, label, processedFile, gps, gpsSource);
     _updatePhotoCount();
   });
 
@@ -995,8 +1056,8 @@ function updatePriceDisplay() {
 
 function _renderNewTotalCharge(data, sys) {
   const el = document.getElementById(
-    sys === 1 ? "wi-new-total-charge" : "wi-new-total-charge-2"
-  );
+    sys === 1 ? "wi-new-total-charge" : (sys === 2 ? "wi-new-total-charge-2" : `wi-new-total-charge-${sys}`)
+  ) || document.getElementById(`wi-new-total-charge-${sys}`);
   if (!el) return;
   const fc = parseFloat(data?.factoryChargeOz);
   const adj = parseFloat(data?.adjustedOz);
@@ -1230,17 +1291,101 @@ function _renderNewJobAccChips() {
     .join("");
 }
 
+let _newJobSystems = [{ indoor: "", outdoor: "", links: {} }];
+
+function _renderNewJobSystems() {
+  const container = document.getElementById("new-job-systems-container");
+  if (!container) return;
+  container.innerHTML = _newJobSystems.map((sys, idx) => `
+    <div class="settings-group nj-sys-item" data-idx="${idx}" style="background:var(--color-surface);border:1px solid var(--color-border);padding:var(--space-2);border-radius:var(--radius-md);margin-bottom:var(--space-2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)">
+        <span class="settings-label" style="margin:0;font-weight:var(--font-weight-bold)">System ${idx + 1}</span>
+        ${idx > 0 ? `<button type="button" class="btn-icon nj-btn-remove-sys" data-remove-idx="${idx}" style="color:var(--color-danger);font-size:var(--font-size-sm);padding:0 var(--space-1)">✕</button>` : ""}
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Indoor unit
+            <select class="nj-sys-indoor">
+              <option value="">-- Select model --</option>${_indoorOptgroups()}
+            </select>
+          </label>
+          <div class="series-links nj-indoor-links"></div>
+        </div>
+        <div>
+          <label>Outdoor unit
+            <select class="nj-sys-outdoor">
+              <option value="">-- Select model --</option>${_outdoorOptgroups()}
+            </select>
+          </label>
+          <div class="series-links nj-outdoor-links"></div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".nj-sys-item").forEach((item, idx) => {
+    const sys = _newJobSystems[idx];
+    const inSel = item.querySelector(".nj-sys-indoor");
+    const outSel = item.querySelector(".nj-sys-outdoor");
+    const inLinks = item.querySelector(".nj-indoor-links");
+    const outLinks = item.querySelector(".nj-outdoor-links");
+
+    if (inSel) {
+      inSel.value = sys?.indoor || "";
+      if (sys?.indoor) _showEquipLinks(sys.indoor, getIndoorModel, SERIES_LINKS, inLinks);
+      inSel.addEventListener("change", (e) => {
+        _syncNewJobSystemsFromDOM();
+        _showEquipLinks(e.target.value, getIndoorModel, SERIES_LINKS, inLinks);
+      });
+    }
+    if (outSel) {
+      outSel.value = sys?.outdoor || "";
+      if (sys?.outdoor) _showEquipLinks(sys.outdoor, getOutdoorModel, OUTDOOR_LINKS, outLinks);
+      outSel.addEventListener("change", (e) => {
+        _syncNewJobSystemsFromDOM();
+        _showEquipLinks(e.target.value, getOutdoorModel, OUTDOOR_LINKS, outLinks);
+      });
+    }
+  });
+
+  container.querySelectorAll(".nj-btn-remove-sys").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const removeIdx = parseInt(btn.dataset.removeIdx);
+      _syncNewJobSystemsFromDOM();
+      _newJobSystems.splice(removeIdx, 1);
+      _renderNewJobSystems();
+    });
+  });
+}
+
+function _syncNewJobSystemsFromDOM() {
+  const container = document.getElementById("new-job-systems-container");
+  if (!container) return;
+  const items = container.querySelectorAll(".nj-sys-item");
+  items.forEach((item, idx) => {
+    if (_newJobSystems[idx]) {
+      const inVal = item.querySelector(".nj-sys-indoor")?.value || "";
+      const outVal = item.querySelector(".nj-sys-outdoor")?.value || "";
+      _newJobSystems[idx].indoor = inVal;
+      _newJobSystems[idx].outdoor = outVal;
+      _newJobSystems[idx].links = {
+        ...(SERIES_LINKS[getIndoorModel(inVal)?.series] ?? {}),
+        ...(OUTDOOR_LINKS[getOutdoorModel(outVal)?.series] ?? {}),
+      };
+    }
+  });
+}
+
 function _collapseAddJobForm() {
   _newJobAccChips = [];
-  document.getElementById("new-job-acc-chips").innerHTML = "";
-  document.getElementById("indoor-links").innerHTML = "";
-  document.getElementById("outdoor-links").innerHTML = "";
-  document.getElementById("indoor-links2").innerHTML = "";
-  document.getElementById("outdoor-links2").innerHTML = "";
-  document.getElementById("new-job-tstat-other").classList.add("hidden");
-  document.getElementById("new-job-sys2").classList.add("hidden");
-  document.getElementById("add-job-form").reset();
-  document.getElementById("add-job-section").classList.add("hidden");
+  _newJobSystems = [{ indoor: "", outdoor: "", links: {} }];
+  const chips = document.getElementById("new-job-acc-chips");
+  if (chips) chips.innerHTML = "";
+  const tstatOther = document.getElementById("new-job-tstat-other");
+  if (tstatOther) tstatOther.classList.add("hidden");
+  document.getElementById("add-job-form")?.reset();
+  _renderNewJobSystems();
+  document.getElementById("add-job-section")?.classList.add("hidden");
 }
 
 // ---------------------------------------------------------------------------
@@ -1278,47 +1423,10 @@ function buildAddJobSection() {
         </label>
       </div>
       <label>Notes<textarea name="notes" rows="2" placeholder="Optional"></textarea></label>
-      <input type="checkbox" id="new-job-two-systems" name="two-systems" hidden>
-      <button type="button" id="btn-add-system2" class="btn-add-system2">+ Add second system</button>
-      <div class="form-row">
-        <div>
-          <label>Indoor unit
-            <select name="indoor" id="new-job-indoor">
-              <option value="">-- Select model --</option>${_indoorOptgroups()}
-            </select>
-          </label>
-          <div id="indoor-links" class="series-links"></div>
-        </div>
-        <div>
-          <label>Outdoor unit
-            <select name="outdoor" id="new-job-outdoor">
-              <option value="">-- Select model --</option>${_outdoorOptgroups()}
-            </select>
-          </label>
-          <div id="outdoor-links" class="series-links"></div>
-        </div>
-      </div>
-      <div id="new-job-sys2" class="hidden">
-        <p class="step-label">System 2</p>
-        <div class="form-row">
-          <div>
-            <label>Indoor unit 2
-              <select name="indoor2" id="new-job-indoor2">
-                <option value="">-- Select model --</option>${_indoorOptgroups()}
-              </select>
-            </label>
-            <div id="indoor-links2" class="series-links"></div>
-          </div>
-          <div>
-            <label>Outdoor unit 2
-              <select name="outdoor2" id="new-job-outdoor2">
-                <option value="">-- Select model --</option>${_outdoorOptgroups()}
-              </select>
-            </label>
-            <div id="outdoor-links2" class="series-links"></div>
-          </div>
-        </div>
-      </div>
+      
+      <div id="new-job-systems-container"></div>
+      <button type="button" id="new-job-btn-add-sys" class="btn" style="margin-bottom:var(--space-2);width:100%;border:1px dashed var(--color-border);background:none">+ Add System</button>
+
       <div class="form-row">
         <label>Tstat
           <select name="tstat" id="new-job-tstat">
@@ -1350,6 +1458,7 @@ function buildAddJobSection() {
   document
     .getElementById("tab-jobs")
     .insertBefore(section, document.getElementById("jobs-list"));
+  _renderNewJobSystems();
 }
 
 // ---------------------------------------------------------------------------
@@ -1390,8 +1499,8 @@ function _showOutdoorPopover(anchor, entry) {
   const lines = [
     ton && `Ton: ${ton}`,
     entry.freon && `Ref: ${entry.freon}`,
-    entry.FactoryCharge && `Factory: ${entry.FactoryCharge} oz`,
-    entry.revisedCharge > 0 && `Revised: ${entry.revisedCharge} oz`,
+    entry.FactoryCharge && `Factory: ${ouncesToPoundsAndOunces(entry.FactoryCharge)}`,
+    entry.revisedCharge > 0 && `Revised: ${ouncesToPoundsAndOunces(entry.revisedCharge)}`,
     cfm && `Max CFM: ${cfm.max}`,
     cfm && `Min CFM: ${cfm.min}`,
   ].filter(Boolean);
@@ -1525,18 +1634,75 @@ function wireEvents() {
     if (b) { b.style.display = "none"; }
   }
 
+  let _editingJobSystems = [];
+
+  function _renderEditJobSystems() {
+    const container = document.getElementById("ej-systems-container");
+    if (!container) return;
+    container.innerHTML = _editingJobSystems.map((sys, idx) => `
+      <div class="settings-group ej-sys-item" data-idx="${idx}" style="background:var(--color-surface);border:1px solid var(--color-border);padding:var(--space-2);border-radius:var(--radius-md);margin-bottom:var(--space-2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)">
+          <span class="settings-label" style="margin:0;font-weight:var(--font-weight-bold)">System ${idx + 1}</span>
+          ${idx > 0 ? `<button type="button" class="btn-icon ej-btn-remove-sys" data-remove-idx="${idx}" style="color:var(--color-danger);font-size:var(--font-size-sm);padding:0 var(--space-1)">✕</button>` : ""}
+        </div>
+        <input type="text" class="ej-sys-indoor" placeholder="Indoor model" list="ej-indoor-list" value="${esc(sys.indoor || "")}" style="margin-bottom:var(--space-1)" />
+        <input type="text" class="ej-sys-outdoor" placeholder="Outdoor model" list="ej-outdoor-list" value="${esc(sys.outdoor || "")}" style="margin-bottom:var(--space-1)" />
+        <select class="ej-sys-service" style="width:100%;font-size:var(--font-size-xs);padding:var(--space-1);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);color:var(--color-text)">
+          <option value="">Service: Inherit (Default)</option>
+          ${[SERVICES.AC, SERVICES.HEAT, SERVICES.AC_HEAT, SERVICES.PRESTART, SERVICES.FINISH, SERVICES.DRIVE_RUN].map(svc => `
+            <option value="${esc(svc)}"${sys.serviceType === svc ? " selected" : ""}>${esc(svc)}</option>
+          `).join("")}
+        </select>
+      </div>
+    `).join("");
+
+    container.querySelectorAll(".ej-btn-remove-sys").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const removeIdx = parseInt(btn.dataset.removeIdx);
+        _syncEditJobSystemsFromDOM();
+        _editingJobSystems.splice(removeIdx, 1);
+        _renderEditJobSystems();
+      });
+    });
+  }
+
+  function _syncEditJobSystemsFromDOM() {
+    const container = document.getElementById("ej-systems-container");
+    if (!container) return;
+    const items = container.querySelectorAll(".ej-sys-item");
+    items.forEach((item, idx) => {
+      if (_editingJobSystems[idx]) {
+        _editingJobSystems[idx].indoor = item.querySelector(".ej-sys-indoor")?.value.trim() || "";
+        _editingJobSystems[idx].outdoor = item.querySelector(".ej-sys-outdoor")?.value.trim() || "";
+        _editingJobSystems[idx].serviceType = item.querySelector(".ej-sys-service")?.value || null;
+      }
+    });
+  }
+
   function openJobEditModal(job) {
     document.getElementById("ej-address").value     = job.address || "";
     document.getElementById("ej-builder").value     = job.builder || "";
     document.getElementById("ej-subdivision").value = job.subdivision || "";
-    document.getElementById("ej-indoor").value      = job.system1?.indoor || "";
-    document.getElementById("ej-outdoor").value     = job.system1?.outdoor || "";
-    const two = job.isTwoSystems || !!(job.system2?.indoor || job.system2?.outdoor);
-    document.getElementById("ej-two-systems").checked = two;
-    document.getElementById("ej-system2-group").classList.toggle("hidden", !two);
-    document.getElementById("ej-indoor2").value     = job.system2?.indoor || "";
-    document.getElementById("ej-outdoor2").value    = job.system2?.outdoor || "";
+    const notesEl = document.getElementById("ej-notes");
+    if (notesEl) notesEl.value = job.notes || "";
     document.getElementById("edit-job-modal").dataset.jobId = job.id;
+
+    _editingJobSystems = Array.isArray(job.systems) && job.systems.length > 0
+      ? JSON.parse(JSON.stringify(job.systems))
+      : [
+          { indoor: job.system1?.indoor || "", outdoor: job.system1?.outdoor || "", serviceType: job.system1?.serviceType || null, links: job.system1?.links || {} },
+          ...((job.system2?.indoor || job.system2?.outdoor || job.isTwoSystems) ? [{
+            indoor: job.system2?.indoor || "",
+            outdoor: job.system2?.outdoor || "",
+            serviceType: job.system2?.serviceType || null,
+            links: job.system2?.links || {}
+          }] : [])
+        ];
+    if (!_editingJobSystems.length) {
+      _editingJobSystems.push({ indoor: "", outdoor: "", links: {}, serviceType: null });
+    }
+
+    _renderEditJobSystems();
     _openModal("edit-job-modal");
   }
 
@@ -1597,23 +1763,15 @@ function wireEvents() {
         const configVal = body.querySelector("#qc-config").value;
         const linesetVal = parseFloat(body.querySelector("#qc-lineset").value);
         const oz = parseFloat(calculateApproxAdjust(linesetVal, configVal));
-        const ref = configVal.includes("Trane") || configVal.includes("Lennox")
-          ? "R-454B"
-          : configVal.includes("Goodman") || configVal.includes("Daikin")
-          ? "R-32"
-          : "";
+        const cfg = FACTORY_LINE_CONFIGS[configVal];
+        const ref = cfg?.freon || "";
         const ozStr = isNaN(oz) ? "—" : oz >= 0 ? `+ ${oz.toFixed(2)} oz` : `− ${Math.abs(oz).toFixed(2)} oz`;
         body.querySelector("#qc-result").textContent = ref ? `${ozStr} · ${ref}` : ozStr;
 
         let detail = "";
-        if (!isNaN(oz) && configVal) {
-          const multiplier = configVal.includes("Trane") ? 0.47 : 0.6;
-          const factoryLength = configVal.includes("10ft") ? 10
-            : configVal.includes("25ft") ? 25
-            : configVal.includes("30ft") ? 30
-            : 15;
-          const extraFt = linesetVal - factoryLength;
-          detail = `${multiplier} oz per extra lineset ft · ${extraFt} additional ft to add.`;
+        if (!isNaN(oz) && cfg) {
+          const extraFt = linesetVal - cfg.factoryLength;
+          detail = `${cfg.multiplier} oz per extra lineset ft · ${extraFt} additional ft to add.`;
         }
         body.querySelector("#qc-detail").textContent = detail;
       }
@@ -1638,25 +1796,38 @@ function wireEvents() {
   document.getElementById("edit-job-cancel").addEventListener("click", () => {
     _closeModal("edit-job-modal");
   });
-  document.getElementById("ej-two-systems").addEventListener("change", (e) => {
-    document.getElementById("ej-system2-group").classList.toggle("hidden", !e.target.checked);
+  document.getElementById("ej-btn-add-system")?.addEventListener("click", () => {
+    _syncEditJobSystemsFromDOM();
+    _editingJobSystems.push({ indoor: "", outdoor: "", links: {} });
+    _renderEditJobSystems();
   });
   document.getElementById("edit-job-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const jobId = document.getElementById("edit-job-modal").dataset.jobId;
     const job = getJobById(jobId);
     if (!job) return;
+    _syncEditJobSystemsFromDOM();
+
     job.address     = document.getElementById("ej-address").value.trim().toUpperCase();
     job.builder     = document.getElementById("ej-builder").value.trim();
     job.subdivision = document.getElementById("ej-subdivision").value.trim().toUpperCase();
-    job.system1     = { ...job.system1, indoor: document.getElementById("ej-indoor").value.trim(), outdoor: document.getElementById("ej-outdoor").value.trim() };
-    const two = document.getElementById("ej-two-systems").checked;
-    job.isTwoSystems = two;
-    job.system2 = two
-      ? { ...(job.system2 || {}), indoor: document.getElementById("ej-indoor2").value.trim(), outdoor: document.getElementById("ej-outdoor2").value.trim() }
-      : null;
+    const notesInput = document.getElementById("ej-notes");
+    if (notesInput) job.notes = notesInput.value.trim();
+
+    job.systems = _editingJobSystems.length > 0 ? _editingJobSystems : [{ indoor: "", outdoor: "", links: {} }];
+    job.system1 = job.systems[0] || { indoor: "", outdoor: "", links: {} };
+    job.system2 = job.systems[1] || null;
+    job.isTwoSystems = job.systems.length === 2;
+
     updateJob(job);
     renderJobs();
+    if (_activeJob?.id === job.id) {
+      _activeJob = job;
+      if (typeof initWorkspace === "function") {
+        initWorkspace(job);
+        renderWorkspace();
+      }
+    }
     _closeModal("edit-job-modal");
     toast("Job updated", "success");
   });
@@ -1980,69 +2151,58 @@ function wireEvents() {
       saveProgress(_activeJob);
       return;
     }
-    if (e.target.dataset.wi === "factoryLineConfig") {
+    const _getWiSysInfo = (target) => {
+      if (target.dataset.wi) return { sys: 1, attr: "data-wi", field: target.dataset.wi };
+      if (target.dataset.wi2) return { sys: 2, attr: "data-wi2", field: target.dataset.wi2 };
+      for (const k of Object.keys(target.dataset)) {
+        if (k.startsWith("wi")) {
+          const m = k.match(/^wi(\d+)$/i);
+          if (m) {
+            const sys = parseInt(m[1]);
+            return { sys, attr: `data-wi-${sys}`, field: target.dataset[k] };
+          }
+        }
+      }
+      return null;
+    };
+
+    const sysInfo = _getWiSysInfo(e.target);
+    if (sysInfo && sysInfo.field === "factoryLineConfig") {
+      const { sys, attr } = sysInfo;
       const data = {};
-      wsForm.querySelectorAll("[data-wi]").forEach((inp) => {
-        data[inp.getAttribute("data-wi")] = inp.value;
+      wsForm.querySelectorAll(`[${attr}]`).forEach((inp) => {
+        data[inp.getAttribute(attr)] = inp.value;
       });
-      const outdoor = getOutdoorModel(_activeJob?.system1?.outdoor);
+      const sysList = getState()?.systems || [];
+      const outdoorModel = sysList[sys - 1]?.outdoor || (sys === 1 ? _activeJob?.system1?.outdoor : _activeJob?.system2?.outdoor);
+      const outdoor = getOutdoorModel(outdoorModel);
       if (outdoor) {
         const lineConfig = e.target.value;
-        const baseCharge = lineConfig.includes("revisedCharge")
+        const cfg = FACTORY_LINE_CONFIGS[lineConfig];
+        const baseCharge = (cfg?.isRevised && outdoor.revisedCharge)
           ? outdoor.revisedCharge
           : outdoor.FactoryCharge;
-        const fcInput = wsForm.querySelector('[data-wi="factoryChargeOz"]');
-        if (fcInput) {
+        const fcInput = wsForm.querySelector(`[${attr}="factoryChargeOz"]`);
+        if (fcInput && baseCharge != null) {
           fcInput.value = String(baseCharge);
           data.factoryChargeOz = String(baseCharge);
         }
-        const approxInput = wsForm.querySelector('[data-wi="approxAdjustOz"]');
+        const approxInput = wsForm.querySelector(`[${attr}="approxAdjustOz"]`);
         const result = calculateApproxAdjust(
           parseFloat(data.linesetLength),
           lineConfig
         );
         data.approxAdjustOz =
-          result !== null ? result : baseCharge ? String(baseCharge) : "";
+          result !== null ? result : (baseCharge != null ? String(baseCharge) : "");
         if (approxInput) approxInput.value = data.approxAdjustOz;
       }
-      setWeightInData(data, 1);
-      _renderNewTotalCharge(data, 1);
-      updatePriceDisplay();
-      saveProgress(_activeJob);
-    }
-    if (e.target.dataset.wi2 === "factoryLineConfig") {
-      const data = {};
-      wsForm.querySelectorAll("[data-wi2]").forEach((inp) => {
-        data[inp.getAttribute("data-wi2")] = inp.value;
-      });
-      const outdoor = getOutdoorModel(_activeJob?.system2?.outdoor);
-      if (outdoor) {
-        const lineConfig = e.target.value;
-        const baseCharge = lineConfig.includes("revisedCharge")
-          ? outdoor.revisedCharge
-          : outdoor.FactoryCharge;
-        const fcInput = wsForm.querySelector('[data-wi2="factoryChargeOz"]');
-        if (fcInput) {
-          fcInput.value = String(baseCharge);
-          data.factoryChargeOz = String(baseCharge);
-        }
-        const approxInput = wsForm.querySelector('[data-wi2="approxAdjustOz"]');
-        const result = calculateApproxAdjust(
-          parseFloat(data.linesetLength),
-          lineConfig
-        );
-        data.approxAdjustOz =
-          result !== null ? result : baseCharge ? String(baseCharge) : "";
-        if (approxInput) approxInput.value = data.approxAdjustOz;
-      }
-      setWeightInData(data, 2);
-      _renderNewTotalCharge(data, 2);
+      setWeightInData(data, sys);
+      _renderNewTotalCharge(data, sys);
       updatePriceDisplay();
       saveProgress(_activeJob);
     }
   });
 
-  // Workspace — text inputs (notes + weight-in)
   wsForm.addEventListener("input", (e) => {
     const state = getState();
     if (!state) return;
@@ -2051,9 +2211,24 @@ function wireEvents() {
       saveProgress(_activeJob);
       return;
     }
-    if (e.target.dataset.wi || e.target.dataset.wi2) {
-      const sys = e.target.dataset.wi ? 1 : 2;
-      const attr = sys === 1 ? "data-wi" : "data-wi2";
+    const _getWiSysInfo = (target) => {
+      if (target.dataset.wi) return { sys: 1, attr: "data-wi", field: target.dataset.wi };
+      if (target.dataset.wi2) return { sys: 2, attr: "data-wi2", field: target.dataset.wi2 };
+      for (const k of Object.keys(target.dataset)) {
+        if (k.startsWith("wi")) {
+          const m = k.match(/^wi(\d+)$/i);
+          if (m) {
+            const sys = parseInt(m[1]);
+            return { sys, attr: `data-wi-${sys}`, field: target.dataset[k] };
+          }
+        }
+      }
+      return null;
+    };
+
+    const sysInfo = _getWiSysInfo(e.target);
+    if (sysInfo) {
+      const { sys, attr, field } = sysInfo;
       const data = {};
       wsForm.querySelectorAll(`[${attr}]`).forEach((inp) => {
         data[inp.getAttribute(attr)] = inp.value;
@@ -2062,22 +2237,22 @@ function wireEvents() {
       const liq = parseFloat(data.liquidLineTemp);
       const csat = parseFloat(data.condenserSatTemp);
       if (!isNaN(liq) && !isNaN(csat)) {
-        data.subcoolingValue = String(csat - liq);
+        const sc = csat - liq;
+        data.subcoolingValue = String(parseFloat(sc.toFixed(1)));
         const scInput = wsForm.querySelector(`[${attr}="subcoolingValue"]`);
         if (scInput) scInput.value = data.subcoolingValue;
       }
       const scVal = parseFloat(data.subcoolingValue);
       const oemGoal = parseFloat(data.oemSubcoolingGoal);
       if (!isNaN(scVal) && !isNaN(oemGoal)) {
-        data.subcoolingDeviation = String(Math.abs(scVal - oemGoal));
+        const dev = Math.abs(scVal - oemGoal);
+        data.subcoolingDeviation = String(parseFloat(dev.toFixed(1)));
         const devInput = wsForm.querySelector(
           `[${attr}="subcoolingDeviation"]`
         );
         if (devInput) devInput.value = data.subcoolingDeviation;
       }
-      const warnContainer = document.getElementById(
-        sys === 1 ? "wi-fields-sys1" : "wi-fields-sys2"
-      );
+      const warnContainer = document.getElementById(`wi-fields-sys${sys}`);
       const warnEl = warnContainer?.querySelector("[data-sc-warn]");
       if (warnEl) {
         warnEl.classList.remove("sc-warn-danger", "sc-warn-caution");
@@ -2098,8 +2273,10 @@ function wireEvents() {
         }
       }
       // Recalc approxAdjustOz when linesetLength changes
-      if (sys === 1 && e.target.dataset.wi === "linesetLength") {
-        const outdoor = getOutdoorModel(_activeJob?.system1?.outdoor);
+      if (field === "linesetLength") {
+        const sysList = getState()?.systems || [];
+        const outdoorModel = sysList[sys - 1]?.outdoor || (sys === 1 ? _activeJob?.system1?.outdoor : _activeJob?.system2?.outdoor);
+        const outdoor = getOutdoorModel(outdoorModel);
         if (outdoor) {
           const lineConfig = data.factoryLineConfig || "";
           const result = calculateApproxAdjust(
@@ -2109,7 +2286,7 @@ function wireEvents() {
           if (result !== null) {
             data.approxAdjustOz = result;
             const approxInput = wsForm.querySelector(
-              '[data-wi="approxAdjustOz"]'
+              `[${attr}="approxAdjustOz"]`
             );
             if (approxInput) approxInput.value = result;
           }
@@ -2154,8 +2331,12 @@ function wireEvents() {
         .writeText(copy.dataset.copy)
         .then(() => toast("Copied!", "success"));
     if (del && confirm("Delete this report?")) {
-      deleteCompletion(del.dataset.delete);
+      const jobId = del.dataset.delete;
+      deleteCompletion(jobId);
+      removeJob(jobId);
       renderReports();
+      renderJobs();
+      toast("Report and associated job deleted.", "success");
     }
     if (edit) {
       const c = getCompletions().find(
@@ -2325,67 +2506,13 @@ function wireEvents() {
   document
     .getElementById("add-job-cancel")
     .addEventListener("click", _collapseAddJobForm);
-  const _checkSys2Btn = () => {
-    const f = document.getElementById("new-job-indoor").value;
-    const o = document.getElementById("new-job-outdoor").value;
-    document.getElementById("btn-add-system2").style.display =
-      f && o ? "block" : "none";
-  };
-  document.getElementById("new-job-indoor").addEventListener("change", _checkSys2Btn);
-  document.getElementById("new-job-outdoor").addEventListener("change", _checkSys2Btn);
-  document.getElementById("btn-add-system2").addEventListener("click", () => {
-    const cb = document.getElementById("new-job-two-systems");
-    const sys2 = document.getElementById("new-job-sys2");
-    const btn = document.getElementById("btn-add-system2");
-    const adding = !cb.checked;
-    cb.checked = adding;
-    sys2.classList.toggle("hidden", !adding);
-    if (!adding) {
-      document.getElementById("new-job-indoor2").value = "";
-      document.getElementById("new-job-outdoor2").value = "";
-    }
-    btn.textContent = adding ? "− Remove second system" : "+ Add second system";
-  });
   document
-    .getElementById("new-job-indoor")
-    .addEventListener("change", (e) =>
-      _showEquipLinks(
-        e.target.value,
-        getIndoorModel,
-        SERIES_LINKS,
-        document.getElementById("indoor-links")
-      )
-    );
-  document
-    .getElementById("new-job-indoor2")
-    .addEventListener("change", (e) =>
-      _showEquipLinks(
-        e.target.value,
-        getIndoorModel,
-        SERIES_LINKS,
-        document.getElementById("indoor-links2")
-      )
-    );
-  document
-    .getElementById("new-job-outdoor")
-    .addEventListener("change", (e) =>
-      _showEquipLinks(
-        e.target.value,
-        getOutdoorModel,
-        OUTDOOR_LINKS,
-        document.getElementById("outdoor-links")
-      )
-    );
-  document
-    .getElementById("new-job-outdoor2")
-    .addEventListener("change", (e) =>
-      _showEquipLinks(
-        e.target.value,
-        getOutdoorModel,
-        OUTDOOR_LINKS,
-        document.getElementById("outdoor-links2")
-      )
-    );
+    .getElementById("new-job-btn-add-sys")
+    .addEventListener("click", () => {
+      _syncNewJobSystemsFromDOM();
+      _newJobSystems.push({ indoor: "", outdoor: "", links: {} });
+      _renderNewJobSystems();
+    });
   document
     .getElementById("new-job-tstat")
     .addEventListener("change", (e) =>
@@ -2414,42 +2541,37 @@ function wireEvents() {
     });
   document.getElementById("add-job-form").addEventListener("submit", (e) => {
     e.preventDefault();
+    _syncNewJobSystemsFromDOM();
     const fd = new FormData(e.target);
     const tstatVal = fd.get("tstat");
     const tstatModel =
       tstatVal === "Other"
         ? (fd.get("tstat-other") || "").trim()
         : tstatVal || "";
-    const isTwoSystems = !!fd.get("two-systems");
+    
+    const systems = _newJobSystems.map((s, idx) => ({
+      id: `sys_${idx + 1}`,
+      indoor: s.indoor || "",
+      outdoor: s.outdoor || "",
+      serviceType: s.serviceType || null,
+      links: s.links || {
+        ...(SERIES_LINKS[getIndoorModel(s.indoor)?.series] ?? {}),
+        ...(OUTDOOR_LINKS[getOutdoorModel(s.outdoor)?.series] ?? {}),
+      },
+      weightInData: null,
+      accessories: [],
+    }));
+
     const job = createJob({
       address: fd.get("address").toUpperCase(),
       subdivision: (fd.get("subdivision") || "").toUpperCase(),
       builder: fd.get("builder") || "",
       notes: fd.get("notes") || "",
-      isTwoSystems,
+      systems,
+      isTwoSystems: systems.length === 2,
       jobAccessories: [..._newJobAccChips],
       jobThermostat: tstatModel
         ? { model: tstatModel, qty: parseInt(fd.get("tstat-qty")) || 1 }
-        : null,
-      system1: {
-        indoor: fd.get("indoor") || "",
-        outdoor: fd.get("outdoor") || "",
-        links: {
-          ...(SERIES_LINKS[getIndoorModel(fd.get("indoor"))?.series] ?? {}),
-          ...(OUTDOOR_LINKS[getOutdoorModel(fd.get("outdoor"))?.series] ?? {}),
-        },
-      },
-      system2: isTwoSystems
-        ? {
-            indoor: fd.get("indoor2") || "",
-            outdoor: fd.get("outdoor2") || "",
-            links: {
-              ...(SERIES_LINKS[getIndoorModel(fd.get("indoor2"))?.series] ??
-                {}),
-              ...(OUTDOOR_LINKS[getOutdoorModel(fd.get("outdoor2"))?.series] ??
-                {}),
-            },
-          }
         : null,
     });
     precacheJobs([job]);
@@ -2550,8 +2672,12 @@ function openEditModal(completion) {
   const iniDriveRun = !isCanceled && svcName === SERVICES.DRIVE_RUN;
   const iniCancel = isCanceled;
 
-  const wid = c.weightInData || {};
-  const wid2 = c.weightInData2 || {};
+  const sysList = Array.isArray(c.systems) && c.systems.length > 0
+    ? c.systems
+    : [
+        { indoor: c.indoor, outdoor: c.outdoor, weightInData: c.weightInData },
+        ...((c.indoor2 || c.outdoor2 || c.isTwoSystems) ? [{ indoor: c.indoor2, outdoor: c.outdoor2, weightInData: c.weightInData2 }] : [])
+      ];
 
   const makeItemRow = (item, type) => {
     const catalog =
@@ -2656,13 +2782,27 @@ function openEditModal(completion) {
               .join("")}
           </div>
           <div class="em-flags">
-            <label class="em-check-label"><input type="checkbox" id="_em2sys"${
-              c.isTwoSystems ? " checked" : ""
-            }> 2 Systems</label>
+            ${sysList.length > 2
+              ? `<span class="chip chip-sm chip-secondary" style="font-weight:bold">${sysList.length} Systems Active</span>`
+              : `<label class="em-check-label"><input type="checkbox" id="_em2sys"${(c.isTwoSystems || sysList.length === 2) ? " checked" : ""}> 2 Systems</label>`}
             <label class="em-check-label"><input type="checkbox" id="_emtemp"${
               c.isTemporary ? " checked" : ""
             }> Temporarily</label>
           </div>
+        </div>
+        <div class="em-section">
+          <div class="em-section-title">Systems & Services</div>
+          ${sysList.map((sys, idx) => `
+            <div class="em-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-1);gap:var(--space-1)">
+              <span style="font-weight:bold;font-size:var(--font-size-sm)">System ${idx + 1}: ${[sys.indoor, sys.outdoor].filter(Boolean).join(" / ") || "Unit"}</span>
+              <select class="em-input em-sys-svc" data-sys-idx="${idx}" style="font-size:var(--font-size-xs);width:auto">
+                <option value="">Default (from Service checkboxes)</option>
+                ${[SERVICES.AC, SERVICES.HEAT, SERVICES.AC_HEAT, SERVICES.PRESTART, SERVICES.FINISH, SERVICES.DRIVE_RUN].map(svc => `
+                  <option value="${esc(svc)}"${sys.serviceType === svc ? " selected" : ""}>${esc(svc)}</option>
+                `).join("")}
+              </select>
+            </div>
+          `).join("")}
         </div>
         <div class="em-section">
           <div class="em-section-title">Thermostat</div>
@@ -2696,8 +2836,10 @@ function openEditModal(completion) {
             .join("")}</div>
           <button type="button" id="_em-addfix" class="btn em-add-btn">+ Add Fix</button>
         </div>
-        ${wiSection(wid, 1)}
-        ${c.isTwoSystems ? wiSection(wid2, 2) : ""}
+        ${sysList.map((sys, idx) => {
+          const sWid = sys.weightInData || (idx === 0 ? c.weightInData : (idx === 1 ? c.weightInData2 : {})) || {};
+          return wiSection(sWid, idx + 1);
+        }).join("")}
       </div>
       <div class="em-footer">
         <button type="button" id="_em-apply" class="btn btn-primary">Apply</button>
@@ -2749,7 +2891,7 @@ function openEditModal(completion) {
     const selSvcs = Array.from(
       overlay.querySelectorAll('[name="_emsvc"]:checked')
     ).map((el) => el.value);
-    const new2sys = overlay.querySelector("#_em2sys").checked;
+    const new2sys = overlay.querySelector("#_em2sys") ? overlay.querySelector("#_em2sys").checked : (sysList.length === 2);
     const newTemp = overlay.querySelector("#_emtemp").checked;
     const tstatVal = overlay.querySelector("#_em-tstat").value;
     const newTstat = tstatVal ? { name: tstatVal } : null;
@@ -2771,26 +2913,22 @@ function openEditModal(completion) {
     const newAccs = collectItems("_em-acclist");
     const newFixes = collectItems("_em-fixlist");
 
-    const newWid = {},
-      newWid2 = {};
-    overlay.querySelectorAll("[data-wi='1']").forEach((el) => {
-      newWid[el.dataset.key] = el.value.trim();
+    const updatedSystems = sysList.map((sys, idx) => {
+      const sysWid = {};
+      overlay.querySelectorAll(`[data-wi='${idx + 1}']`).forEach((el) => {
+        sysWid[el.dataset.key] = el.value.trim();
+      });
+      const svcEl = overlay.querySelector(`.em-sys-svc[data-sys-idx='${idx}']`);
+      return {
+        ...sys,
+        serviceType: svcEl ? (svcEl.value || null) : (sys.serviceType || null),
+        weightInData: sysWid,
+      };
     });
-    overlay.querySelectorAll("[data-wi='2']").forEach((el) => {
-      newWid2[el.dataset.key] = el.value.trim();
-    });
-    const updatedWid2 = overlay.querySelector("[data-wi='2']")
-      ? newWid2
-      : c.weightInData2 || {};
+    const updatedWid = updatedSystems[0]?.weightInData || {};
+    const updatedWid2 = updatedSystems[1]?.weightInData || null;
 
-    // Service items — mirrors _buildServiceItems in workspace.js
-    const hasAC = selSvcs.includes(SERVICES.AC);
-    const hasHeat = selSvcs.includes(SERVICES.HEAT);
-    const hasFinish = selSvcs.includes(SERVICES.FINISH);
-    const hasPrestart = selSvcs.includes(SERVICES.PRESTART);
-    const hasDriveRun = selSvcs.includes(SERVICES.DRIVE_RUN);
     const hasCancel = selSvcs.includes(SERVICES.CANCEL);
-
     const svcItems = [];
     if (hasCancel) {
       svcItems.push({
@@ -2799,46 +2937,66 @@ function openEditModal(completion) {
         price: 0,
       });
     } else {
-      let name,
-        dn,
-        price = 0;
-      if (hasFinish) {
-        name = SERVICES.FINISH;
-        const combo =
-          hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
-        dn = combo ? `Finish/ ${combo} started` : "Finish";
-        price = (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0;
-      } else if (hasAC && hasHeat) {
-        name = SERVICES.AC_HEAT;
-        dn = newTemp ? "AC & Heat started (Temporarily)" : "AC & Heat started";
-        price = prices.SERVICE[SERVICES.AC_HEAT] ?? 0;
-      } else if (hasAC) {
-        name = SERVICES.AC;
-        dn = newTemp ? "AC (Temporarily) started" : "AC started";
-        price = prices.SERVICE[SERVICES.AC] ?? 0;
-      } else if (hasHeat) {
-        name = SERVICES.HEAT;
-        dn = newTemp ? "Heat (Temporarily) started" : "Heat started";
-        price = prices.SERVICE[SERVICES.HEAT] ?? 0;
-      } else if (hasPrestart) {
-        name = SERVICES.PRESTART;
-        dn = "System Prestarted";
-        price = prices.SERVICE[SERVICES.PRESTART] ?? 0;
-      } else if (hasDriveRun) {
-        name = SERVICES.DRIVE_RUN;
-        dn = "Drive Run";
-        price = prices.SERVICE[SERVICES.DRIVE_RUN] ?? 0;
+      const formatSvc = (name) => {
+        if (!name) return { name: "", label: "", price: 0 };
+        if (name === SERVICES.FINISH) return { name: SERVICES.FINISH, label: "Finish/", price: FINISH_SERVICE_PRICE };
+        if (name === SERVICES.AC_HEAT) return { name: SERVICES.AC_HEAT, label: newTemp ? "AC & Heat started (Temporarily)" : "AC & Heat started", price: prices.SERVICE[SERVICES.AC_HEAT] ?? 30 };
+        if (name === SERVICES.AC) return { name: SERVICES.AC, label: newTemp ? "AC (Temporarily) started" : "AC started", price: prices.SERVICE[SERVICES.AC] ?? 30 };
+        if (name === SERVICES.HEAT) return { name: SERVICES.HEAT, label: newTemp ? "Heat (Temporarily) started" : "Heat started", price: prices.SERVICE[SERVICES.HEAT] ?? 30 };
+        if (name === SERVICES.PRESTART) return { name: SERVICES.PRESTART, label: "System Prestarted", price: prices.SERVICE[SERVICES.PRESTART] ?? 20 };
+        if (name === SERVICES.DRIVE_RUN) return { name: SERVICES.DRIVE_RUN, label: "Drive Run", price: prices.SERVICE[SERVICES.DRIVE_RUN] ?? 10 };
+        return { name, label: name, price: prices.SERVICE[name] ?? 0 };
+      };
+
+      const getGlobalSvc = () => {
+        const hasAC = selSvcs.includes(SERVICES.AC);
+        const hasHeat = selSvcs.includes(SERVICES.HEAT);
+        const hasFinish = selSvcs.includes(SERVICES.FINISH);
+        const hasPrestart = selSvcs.includes(SERVICES.PRESTART);
+        const hasDriveRun = selSvcs.includes(SERVICES.DRIVE_RUN);
+        if (hasFinish) {
+          const combo = hasAC && hasHeat ? "AC & Heat" : hasAC ? "AC" : hasHeat ? "Heat" : "";
+          const label = combo ? `Finish/ ${combo} started` : "Finish";
+          return { name: SERVICES.FINISH, label, price: (hasAC || hasHeat) ? FINISH_SERVICE_PRICE : 0 };
+        } else if (hasAC && hasHeat) {
+          return { name: SERVICES.AC_HEAT, label: newTemp ? "AC & Heat started (Temporarily)" : "AC & Heat started", price: prices.SERVICE[SERVICES.AC_HEAT] ?? 30 };
+        } else if (hasAC) {
+          return { name: SERVICES.AC, label: newTemp ? "AC (Temporarily) started" : "AC started", price: prices.SERVICE[SERVICES.AC] ?? 30 };
+        } else if (hasHeat) {
+          return { name: SERVICES.HEAT, label: newTemp ? "Heat (Temporarily) started" : "Heat started", price: prices.SERVICE[SERVICES.HEAT] ?? 30 };
+        } else if (hasPrestart) {
+          return { name: SERVICES.PRESTART, label: "System Prestarted", price: prices.SERVICE[SERVICES.PRESTART] ?? 20 };
+        } else if (hasDriveRun) {
+          return { name: SERVICES.DRIVE_RUN, label: "Drive Run", price: prices.SERVICE[SERVICES.DRIVE_RUN] ?? 10 };
+        }
+        return { name: "", label: "", price: 0 };
+      };
+
+      const globalSvc = getGlobalSvc();
+      const perSys = updatedSystems.map(s => s.serviceType ? formatSvc(s.serviceType) : globalSvc);
+      const allIdentical = perSys.length > 0 && perSys.every(p => p.name === perSys[0].name && p.label === perSys[0].label);
+
+      let tstatSuffix = "";
+      if (newTstat) {
+        const ql = newTstatQty === 1 ? "tstat" : "tstats";
+        tstatSuffix = ` ${newTstatQty} ${newTstat.name} ${ql}`;
       }
-      if (name) {
-        if (new2sys) {
-          price *= 2;
-          dn += " (2 Systems)";
-        }
-        if (newTstat) {
-          const ql = newTstatQty === 1 ? "tstat" : "tstats";
-          dn += ` ${newTstatQty} ${newTstat.name} ${ql}`;
-        }
-        svcItems.push({ name, displayName: dn, price });
+
+      const sysCount = updatedSystems.length > 2
+        ? updatedSystems.length
+        : (new2sys ? 2 : (updatedSystems.length || 1));
+
+      if (allIdentical && perSys[0].name) {
+        let dn = perSys[0].label;
+        if (sysCount > 1) dn += ` (${sysCount} Systems)`;
+        dn += tstatSuffix;
+        svcItems.push({ name: perSys[0].name, displayName: dn, price: perSys[0].price * sysCount });
+      } else if (perSys.some(p => p.name)) {
+        perSys.forEach((svc, idx) => {
+          let dn = `Sys ${idx + 1}: ${svc.label}`;
+          if (idx === perSys.length - 1 && tstatSuffix) dn += tstatSuffix;
+          svcItems.push({ name: svc.name, displayName: dn, price: svc.price, systemIndex: idx });
+        });
       }
     }
 
@@ -2846,17 +3004,22 @@ function openEditModal(completion) {
     const accTotal = newAccs.reduce((s, i) => s + i.price, 0);
     const fixTotal = newFixes.reduce((s, i) => s + i.price, 0);
 
+    const sysCount = updatedSystems.length > 2
+      ? updatedSystems.length
+      : (new2sys ? 2 : (updatedSystems.length || 1));
+
     const updated = {
       ...c,
       notes: newNotes,
-      isTwoSystems: new2sys,
+      isTwoSystems: sysCount === 2,
       isTemporary: newTemp,
       selectedThermostat: newTstat,
       thermostatQuantity: newTstatQty,
       services: svcItems,
       accessories: newAccs,
       fixes: newFixes,
-      weightInData: newWid,
+      systems: updatedSystems,
+      weightInData: updatedWid,
       weightInData2: updatedWid2,
       totals: {
         service: svcTotal,

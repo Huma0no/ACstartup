@@ -70,6 +70,8 @@ export function buildContext(state) {
     zoningBoardKey: zoningKey,
     isA2L:         !!(heater?.isA2L || outdoor?.isA2L),
     isTwoSystems:  state.isTwoSystems || false,
+    systemsCount:  state.systemsCount || (state.isTwoSystems ? 2 : 1),
+    systemIndex:   state.systemIndex ?? 0,
     selectedAccessories: accs,
   };
 }

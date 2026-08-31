@@ -78,6 +78,7 @@ function csvCell(value) {
     : s;
 }
 
+// Columns 1-43 match legacy format. Extra systems are appended at the end.
 const CSV_HEADER =
   "Date,Address,Subdivision,Builder,Notes," +
   "Service_Type,Service_Price,Thermostat,Tstat_Qty," +
@@ -90,17 +91,34 @@ const CSV_HEADER =
   "Indoor_Model_2,Outdoor_Model_2," +
   "Sys2_Lineset,Sys2_Line_Config,Sys2_Fact_Chg,Sys2_Appr_Adj," +
   "Sys2_Adj_Chg,Sys2_Fan_CFM,Sys2_Liq_Temp,Sys2_Suc_Temp," +
-  "Sys2_Sat_Temp,Sys2_SC,Sys2_SC_Goal,Sys2_SC_Dev";
+  "Sys2_Sat_Temp,Sys2_SC,Sys2_SC_Goal,Sys2_SC_Dev," +
+  "Total_Systems,Extra_Systems_Summary";
 
 export function exportCSV(completions) {
   const rows = completions.map((c) => {
-    const w  = c.weightInData  || {};
-    const w2 = c.weightInData2 || {};
+    const sysList = Array.isArray(c.systems) && c.systems.length > 0
+      ? c.systems
+      : [
+          { indoor: c.indoor || "", outdoor: c.outdoor || "", weightInData: c.weightInData },
+          ...((c.indoor2 || c.outdoor2 || c.isTwoSystems) ? [{ indoor: c.indoor2 || "", outdoor: c.outdoor2 || "", weightInData: c.weightInData2 }] : [])
+        ];
 
-    // Service_Type: strip tstat segment embedded in displayName
-    const serviceType = (c.services[0]?.displayName || "")
-      .replace(/\s+\d+\s+\S+\s+tstats?$/i, "")
-      .trim();
+    const s1 = sysList[0] || {};
+    const s2 = sysList[1] || {};
+    const w  = s1.weightInData || c.weightInData  || {};
+    const w2 = s2.weightInData || c.weightInData2 || {};
+
+    // Service_Type: handle uniform or mixed per-system services
+    let serviceType = "";
+    if (c.services?.length === 1) {
+      serviceType = (c.services[0]?.displayName || "")
+        .replace(/\s+\d+\s+\S+\s+tstats?$/i, "")
+        .trim();
+    } else if (c.services?.length > 1) {
+      serviceType = c.services
+        .map((s) => (s.displayName || s.name || "").replace(/\s+\d+\s+\S+\s+tstats?$/i, "").trim())
+        .join("; ");
+    }
 
     const accessories = c.accessories
       .map((a) => `${a.displayName} $${a.price}`)
@@ -112,6 +130,13 @@ export function exportCSV(completions) {
 
     const date = c.timestamp
       ? new Date(c.timestamp).toLocaleDateString()
+      : "";
+
+    const totalSystems = sysList.length;
+    const extraSystemsSummary = sysList.length > 2
+      ? sysList.slice(2).map((s, i) =>
+          `Sys${i + 3}: [${s.serviceType ? `Service: ${s.serviceType}, ` : ""}Indoor: ${s.indoor || "—"}, Outdoor: ${s.outdoor || "—"}, Lineset: ${s.weightInData?.linesetLength || "—"}, Adj: ${s.weightInData?.adjustedOz || "—"} oz, SC: ${s.weightInData?.subcoolingValue || "—"}°F]`
+        ).join(" | ")
       : "";
 
     return [
@@ -130,9 +155,9 @@ export function exportCSV(completions) {
       c.totals.fix,
       c.totals.total,
       // Equipment sys1
-      c.indoor,
-      c.outdoor,
-      c.refrigerant,
+      s1.indoor || c.indoor || "",
+      s1.outdoor || c.outdoor || "",
+      c.refrigerant || "",
       // Weigh-in sys1
       w.linesetLength        || "",
       w.factoryLineConfig    || "",
@@ -147,8 +172,8 @@ export function exportCSV(completions) {
       w.oemSubcoolingGoal    || "",
       w.subcoolingDeviation  || "",
       // Equipment sys2
-      c.indoor2,
-      c.outdoor2,
+      s2.indoor || c.indoor2 || "",
+      s2.outdoor || c.outdoor2 || "",
       // Weigh-in sys2
       w2.linesetLength       || "",
       w2.factoryLineConfig   || "",
@@ -162,6 +187,9 @@ export function exportCSV(completions) {
       w2.subcoolingValue     || "",
       w2.oemSubcoolingGoal   || "",
       w2.subcoolingDeviation || "",
+      // Extra Multi-System Columns (Columns 44 & 45)
+      totalSystems,
+      extraSystemsSummary,
     ].map(csvCell).join(",");
   });
 

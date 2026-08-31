@@ -1768,20 +1768,6 @@
               <div id="nj-addr-dropdown" class="gs-dropdown" style="display:none"></div>
             </div>
 
-            <!-- Service chips -->
-            <div style="margin-bottom:10px">
-              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Service</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap" id="nj-svc-chips">
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC STARTUP"    onclick="njToggleSvc(this)">AC</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="HEAT STARTUP"  onclick="njToggleSvc(this)">Heat</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC & HEAT"     onclick="njToggleSvc(this)">AC &amp; Heat</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="PRESTART"      onclick="njToggleSvc(this)">Prestart</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="FINISH"        onclick="njToggleSvc(this)">Finish</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="DRIVE RUN"     onclick="njToggleSvc(this)">Drive Run</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="SERVICE CALL"  onclick="njToggleSvc(this)">Service Call</button>
-              </div>
-            </div>
-
             <!-- Subdivision + Builder -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
@@ -1824,53 +1810,33 @@
               </div>
             </div>
 
-            <!-- Equipment flat selects -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-              <!-- Furnace -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Furnace / AHU</label>
-                <select id="nj-furnace" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-              </div>
-              <!-- Outdoor -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Outdoor Unit</label>
-                <select id="nj-outdoor" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
+            <!-- Dynamic Systems container -->
+            <div id="nj-systems-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+              <!-- System 1 -->
+              <div class="nj-sys-row" data-sys-idx="1" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px">
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Furnace / AHU — Sys 1</label>
+                  <select id="nj-furnace" class="nj-sys-furnace" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
+                    style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                    <option value="">Select model…</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Outdoor Unit — Sys 1</label>
+                  <select id="nj-outdoor" class="nj-sys-outdoor" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
+                    style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                    <option value="">Select model…</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <!-- 2 Systems checkbox -->
+            <!-- Add System Button -->
             <div style="margin-bottom:10px">
-              <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--mono);color:var(--text);cursor:pointer">
-                <input type="checkbox" id="nj-two-systems" style="width:15px;height:15px;cursor:pointer"
-                  onchange="document.getElementById('nj-sys2-row').style.display=this.checked?'grid':'none'" />
-                2 Systems
-              </label>
-            </div>
-
-            <!-- System 2 equipment (hidden until 2 Systems checked) -->
-            <div id="nj-sys2-row" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px">
-              <!-- Furnace 2 -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Furnace / AHU — Sys 2</label>
-                <select id="nj-furnace2" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-              </div>
-              <!-- Outdoor 2 -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Outdoor Unit — Sys 2</label>
-                <select id="nj-outdoor2" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-              </div>
+              <button type="button" id="nj-btn-add-system" onclick="njAddSystemRow()"
+                style="background:none;border:1px dashed var(--border2);color:var(--amber);padding:5px 10px;border-radius:3px;font-size:11px;font-family:var(--mono);cursor:pointer">
+                + Add System
+              </button>
             </div>
 
             <!-- Tstat + qty + Acc row -->
@@ -4820,8 +4786,12 @@
           </div>`;
         };
 
-        const hasWid2 = Object.values(wid2).some(v => v !== '' && v != null);
-        const hasEquip2 = !!(j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems);
+        const sysList = Array.isArray(j.systems) && j.systems.length > 0
+          ? j.systems
+          : [
+              { indoor: j.heaterModel || j.indoor || '', outdoor: j.outdoorModel || j.outdoor || '', weightInData: ss.weightInData },
+              ...((j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems || ss.weightInData2) ? [{ indoor: j.heaterModel2 || j.indoor2 || '', outdoor: j.outdoorModel2 || j.outdoor2 || '', weightInData: ss.weightInData2 }] : [])
+            ];
 
         // Always-visible equipment label+input (no data-cef — never hidden)
         const equipField = (id, label, val) =>
@@ -4835,7 +4805,7 @@
           <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
             <button type="button" id="ce-showall-btn-${idx}" onclick="compToggleAllFields(${idx})"
               style="font-size:10px;color:var(--ice);background:none;border:none;
-                     cursor:pointer;text-decoration:underline;padding:0">Show all fields</button>
+              cursor:pointer;text-decoration:underline;padding:0">Show all fields</button>
           </div>
 
           <!-- Report Text -->
@@ -4861,25 +4831,30 @@
           </div>
 
           <!-- Equipment — always visible regardless of weigh-in data -->
-          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                        color:var(--ice);margin-bottom:8px">Equipment — System 1</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
-              ${equipField(`ce-indoor-${idx}`,      'Indoor Model',  j.heaterModel)}
-              ${equipField(`ce-outdoor-${idx}`,     'Outdoor Model', j.outdoorModel)}
-              ${equipField(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant)}
-            </div>
-          </div>
-
-          ${hasEquip2 ? `
-          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                        color:var(--ice);margin-bottom:8px">Equipment — System 2</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
-              ${equipField(`ce-indoor2-${idx}`,  'Indoor Model 2',  j.heaterModel2)}
-              ${equipField(`ce-outdoor2-${idx}`, 'Outdoor Model 2', j.outdoorModel2)}
-            </div>
-          </div>` : ''}
+          ${sysList.map((s, sIdx) => {
+            const sysNum = sIdx + 1;
+            const inVal = s.indoor || (sIdx === 0 ? j.heaterModel : sIdx === 1 ? j.heaterModel2 : '');
+            const outVal = s.outdoor || (sIdx === 0 ? j.outdoorModel : sIdx === 1 ? j.outdoorModel2 : '');
+            return `
+            <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                          color:var(--ice);margin-bottom:8px">Equipment — System ${sysNum}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+                ${equipField(`ce-indoor-${sysNum}-${idx}`,      'Indoor Model',  inVal)}
+                ${equipField(`ce-outdoor-${sysNum}-${idx}`,     'Outdoor Model', outVal)}
+                <div style="margin-bottom:6px">
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:2px">Service</div>
+                  <select id="ce-service-${sysNum}-${idx}" style="width:100%;font-size:12px;padding:3px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box">
+                    <option value="">Default (Global)</option>
+                    ${['AC','Heat','AC & Heat','Prestart','Finish','Drive Run'].map(svc => `
+                      <option value="${esc(svc)}"${(s.serviceType === svc || (sIdx === 0 && !s.serviceType && j.serviceType === svc)) ? ' selected' : ''}>${esc(svc)}</option>
+                    `).join('')}
+                  </select>
+                </div>
+                ${sIdx === 0 ? equipField(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant) : ''}
+              </div>
+            </div>`;
+          }).join('')}
 
           <!-- Notes -->
           <div style="margin-bottom:10px">
@@ -4915,10 +4890,11 @@
           </div>
 
           <!-- Weigh-In Data -->
-          ${widSection(1, wid, 'Weigh-In Data')}
-          <div data-cef style="display:${hasWid2 ? 'block' : 'none'}">
-            ${widSection(2, wid2, 'Weigh-In Data — System 2')}
-          </div>
+          ${sysList.map((s, sIdx) => {
+            const sysNum = sIdx + 1;
+            const sWid = s.weightInData || (sIdx === 0 ? ss.weightInData : sIdx === 1 ? ss.weightInData2 : {}) || {};
+            return widSection(sysNum, sWid, `Weigh-In Data — System ${sysNum}`);
+          }).join('')}
 
           <!-- Items -->
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
@@ -5101,11 +5077,7 @@
         j.address      = document.getElementById(`ce-addr-${idx}`).value.trim();
         j.subdivision  = document.getElementById(`ce-subdiv-${idx}`)?.value.trim() ?? j.subdivision;
         j.builder      = document.getElementById(`ce-builder-${idx}`)?.value.trim() ?? j.builder;
-        j.heaterModel  = document.getElementById(`ce-indoor-${idx}`)?.value.trim() ?? j.heaterModel;
-        j.outdoorModel = document.getElementById(`ce-outdoor-${idx}`)?.value.trim() ?? j.outdoorModel;
         j.refrigerant  = document.getElementById(`ce-refrigerant-${idx}`)?.value.trim() ?? j.refrigerant;
-        j.heaterModel2  = document.getElementById(`ce-indoor2-${idx}`)?.value.trim() ?? j.heaterModel2 ?? "";
-        j.outdoorModel2 = document.getElementById(`ce-outdoor2-${idx}`)?.value.trim() ?? j.outdoorModel2 ?? "";
         j.savedState.notes = document.getElementById(`ce-notes-${idx}`).value.trim();
 
         // Thermostat
@@ -5129,8 +5101,37 @@
           });
           return obj;
         };
-        j.savedState.weightInData  = readWid(1);
-        j.savedState.weightInData2 = readWid(2);
+
+        const sysList = Array.isArray(j.systems) && j.systems.length > 0
+          ? j.systems
+          : [
+              { indoor: j.heaterModel || "", outdoor: j.outdoorModel || "" },
+              ...((j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems || j.savedState?.weightInData2) ? [{ indoor: j.heaterModel2 || "", outdoor: j.outdoorModel2 || "" }] : [])
+            ];
+
+        const updatedSystems = sysList.map((s, sIdx) => {
+          const sysNum = sIdx + 1;
+          const inEl = document.getElementById(`ce-indoor-${sysNum}-${idx}`) || (sysNum === 1 ? document.getElementById(`ce-indoor-${idx}`) : document.getElementById(`ce-indoor2-${idx}`));
+          const outEl = document.getElementById(`ce-outdoor-${sysNum}-${idx}`) || (sysNum === 1 ? document.getElementById(`ce-outdoor-${idx}`) : document.getElementById(`ce-outdoor2-${idx}`));
+          const svcEl = document.getElementById(`ce-service-${sysNum}-${idx}`);
+          return {
+            ...s,
+            id: s.id || `sys_${sysNum}`,
+            indoor: inEl?.value.trim() ?? s.indoor ?? "",
+            outdoor: outEl?.value.trim() ?? s.outdoor ?? "",
+            serviceType: svcEl?.value || null,
+            weightInData: readWid(sysNum),
+          };
+        });
+
+        j.systems = updatedSystems;
+        j.heaterModel = updatedSystems[0]?.indoor || "";
+        j.outdoorModel = updatedSystems[0]?.outdoor || "";
+        j.heaterModel2 = updatedSystems[1]?.indoor || "";
+        j.outdoorModel2 = updatedSystems[1]?.outdoor || "";
+        j.savedState.weightInData = updatedSystems[0]?.weightInData || {};
+        j.savedState.weightInData2 = updatedSystems[1]?.weightInData || {};
+        j.isTwoSystems = updatedSystems.length === 2;
 
         const services = [], accessories = [], fixes = [];
         document.getElementById(`ce-items-${idx}`)
@@ -5894,7 +5895,7 @@
         "ML14KC1 SERIES": ["ML14KC1-018","ML14KC1-024","ML14KC1-030","ML14KC1-036","ML14KC1-041","ML14KC1-042","ML14KC1-047","ML14KC1-048","ML14KC1-059","ML14KC1-060"],
         "ML17KC2 SERIES": ["ML17KC2-024","ML17KC2-036","ML17KC2-048","ML17KC2-060"],
         "4TTR SERIES": ["4TTR6024N1000AA","4TTR5042A1000AA","4TTR5048A1000AA","4TTR5060A1000AA"],
-        "5TTR SERIES": ["5TTR5018","5TTR5024","5TTR5030","5TTR5036","5TTR5042","5TTR5048","5TTR5060"],
+        "5TTR SERIES": ["5TTR5018","5TTR5024","5TTR5030","5TTR5036","5TTR5042","5TTR5048","5TTR5060","5TTR6018","5TTR6024","5TTR6030","5TTR6036","5TTR6042","5TTR6048","5TTR6060"],
         "GLXS4BA SERIES": ["GLXS4BA1810AA","GLXS4BA2410AA","GLXS4BA3010AA","GLXS4BA3610AA","GLXS4BA4210AA","GLXS4BA4810AA","GLXS4BA6010AA"],
         "GLXS5BA SERIES": ["GLXS5BA1810AA","GLXS5BA2410AA","GLXS5BA3010AA","GLXS5BA3610AA","GLXS5BA4210AA","GLXS5BA4810AA","GLXS5BA6010AA"],
         "GLZS4BA SERIES": ["GLZS4BA1810AA","GLZS4BA2410AA","GLZS4BA3010AA","GLZS4BA3610AA","GLZS4BA4210AA","GLZS4BA4810AA","GLZS4BA6010AA"],
@@ -5902,22 +5903,104 @@
       };
 
       // ── New Job: populate flat model selects ──
-      function njBuildFlatSelects() {
-        const map = { furnace: NJ_HEATER_DATA, outdoor: NJ_OUTDOOR_DATA, furnace2: NJ_HEATER_DATA, outdoor2: NJ_OUTDOOR_DATA };
-        ["furnace", "outdoor", "furnace2", "outdoor2"].forEach(field => {
-          const sel = document.getElementById(`nj-${field}`);
-          if (!sel || sel.options.length > 1) return;
-          Object.entries(map[field]).forEach(([series, models]) => {
-            const grp = document.createElement("optgroup");
-            grp.label = series;
-            models.forEach(m => {
-              const opt = document.createElement("option");
-              opt.value = m; opt.textContent = m;
-              grp.appendChild(opt);
-            });
-            sel.appendChild(grp);
+      function njPopulateSelect(sel, isOutdoor) {
+        if (!sel || sel.options.length > 1) return;
+        const data = isOutdoor ? NJ_OUTDOOR_DATA : NJ_HEATER_DATA;
+        Object.entries(data).forEach(([series, models]) => {
+          const grp = document.createElement("optgroup");
+          grp.label = series;
+          models.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m; opt.textContent = m;
+            grp.appendChild(opt);
           });
+          sel.appendChild(grp);
         });
+      }
+
+      function njBuildFlatSelects() {
+        const selF = document.getElementById("nj-furnace");
+        const selO = document.getElementById("nj-outdoor");
+        if (selF) njPopulateSelect(selF, false);
+        if (selO) njPopulateSelect(selO, true);
+      }
+
+      function njAddSystemRow(indoorVal = "", outdoorVal = "") {
+        const container = document.getElementById("nj-systems-container");
+        if (!container) return;
+        const rows = container.querySelectorAll(".nj-sys-row");
+        const idx = rows.length + 1;
+
+        const row = document.createElement("div");
+        row.className = "nj-sys-row";
+        row.dataset.sysIdx = String(idx);
+        row.style.cssText = "display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;align-items:flex-end;";
+
+        const fWrap = document.createElement("div");
+        fWrap.style.cssText = "display:flex;flex-direction:column;gap:5px;";
+        fWrap.innerHTML = `<label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Furnace / AHU — Sys ${idx}</label>`;
+        const fSel = document.createElement("select");
+        fSel.className = "nj-sys-furnace";
+        fSel.style.cssText = "background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono);width:100%;";
+        fSel.innerHTML = '<option value="">Select model…</option>';
+        fSel.onchange = function() { this.style.color = this.value ? "var(--amber)" : "var(--text-dim)"; };
+        njPopulateSelect(fSel, false);
+        if (indoorVal) { fSel.value = indoorVal; fSel.style.color = "var(--amber)"; }
+        fWrap.appendChild(fSel);
+
+        const oWrap = document.createElement("div");
+        oWrap.style.cssText = "display:flex;flex-direction:column;gap:5px;";
+        oWrap.innerHTML = `<label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Outdoor Unit — Sys ${idx}</label>`;
+        const oSel = document.createElement("select");
+        oSel.className = "nj-sys-outdoor";
+        oSel.style.cssText = "background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono);width:100%;";
+        oSel.innerHTML = '<option value="">Select model…</option>';
+        oSel.onchange = function() { this.style.color = this.value ? "var(--amber)" : "var(--text-dim)"; };
+        njPopulateSelect(oSel, true);
+        if (outdoorVal) { oSel.value = outdoorVal; oSel.style.color = "var(--amber)"; }
+        oWrap.appendChild(oSel);
+
+        const rmBtn = document.createElement("button");
+        rmBtn.type = "button";
+        rmBtn.style.cssText = "background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:6px 4px;margin-bottom:2px;";
+        rmBtn.title = "Remove system";
+        rmBtn.textContent = "✕";
+        rmBtn.onclick = function() {
+          row.remove();
+          njRenumberSystemRows();
+        };
+
+        row.appendChild(fWrap);
+        row.appendChild(oWrap);
+        row.appendChild(rmBtn);
+        container.appendChild(row);
+      }
+
+      function njRenumberSystemRows() {
+        const container = document.getElementById("nj-systems-container");
+        if (!container) return;
+        const rows = container.querySelectorAll(".nj-sys-row");
+        rows.forEach((row, i) => {
+          row.dataset.sysIdx = String(i + 1);
+          const labels = row.querySelectorAll("label");
+          if (labels[0]) labels[0].textContent = `Furnace / AHU — Sys ${i + 1}`;
+          if (labels[1]) labels[1].textContent = `Outdoor Unit — Sys ${i + 1}`;
+        });
+      }
+
+      function njGetSystems() {
+        const container = document.getElementById("nj-systems-container");
+        if (!container) return [];
+        const rows = container.querySelectorAll(".nj-sys-row");
+        const list = [];
+        rows.forEach((row, i) => {
+          const f = row.querySelector(".nj-sys-furnace")?.value.trim() || "";
+          const o = row.querySelector(".nj-sys-outdoor")?.value.trim() || "";
+          if (f || o || i === 0) {
+            list.push({ id: `sys_${i + 1}`, indoor: f, outdoor: o });
+          }
+        });
+        return list;
       }
 
       // ── New Job: address autocomplete from history ──
@@ -6047,12 +6130,13 @@
           alert("Address is required");
           return;
         }
-        const svcEl    = document.getElementById("nj-service");
-        const svcValue = svcEl?.value || document.querySelector(".nj-svc-btn.active")?.dataset.svc || "";
+        const systemsList = njGetSystems();
+        const sys1 = systemsList[0] || { indoor: "", outdoor: "" };
+        const sys2 = systemsList[1] || null;
         const tstat    = document.getElementById("nj-tstat")?.value || "";
         const tstatQty = document.getElementById("nj-tstat-qty")?.value || "1";
         const job = {
-          id: genId(),
+          id: crypto.randomUUID(),
           status: "pending",
           priority: document.getElementById("nj-priority")?.value || "normal",
           orderNumber: document.getElementById("nj-order")?.value.trim() || "",
@@ -6062,8 +6146,8 @@
             document.getElementById("nj-subdivision")?.value.trim() || "",
           cityState: document.getElementById("nj-city")?.value.trim() || "",
           builder: document.getElementById("nj-builder")?.value.trim() || "",
-          serviceType: svcValue,
-          problem: svcValue,
+          serviceType: "",
+          problem: "",
           thermostat: tstat ? { type: tstat, qty: tstatQty } : null,
           accessoryHints: [..._njAccs, ..._njHints],
           contactName:
@@ -6072,14 +6156,11 @@
             document.getElementById("nj-contact-phone")?.value.trim() || "",
           calledInBy:
             document.getElementById("nj-called-by")?.value.trim() || "",
-          furnaceModel:
-            document.getElementById("nj-furnace")?.value.trim() || "",
-          outdoorModel:
-            document.getElementById("nj-outdoor")?.value.trim() || "",
-          furnaceModel2:
-            document.getElementById("nj-furnace2")?.value.trim() || "",
-          outdoorModel2:
-            document.getElementById("nj-outdoor2")?.value.trim() || "",
+          systems: systemsList,
+          furnaceModel: sys1.indoor,
+          outdoorModel: sys1.outdoor,
+          furnaceModel2: sys2 ? sys2.indoor : "",
+          outdoorModel2: sys2 ? sys2.outdoor : "",
           coilModel: document.getElementById("nj-coil")?.value.trim() || "",
           evapModel: document.getElementById("nj-evap")?.value.trim() || "",
           linesetHint:
@@ -6088,7 +6169,7 @@
           historyRough: document.getElementById("nj-rough")?.value.trim() || "",
           historyTrim: document.getElementById("nj-trim")?.value.trim() || "",
           historySet: document.getElementById("nj-set")?.value.trim() || "",
-          twoSystems: document.getElementById("nj-two-systems")?.checked || false,
+          twoSystems: systemsList.length === 2,
           importantNotes:
             document.getElementById("nj-notes-quick")?.value.trim() ||
             document.getElementById("nj-notes")?.value.trim() || "",
@@ -6179,8 +6260,14 @@
         if (war) war.value = "true";
         const twoSys = document.getElementById("nj-two-systems");
         if (twoSys) twoSys.checked = false;
-        const sys2row = document.getElementById("nj-sys2-row");
-        if (sys2row) sys2row.style.display = "none";
+        
+        // Reset dynamic systems container to 1 row
+        const sysCont = document.getElementById("nj-systems-container");
+        if (sysCont) {
+          const extraRows = sysCont.querySelectorAll(".nj-sys-row:not([data-sys-idx='1'])");
+          extraRows.forEach(r => r.remove());
+        }
+        
         const histPanel = document.getElementById("nj-history-panel");
         if (histPanel) histPanel.style.display = "none";
         const histToggle = document.getElementById("nj-history-toggle");
@@ -6574,17 +6661,35 @@
             notes: j.importantNotes || "",
             subdivision: j.subdivision || "",
             builder: j.builder || "",
+            systems: (Array.isArray(j.systems) && j.systems.length > 0)
+              ? j.systems.map(s => ({
+                  indoor: s.indoor || s.furnaceModel || s.heaterModel || "",
+                  outdoor: s.outdoor || s.outdoorModel || "",
+                  links: s.links || {}
+                }))
+              : [
+                  {
+                    indoor: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
+                    outdoor: j.outdoorModel || latest?.outdoor_model || "",
+                    links: {}
+                  },
+                  ...((j.furnaceModel2 || j.heaterModel2 || j.outdoorModel2 || j.twoSystems) ? [{
+                    indoor: j.furnaceModel2 || j.heaterModel2 || "",
+                    outdoor: j.outdoorModel2 || "",
+                    links: {}
+                  }] : [])
+                ],
             system1: {
-              indoor: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
-              outdoor: j.outdoorModel || latest?.outdoor_model || "",
+              indoor: j.furnaceModel || j.heaterModel || latest?.indoor_model || (j.systems?.[0]?.indoor || ""),
+              outdoor: j.outdoorModel || latest?.outdoor_model || (j.systems?.[0]?.outdoor || ""),
             },
-            system2: (j.furnaceModel2 || j.heaterModel2 || j.outdoorModel2)
+            system2: (j.furnaceModel2 || j.heaterModel2 || j.outdoorModel2 || j.systems?.[1])
               ? {
-                  indoor: j.furnaceModel2 || j.heaterModel2 || "",
-                  outdoor: j.outdoorModel2 || "",
+                  indoor: j.furnaceModel2 || j.heaterModel2 || (j.systems?.[1]?.indoor || ""),
+                  outdoor: j.outdoorModel2 || (j.systems?.[1]?.outdoor || ""),
                 }
               : null,
-            isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
+            isTwoSystems: (Array.isArray(j.systems) ? j.systems.length === 2 : !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2)),
             jobThermostat: thermostat
               ? { model: thermostat.type || thermostat.model || "", qty: parseInt(thermostat.qty) || 1 }
               : null,

@@ -1091,6 +1091,16 @@ input[name="builder"] {
   padding: 0 var(--space-1);
 }
 
+.job-item.expanded .job-top-notes {
+  display: block !important;
+  white-space: pre-wrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word !important;
+  line-height: var(--line-height-normal);
+  margin: var(--space-1) 0;
+}
+
 /* Col 1 Row 2 — tstat + accessory chips */
 .job-top-tech {
   display: flex;
@@ -1698,6 +1708,10 @@ input[name="builder"] {
   font-size: var(--font-size-xs);
 }
 
+#tab-reports {
+  padding-bottom: calc(var(--space-4) + 60px);
+}
+
 .reports-header {
   display: flex;
   justify-content: flex-end;
@@ -1717,13 +1731,57 @@ input[name="builder"] {
   padding: 0 var(--space-4) var(--space-4);
 }
 
-#reports-global-actions .btn-row {
+#reports-global-actions > .btn-row {
   display: flex;
   justify-content: space-between;
+  gap: var(--space-2);
 }
 
 #btn-share-all {
   flex: 1;
+}
+
+#share-all-panel {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+#share-all-panel .btn-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+#share-all-panel .btn {
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-3);
+  min-height: 34px;
+}
+
+[id^="share-panel-"] {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+[id^="share-panel-"] .btn-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+[id^="share-panel-"] .btn {
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-3);
+  min-height: 32px;
 }
 
 .report-breakdown {

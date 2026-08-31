@@ -95,6 +95,7 @@
               <div class="step-body">
                 <div id="service-type-buttons" class="chip-group"></div>
                 <div id="ac-heat-options" class="chip-group"></div>
+                <div id="per-system-services-container"></div>
                 <div id="quantity-selector" class="quantity-row"></div>
                 <button type="button" class="btn-next" data-next>Next →</button>
               </div>
@@ -170,10 +171,7 @@
 
             <div id="section-weight-in" class="step-section">
               <div class="step-body">
-                <div id="wi-fields-sys1"></div>
-                <div id="wi-photo-row-1"></div>
-                <div id="wi-fields-sys2"></div>
-                <div id="wi-photo-row-2"></div>
+                <div id="wi-systems-container"></div>
                 <button type="button" class="btn-next" data-next>Next →</button>
               </div>
             </div>
@@ -434,21 +432,13 @@
               <p class="settings-label">Subdivision</p>
               <input type="text" id="ej-subdivision" autocomplete="off" />
             </div>
-            <div class="settings-group">
-              <p class="settings-label">System 1</p>
-              <input type="text" id="ej-indoor" placeholder="Indoor model" list="ej-indoor-list" />
-              <input type="text" id="ej-outdoor" placeholder="Outdoor model" list="ej-outdoor-list" />
+            <div id="ej-systems-container"></div>
+            <div class="settings-group" style="margin-top:var(--space-1);margin-bottom:var(--space-3)">
+              <button type="button" id="ej-btn-add-system" class="btn-secondary" style="width:100%">+ Add System</button>
             </div>
             <div class="settings-group">
-              <label class="toggle-row">
-                <span>Two Systems</span>
-                <input type="checkbox" id="ej-two-systems" role="switch" />
-              </label>
-            </div>
-            <div id="ej-system2-group" class="settings-group hidden">
-              <p class="settings-label">System 2</p>
-              <input type="text" id="ej-indoor2" placeholder="Indoor model" list="ej-indoor-list" />
-              <input type="text" id="ej-outdoor2" placeholder="Outdoor model" list="ej-outdoor-list" />
+              <p class="settings-label">Notes</p>
+              <textarea id="ej-notes" rows="2" placeholder="Optional notes"></textarea>
             </div>
             <div class="btn-row">
               <button type="submit" class="btn-primary">Save</button>

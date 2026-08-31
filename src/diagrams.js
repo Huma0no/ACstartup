@@ -40,8 +40,13 @@ export function getLinksForJob(job) {
     if (blower)          links.push({ label: `${prefix} blower table`,     url: blower });
   }
 
-  collect("System 1", job.system1);
-  collect("System 2", job.system2);
+  const sysList = Array.isArray(job.systems) && job.systems.length > 0
+    ? job.systems
+    : [job.system1, job.system2].filter(Boolean);
+
+  sysList.forEach((sys, idx) => {
+    collect(`System ${idx + 1}`, sys);
+  });
 
   return links;
 }
