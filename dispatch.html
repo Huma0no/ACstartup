@@ -1529,7 +1529,7 @@
           <span class="nav-icon">📲</span> Export → PWA
         </div>
         <div class="nav-item" data-panel="completion">
-          <span class="nav-icon">✓</span> Completion
+          <span class="nav-icon">✓</span> Import PWA
         </div>
         <div class="sidebar-sec">Admin</div>
         <div class="nav-item" data-panel="techs">
@@ -1577,15 +1577,10 @@
               <div class="home-kpi-val" id="hk-board" style="color:var(--ice)">—</div>
               <div class="home-kpi-sub" id="hk-board-sub"></div>
             </div>
-            <div class="card home-kpi" onclick="switchPanel('reports')" title="Go to Reports" style="cursor:pointer">
-              <div class="home-kpi-label">Revenue · 7 days</div>
-              <div class="home-kpi-val" id="hk-revenue" style="color:var(--green)">—</div>
-              <div class="home-kpi-sub" id="hk-revenue-sub"></div>
-            </div>
-            <div class="card home-kpi" onclick="switchPanel('reports')" title="Go to Reports" style="cursor:pointer">
-              <div class="home-kpi-label">Top Tech · Week</div>
-              <div class="home-kpi-val" id="hk-tech" style="color:var(--purple);font-size:16px">—</div>
-              <div class="home-kpi-sub" id="hk-tech-sub"></div>
+            <div class="card home-kpi" onclick="switchPanel('history')" style="cursor:pointer">
+              <div class="home-kpi-label">Partial Jobs</div>
+              <div class="home-kpi-val" id="hk-partial">—</div>
+              <div class="home-kpi-sub" id="hk-partial-sub">pending follow-up</div>
             </div>
             <div class="card home-kpi" id="hk-stock-card" onclick="switchPanel('inventory')" title="Go to Inventory" style="cursor:pointer">
               <div class="home-kpi-label">Low Stock</div>
@@ -1616,11 +1611,10 @@
                       <th>Date</th>
                       <th>Address</th>
                       <th>Tech</th>
-                      <th style="text-align:right">Total</th>
                     </tr>
                   </thead>
                   <tbody id="home-recent-tbody">
-                    <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
+                    <tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -1774,20 +1768,6 @@
               <div id="nj-addr-dropdown" class="gs-dropdown" style="display:none"></div>
             </div>
 
-            <!-- Service chips -->
-            <div style="margin-bottom:10px">
-              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Service</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap" id="nj-svc-chips">
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC STARTUP"    onclick="njToggleSvc(this)">AC</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="HEAT STARTUP"  onclick="njToggleSvc(this)">Heat</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="AC & HEAT"     onclick="njToggleSvc(this)">AC &amp; Heat</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="PRESTART"      onclick="njToggleSvc(this)">Prestart</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="FINISH"        onclick="njToggleSvc(this)">Finish</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="DRIVE RUN"     onclick="njToggleSvc(this)">Drive Run</button>
-                <button type="button" class="btn btn-ghost btn-sm nj-svc-btn" data-svc="SERVICE CALL"  onclick="njToggleSvc(this)">Service Call</button>
-              </div>
-            </div>
-
             <!-- Subdivision + Builder -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
@@ -1818,77 +1798,45 @@
                 style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
             </div>
 
-            <!-- Equipment: series → model (PWA style) -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-              <!-- Furnace -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Furnace / AHU</label>
-                <select id="nj-furnace-series" onchange="njLoadModels('furnace')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-furnace" disabled onchange="njModelSelected('furnace',this)"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-                <button type="button" id="nj-furnace-reset" onclick="njResetSeries('furnace')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
-              </div>
-              <!-- Outdoor -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Outdoor Unit</label>
-                <select id="nj-outdoor-series" onchange="njLoadModels('outdoor')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-outdoor" disabled onchange="njModelSelected('outdoor',this)"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-                <button type="button" id="nj-outdoor-reset" onclick="njResetSeries('outdoor')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
-              </div>
-            </div>
-
-            <!-- 2 Systems checkbox -->
+            <!-- History (collapsed by default) -->
             <div style="margin-bottom:10px">
-              <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--mono);color:var(--text);cursor:pointer">
-                <input type="checkbox" id="nj-two-systems" style="width:15px;height:15px;cursor:pointer"
-                  onchange="document.getElementById('nj-sys2-row').style.display=this.checked?'grid':'none'" />
-                2 Systems
-              </label>
+              <button type="button" id="nj-history-toggle"
+                style="background:none;border:none;color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;padding:0"
+                onclick="(function(){var p=document.getElementById('nj-history-panel');var open=p.style.display==='none';p.style.display=open?'':'none';document.getElementById('nj-history-toggle').textContent=open?'▾ History':'▶ History';})()">&#x25B6; History</button>
+              <div id="nj-history-panel" style="display:none;margin-top:6px">
+                <textarea id="nj-history" rows="3"
+                  placeholder="2026-04-06 — Chris: AC started · $30"
+                  style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:11px;font-family:var(--mono);box-sizing:border-box;resize:vertical"></textarea>
+              </div>
             </div>
 
-            <!-- System 2 equipment (hidden until 2 Systems checked) -->
-            <div id="nj-sys2-row" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px">
-              <!-- Furnace 2 -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Furnace / AHU — Sys 2</label>
-                <select id="nj-furnace2-series" onchange="njLoadModels('furnace2')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-furnace2" disabled onchange="njModelSelected('furnace2',this)"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-                <button type="button" id="nj-furnace2-reset" onclick="njResetSeries('furnace2')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
+            <!-- Dynamic Systems container -->
+            <div id="nj-systems-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+              <!-- System 1 -->
+              <div class="nj-sys-row" data-sys-idx="1" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px">
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Furnace / AHU — Sys 1</label>
+                  <select id="nj-furnace" class="nj-sys-furnace" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
+                    style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                    <option value="">Select model…</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)">Outdoor Unit — Sys 1</label>
+                  <select id="nj-outdoor" class="nj-sys-outdoor" onchange="this.style.color=this.value?'var(--amber)':'var(--text-dim)'"
+                    style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
+                    <option value="">Select model…</option>
+                  </select>
+                </div>
               </div>
-              <!-- Outdoor 2 -->
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Outdoor Unit — Sys 2</label>
-                <select id="nj-outdoor2-series" onchange="njLoadModels('outdoor2')"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select series…</option>
-                </select>
-                <select id="nj-outdoor2" disabled onchange="njModelSelected('outdoor2',this)"
-                  style="background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono)">
-                  <option value="">Select model…</option>
-                </select>
-                <button type="button" id="nj-outdoor2-reset" onclick="njResetSeries('outdoor2')"
-                  style="display:none;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;text-align:left;padding:0">↺ Change series</button>
-              </div>
+            </div>
+
+            <!-- Add System Button -->
+            <div style="margin-bottom:10px">
+              <button type="button" id="nj-btn-add-system" onclick="njAddSystemRow()"
+                style="background:none;border:1px dashed var(--border2);color:var(--amber);padding:5px 10px;border-radius:3px;font-size:11px;font-family:var(--mono);cursor:pointer">
+                + Add System
+              </button>
             </div>
 
             <!-- Tstat + qty + Acc row -->
@@ -1902,7 +1850,7 @@
                 <option value="Ecobee">Ecobee</option>
                 <option value="Daikin One">Daikin One</option>
                 <option value="TH2110">TH2110</option>
-                <option value="Otro">Other</option>
+                <option value="Other">Other</option>
               </select>
               <select id="nj-tstat-qty" style="width:56px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 4px;font-size:12px;font-family:var(--mono);text-align:center">
                 <option value="1">1</option><option value="2">2</option>
@@ -1911,18 +1859,25 @@
               <select id="nj-acc-select" onchange="njAddAcc(this)"
                 style="flex:2;min-width:120px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);padding:6px 8px;font-size:12px;font-family:var(--mono)">
                 <option value="">+ Acc</option>
-                <option value="Float Switch">Float Switch</option>
-                <option value="Zoning">Zone</option>
+                <option value="UT3000">UT3000</option>
                 <option value="HZ322">HZ322</option>
-                <option value="UT3000">UT-3000</option>
-                <option value="DAPC">DAPC</option>
                 <option value="Harmony">Harmony</option>
-                <option value="RDS">RDS</option>
+                <option value="DAPC">DAPC</option>
+                <option value="eBypass">eBypass</option>
+                <option value="Bypass">Bypass</option>
+                <option value="FIN180P">FIN180P</option>
+                <option value="Dehum">Dehum</option>
+                <option value="Float Switch">Float Switch</option>
+                <option value="Weight-In-Data">Weight-In-Data</option>
+                <option value="Ecoil Wire">Ecoil Wire</option>
+                <option value="AprilAir">AprilAir</option>
+                <option value="F/A">F/A</option>
+                <option value="FIN6-MD">FIN6-MD</option>
                 <option value="Trane Harness">Trane Harness</option>
+                <option value="RDS">RDS</option>
                 <option value="LP Kit Lennox 1stg">LP Kit Lennox 1stg</option>
                 <option value="LP Kit Lennox 2stg">LP Kit Lennox 2stg</option>
                 <option value="LP Kit Goodman">LP Kit Goodman</option>
-                <option value="eBypass">eBypass</option>
                 <option value="__new__" style="font-weight:700">+ New…</option>
               </select>
             </div>
@@ -1935,6 +1890,16 @@
               <button class="btn btn-ghost btn-sm" onclick="clearNewJobForm()">↺ Clear</button>
               <button type="button" class="btn btn-ghost btn-sm" onclick="njToggleExtra()"
                 id="nj-extra-btn" style="color:var(--text-dim);font-size:11px">▸ All fields</button>
+            </div>
+
+            <div id="nj-recent-section" style="display:none;margin-top:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span class="sec-sub">Jobs added this session</span>
+                <button class="btn btn-primary btn-sm" onclick="njExportSelected()">
+                  Export selected →
+                </button>
+              </div>
+              <div id="nj-recent-list"></div>
             </div>
 
             <!-- ── NIVEL 2: Todos los campos (colapsado) ── -->
@@ -2136,9 +2101,9 @@
         <!-- ══════════ PANEL: COMPLETION ══════════ -->
         <div class="panel" id="panel-completion">
           <div class="sec-header">
-            <div class="sec-title">Completion</div>
+            <div class="sec-title">Import PWA</div>
             <div class="sec-sub">
-              End of day · generate completion text for HVAC
+              Import tech JSON · review and save to database
             </div>
           </div>
           <div class="card">
@@ -2365,6 +2330,12 @@
           </div>
 
           <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text-dim)">
+                <input type="checkbox" id="hist-partial-only" onchange="filterHistory()" />
+                Show partial only
+              </label>
+            </div>
             <div class="tbl-wrap" style="max-height: 580px; overflow-y: auto">
               <table>
                 <thead>
@@ -2495,20 +2466,6 @@
               <!-- COL 1: Equipment -->
               <div style="display:flex;flex-direction:column;gap:10px">
                 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ice);border-bottom:1px solid var(--border);padding-bottom:6px">⚙ Equipment Used</div>
-                <div>
-                  <div class="label" style="margin-bottom:5px">Equipment &amp; Accessories</div>
-                <details>
-                  <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;color:var(--text-dim);user-select:none">
-                    <span style="font-size:11px">Filter models</span>
-                    <span style="display:flex;gap:6px;align-items:center">
-                      <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px" onclick="event.preventDefault();crCheckAll(true)">All</button>
-                      <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px" onclick="event.preventDefault();crCheckAll(false)">None</button>
-                      <span style="font-size:10px;opacity:.5">▾</span>
-                    </span>
-                  </summary>
-                  <div id="cr-eq-checklist" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:8px 10px;max-height:160px;overflow-y:auto"></div>
-                </details>
-                </div>
                 <div id="cr-equipment-summary" style="display:none;margin-bottom:6px">
                   <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Summary</div>
                   <div id="cr-equipment-summary-body" style="display:flex;flex-direction:column;gap:2px"></div>
@@ -2550,6 +2507,9 @@
               </div>
 
             </div><!-- /3-col grid -->
+            <div style="display:flex;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--border);margin-top:4px">
+              <button type="button" class="btn btn-amber" onclick="crMarkRestocked()">Add to Inventory</button>
+            </div>
           </div>
 
           <!-- ── Restock Queue ── -->
@@ -2559,7 +2519,11 @@
                 <div class="card-title" style="margin:0">Restock Queue</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Pending equipment — oldest first</div>
               </div>
-              <div style="display:flex;gap:6px;align-items:center">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <label style="font-size:11px;color:var(--text-dim)">From</label>
+                <input type="date" id="restock-from" style="width:130px" />
+                <label style="font-size:11px;color:var(--text-dim)">To</label>
+                <input type="date" id="restock-to" style="width:130px" />
                 <button type="button" class="btn btn-outline btn-sm" onclick="loadRestockPending()">↻ Load</button>
                 <button type="button" class="btn btn-amber btn-sm" id="restock-print-btn" style="display:none" onclick="printAndMarkRestock()">🖨 Print &amp; Mark Restocked</button>
               </div>
@@ -3222,6 +3186,17 @@
       const STORE = "dispatch_v1";
       const TECH_STORE = "dispatch_techs_v1";
       const API_BASE = "http://localhost:3000/api";
+
+      const TSTAT_OPTIONS = ["T-4","T-6","T-10","T-8321","Ecobee","Daikin One","TH2110"];
+      function buildTstatOptions(selected, includeBlank = false) {
+        const isOther = selected && !TSTAT_OPTIONS.includes(selected);
+        let opts = includeBlank ? `<option value="">— none —</option>` : "";
+        TSTAT_OPTIONS.forEach(t => {
+          opts += `<option value="${t}"${t === selected ? " selected" : ""}>${t}</option>`;
+        });
+        opts += `<option value="Other"${isOther ? " selected" : ""}>Other</option>`;
+        return opts;
+      }
 
       let jobs = [];
       let techs = [];
@@ -4677,11 +4652,12 @@
 
       // Compute completion text + total for one job (pure, no DOM)
       function _compJobText(j) {
-        const ss = j.savedState || {};
-        const total =
-          (ss.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
-          (ss.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
-          (ss.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0);
+        const ss = j.savedState || null;
+        const total = ss
+          ? (ss.selectedServices || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+            (ss.selectedAccessories || []).reduce((s, i) => s + (i.basePrice || 0), 0) +
+            (ss.selectedFixes || []).reduce((s, i) => s + (i.basePrice || 0), 0)
+          : (j.totals?.total || 0);
 
         // Use the PWA-generated reportText if available — exact match
         if (j.reportText) {
@@ -4711,12 +4687,21 @@
       }
 
       // Build item rows HTML for edit mode
-      function _compItemRowsHtml(ss) {
-        const items = [
-          ...(ss.selectedServices || []).map(i => ({ name: i.name, price: i.basePrice, type: "Service" })),
-          ...(ss.selectedAccessories || []).map(i => ({ name: i.name, price: i.basePrice, type: "Accessory" })),
-          ...(ss.selectedFixes || []).map(i => ({ name: i.name, price: i.basePrice, type: "Fix" })),
-        ];
+      function _compItemRowsHtml(ss, j) {
+        const useSavedState = ss && (
+          ss.selectedServices?.length || ss.selectedAccessories?.length || ss.selectedFixes?.length
+        );
+        const items = useSavedState
+          ? [
+              ...(ss.selectedServices    || []).map(i => ({ name: i.name, price: i.basePrice, type: "Service" })),
+              ...(ss.selectedAccessories || []).map(i => ({ name: i.name, price: i.basePrice, type: "Accessory" })),
+              ...(ss.selectedFixes       || []).map(i => ({ name: i.name, price: i.basePrice, type: "Fix" })),
+            ]
+          : [
+              ...(j?.services    || []).map(i => ({ name: i.displayName || i.name, price: i.price, type: "Service" })),
+              ...(j?.accessories || []).map(i => ({ name: i.displayName || i.name, price: i.price, type: "Accessory" })),
+              ...(j?.fixes       || []).map(i => ({ name: i.displayName || i.name, price: i.price, type: "Fix" })),
+            ];
         return items.map(item => `
           <div data-item-row style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
             <input type="text" value="${esc(item.name)}" data-field="name"
@@ -4739,6 +4724,7 @@
 
       // Generate full edit panel HTML for one completion card
       function _compEditPanelHtml(j, idx, ss) {
+        ss = ss || {};
         const wid  = ss.weightInData  || {};
         const wid2 = ss.weightInData2 || {};
 
@@ -4800,8 +4786,12 @@
           </div>`;
         };
 
-        const hasWid2 = Object.values(wid2).some(v => v !== '' && v != null);
-        const hasEquip2 = !!(j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems);
+        const sysList = Array.isArray(j.systems) && j.systems.length > 0
+          ? j.systems
+          : [
+              { indoor: j.heaterModel || j.indoor || '', outdoor: j.outdoorModel || j.outdoor || '', weightInData: ss.weightInData },
+              ...((j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems || ss.weightInData2) ? [{ indoor: j.heaterModel2 || j.indoor2 || '', outdoor: j.outdoorModel2 || j.outdoor2 || '', weightInData: ss.weightInData2 }] : [])
+            ];
 
         // Always-visible equipment label+input (no data-cef — never hidden)
         const equipField = (id, label, val) =>
@@ -4815,7 +4805,7 @@
           <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
             <button type="button" id="ce-showall-btn-${idx}" onclick="compToggleAllFields(${idx})"
               style="font-size:10px;color:var(--ice);background:none;border:none;
-                     cursor:pointer;text-decoration:underline;padding:0">Show all fields</button>
+              cursor:pointer;text-decoration:underline;padding:0">Show all fields</button>
           </div>
 
           <!-- Report Text -->
@@ -4841,25 +4831,30 @@
           </div>
 
           <!-- Equipment — always visible regardless of weigh-in data -->
-          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                        color:var(--ice);margin-bottom:8px">Equipment — System 1</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
-              ${equipField(`ce-indoor-${idx}`,      'Indoor Model',  j.heaterModel)}
-              ${equipField(`ce-outdoor-${idx}`,     'Outdoor Model', j.outdoorModel)}
-              ${equipField(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant)}
-            </div>
-          </div>
-
-          ${hasEquip2 ? `
-          <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
-                        color:var(--ice);margin-bottom:8px">Equipment — System 2</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
-              ${equipField(`ce-indoor2-${idx}`,  'Indoor Model 2',  j.heaterModel2)}
-              ${equipField(`ce-outdoor2-${idx}`, 'Outdoor Model 2', j.outdoorModel2)}
-            </div>
-          </div>` : ''}
+          ${sysList.map((s, sIdx) => {
+            const sysNum = sIdx + 1;
+            const inVal = s.indoor || (sIdx === 0 ? j.heaterModel : sIdx === 1 ? j.heaterModel2 : '');
+            const outVal = s.outdoor || (sIdx === 0 ? j.outdoorModel : sIdx === 1 ? j.outdoorModel2 : '');
+            return `
+            <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:3px;padding:8px 10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                          color:var(--ice);margin-bottom:8px">Equipment — System ${sysNum}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+                ${equipField(`ce-indoor-${sysNum}-${idx}`,      'Indoor Model',  inVal)}
+                ${equipField(`ce-outdoor-${sysNum}-${idx}`,     'Outdoor Model', outVal)}
+                <div style="margin-bottom:6px">
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:2px">Service</div>
+                  <select id="ce-service-${sysNum}-${idx}" style="width:100%;font-size:12px;padding:3px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text);box-sizing:border-box">
+                    <option value="">Default (Global)</option>
+                    ${['AC','Heat','AC & Heat','Prestart','Finish','Drive Run'].map(svc => `
+                      <option value="${esc(svc)}"${(s.serviceType === svc || (sIdx === 0 && !s.serviceType && j.serviceType === svc)) ? ' selected' : ''}>${esc(svc)}</option>
+                    `).join('')}
+                  </select>
+                </div>
+                ${sIdx === 0 ? equipField(`ce-refrigerant-${idx}`, 'Refrigerant',   j.refrigerant) : ''}
+              </div>
+            </div>`;
+          }).join('')}
 
           <!-- Notes -->
           <div style="margin-bottom:10px">
@@ -4872,33 +4867,39 @@
           </div>
 
           <!-- Thermostat -->
-          <div data-cef style="display:${ss.selectedThermostat?.name ? 'block' : 'none'};margin-bottom:10px">
+          <div data-cef style="margin-bottom:10px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
                         color:var(--text-dim);margin-bottom:4px">Thermostat</div>
-            <div style="display:flex;gap:6px;align-items:center">
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <input type="number" id="ce-tstat-qty-${idx}" value="${ss.thermostatQuantity || 1}"
                 min="1" step="1"
                 style="width:52px;font-size:12px;padding:4px 6px;background:var(--bg2);
                        border:1px solid var(--border2);border-radius:3px;color:var(--text);
                        text-align:center" />
-              <input type="text" id="ce-tstat-name-${idx}"
-                value="${esc(ss.selectedThermostat?.name || '')}"
-                placeholder="Name (blank = none)"
-                style="flex:1;font-size:12px;padding:4px 6px;background:var(--bg2);
+              <select id="ce-tstat-name-${idx}"
+                onchange="document.getElementById('ce-tstat-other-${idx}').style.display=this.value==='Other'?'inline-block':'none'"
+                style="flex:1;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);
+                       border:1px solid var(--border2);border-radius:3px;color:var(--text)">
+                ${buildTstatOptions(ss.selectedThermostat?.name || '', true)}
+              </select>
+              <input type="text" id="ce-tstat-other-${idx}" placeholder="Specify tstat…"
+                value="${esc((ss.selectedThermostat?.name && !TSTAT_OPTIONS.includes(ss.selectedThermostat.name)) ? ss.selectedThermostat.name : '')}"
+                style="display:${(ss.selectedThermostat?.name && !TSTAT_OPTIONS.includes(ss.selectedThermostat.name)) ? 'inline-block' : 'none'};flex:1;min-width:100px;font-size:12px;padding:4px 6px;background:var(--bg2);
                        border:1px solid var(--border2);border-radius:3px;color:var(--text)" />
             </div>
           </div>
 
           <!-- Weigh-In Data -->
-          ${widSection(1, wid, 'Weigh-In Data')}
-          <div data-cef style="display:${hasWid2 ? 'block' : 'none'}">
-            ${widSection(2, wid2, 'Weigh-In Data — System 2')}
-          </div>
+          ${sysList.map((s, sIdx) => {
+            const sysNum = sIdx + 1;
+            const sWid = s.weightInData || (sIdx === 0 ? ss.weightInData : sIdx === 1 ? ss.weightInData2 : {}) || {};
+            return widSection(sysNum, sWid, `Weigh-In Data — System ${sysNum}`);
+          }).join('')}
 
           <!-- Items -->
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;
                       color:var(--text-dim);margin-bottom:6px">Items</div>
-          <div id="ce-items-${idx}" style="margin-bottom:8px">${_compItemRowsHtml(ss)}</div>
+          <div id="ce-items-${idx}" style="margin-bottom:8px">${_compItemRowsHtml(ss, j)}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
             <input type="text" id="ce-new-name-${idx}" placeholder="Item name"
               style="flex:2;min-width:90px;font-size:12px;padding:4px 6px;background:var(--bg2);
@@ -4957,15 +4958,29 @@
         let cardsHtml = "";
 
         techJobs.forEach((j, idx) => {
-          const ss = j.savedState;
-          if (!ss) return;
+          const ss = j.savedState || null;
+          if (!ss && !j.reportText) return;
           const { text, total } = _compJobText(j);
           totalDay += total;
           allText.push(text);
 
+          const isPrestart = ss
+            ? (ss.selectedServices?.length === 1 &&
+               ss.selectedServices[0].name === "Prestart" &&
+               !ss.selectedAccessories?.length &&
+               !ss.selectedFixes?.length)
+            : (j.services?.length === 1 && j.services[0]?.name === "Prestart");
+          j.is_partial = isPrestart ? 1 : 0;
+
           cardsHtml += `
     <div id="comp-card-${idx}" style="background:var(--bg3);border:1px solid var(--border);
                                        border-radius:3px;padding:10px;margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--amber);
+                    margin-bottom:6px;cursor:pointer;user-select:none">
+        <input type="checkbox" ${isPrestart ? "checked" : ""}
+          onchange="_lastImportedJobs[${idx}].is_partial=this.checked?1:0" />
+        ⚠️ Mark as partial (follow-up needed)
+      </label>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div id="comp-view-${idx}" style="flex:1;font-size:11px;color:var(--text);
              line-height:1.7;font-family:var(--mono)">${esc(text)}</div>
@@ -5062,15 +5077,14 @@
         j.address      = document.getElementById(`ce-addr-${idx}`).value.trim();
         j.subdivision  = document.getElementById(`ce-subdiv-${idx}`)?.value.trim() ?? j.subdivision;
         j.builder      = document.getElementById(`ce-builder-${idx}`)?.value.trim() ?? j.builder;
-        j.heaterModel  = document.getElementById(`ce-indoor-${idx}`)?.value.trim() ?? j.heaterModel;
-        j.outdoorModel = document.getElementById(`ce-outdoor-${idx}`)?.value.trim() ?? j.outdoorModel;
         j.refrigerant  = document.getElementById(`ce-refrigerant-${idx}`)?.value.trim() ?? j.refrigerant;
-        j.heaterModel2  = document.getElementById(`ce-indoor2-${idx}`)?.value.trim() ?? j.heaterModel2 ?? "";
-        j.outdoorModel2 = document.getElementById(`ce-outdoor2-${idx}`)?.value.trim() ?? j.outdoorModel2 ?? "";
         j.savedState.notes = document.getElementById(`ce-notes-${idx}`).value.trim();
 
         // Thermostat
-        const tstatName = document.getElementById(`ce-tstat-name-${idx}`).value.trim();
+        const tstatSel = document.getElementById(`ce-tstat-name-${idx}`).value;
+        const tstatName = tstatSel === "Other"
+          ? document.getElementById(`ce-tstat-other-${idx}`).value.trim()
+          : tstatSel;
         j.savedState.selectedThermostat = tstatName ? { name: tstatName } : null;
         j.savedState.thermostatQuantity = parseInt(document.getElementById(`ce-tstat-qty-${idx}`).value) || 1;
 
@@ -5087,8 +5101,37 @@
           });
           return obj;
         };
-        j.savedState.weightInData  = readWid(1);
-        j.savedState.weightInData2 = readWid(2);
+
+        const sysList = Array.isArray(j.systems) && j.systems.length > 0
+          ? j.systems
+          : [
+              { indoor: j.heaterModel || "", outdoor: j.outdoorModel || "" },
+              ...((j.heaterModel2 || j.outdoorModel2 || j.isTwoSystems || j.savedState?.weightInData2) ? [{ indoor: j.heaterModel2 || "", outdoor: j.outdoorModel2 || "" }] : [])
+            ];
+
+        const updatedSystems = sysList.map((s, sIdx) => {
+          const sysNum = sIdx + 1;
+          const inEl = document.getElementById(`ce-indoor-${sysNum}-${idx}`) || (sysNum === 1 ? document.getElementById(`ce-indoor-${idx}`) : document.getElementById(`ce-indoor2-${idx}`));
+          const outEl = document.getElementById(`ce-outdoor-${sysNum}-${idx}`) || (sysNum === 1 ? document.getElementById(`ce-outdoor-${idx}`) : document.getElementById(`ce-outdoor2-${idx}`));
+          const svcEl = document.getElementById(`ce-service-${sysNum}-${idx}`);
+          return {
+            ...s,
+            id: s.id || `sys_${sysNum}`,
+            indoor: inEl?.value.trim() ?? s.indoor ?? "",
+            outdoor: outEl?.value.trim() ?? s.outdoor ?? "",
+            serviceType: svcEl?.value || null,
+            weightInData: readWid(sysNum),
+          };
+        });
+
+        j.systems = updatedSystems;
+        j.heaterModel = updatedSystems[0]?.indoor || "";
+        j.outdoorModel = updatedSystems[0]?.outdoor || "";
+        j.heaterModel2 = updatedSystems[1]?.indoor || "";
+        j.outdoorModel2 = updatedSystems[1]?.outdoor || "";
+        j.savedState.weightInData = updatedSystems[0]?.weightInData || {};
+        j.savedState.weightInData2 = updatedSystems[1]?.weightInData || {};
+        j.isTwoSystems = updatedSystems.length === 2;
 
         const services = [], accessories = [], fixes = [];
         document.getElementById(`ce-items-${idx}`)
@@ -5837,78 +5880,127 @@
         "ML180UH SERIES": ["ML180UH045E36A","ML180UH070E36A","ML180UH070E36B","ML180UH090E48B","ML180UH090E60C","ML180UH110E60C","ML180UH135E60D"],
         "ML196UH SERIES(HIGH EFFICIENCY)": ["ML196UH030XE36B","ML196UH045XE36B","ML196UH070XE36B","ML196UH070XE48B","ML196UH090XE36C","ML196UH090XE48C","ML196UH090XE60C","ML196UH110XE60C","ML196UH135XE60D"],
         "ML180UHV SERIES(DIP SWITCH)": ["ML180UH030V36A","ML180UH045V36A","ML180UH070V36A","ML180UH070V48B","ML180UH090V48B","ML180UH110V60C"],
-        "ML296UHV SERIES": ["ML296UH045XV36B","ML296UH070XV36B","ML296UH090XV48C","ML296UH110XV60C"],
+        "ML296UH SERIES": ["ML296UH045XV36B","ML296UH070XV36B","ML296UH090XV48C","ML296UH110XV60C"],
         "EL196UH SERIES": ["EL196UH030XE36BK","EL196UH045XE36BK","EL196UH070XE36BK","EL196UH090XE48CK","EL196UH110XE60CK"],
         "CBK45UHET SERIES": ["CBK45UHET024","CBK45UHET030","CBK45UHET036","CBK45UHET042","CBK45UHET048","CBK45UHET060"],
         "CBA25UH SERIES": ["CBA25UH018","CBA25UH024","CBA25UH030","CBA25UH036","CBA25UH042","CBA25UH048","CBA25UH060"],
         "S8X1/S8X2-S8B1": ["S8X1A040M3PSC","S8X1B040M2PSC","S8X1B060M4PSC","S8X1B080M4PSC","S8X1C080M5PSC","S8X1C100M5PSC","S8X1D120M5PSC"],
         "GR9S80 SERIES": ["GR9S800403AU","GR9S800603AU","GR9S800604BU","GR9S800804BU","GR9S800805CU"],
-        "AMSTU1300 SERIES": ["AMST24BU1300AA","AMST30BU1300AA","AMST36BU1300AA","AMST36CU1300AA","AMST42CU1300AA","AMST48CU1300AA","AMST48DU1300AA","AMST60DU1300AA"],
-        "DR96TC SERIES": ["DR96TC0403BN","DR96TC0603BN","DR96TC0803BN","DR96TC0804CN","DR96TC1005CN","DR96TC1005DN","DR96TC1205DN"],
+        "AMSTU1300 SERIES": ["AMST24BU","AMST30BU","AMST36BU","AMST36CU","AMST42CU","AMST48CU","AMST48DU","AMST60DU"],
+        "DR96TC/DD96TC SERIES": ["DR96TC0403BN","DR96TC0603BN","DR96TC0803BN","DR96TC0804CN","DR96TC1005CN","DR96TC1005DN","DR96TC1205DN","DD96TC0403BN","DD96TC0603BN","DD96TC0804CN","DD96TC1005CN","DD96TC1205DN"],
       };
       const NJ_OUTDOOR_DATA = {
         "ML17XC1 SERIES": ["ML17XC1-018","ML17XC1-024","ML17XC1-030","ML17XC1-036","ML17XC1-042","ML17XC1-047","ML17XC1-059","ML18XC2-036","ML18XC2-048"],
-        "EL17XP1 SERIES": ["EL17XP1-018","EL17XP1-024","EL17XP1-030","EL17XP1-036","EL17XP1-042","EL17XP1-048","EL17XP1-060"],
+        "EL17XP1 SERIES": ["EL17XP1-18","EL17XP1-24","EL17XP1-30","EL17XP1-36","EL17XP1-42","EL17XP1-48","EL17XP1-60"],
         "ML14KC1 SERIES": ["ML14KC1-018","ML14KC1-024","ML14KC1-030","ML14KC1-036","ML14KC1-041","ML14KC1-042","ML14KC1-047","ML14KC1-048","ML14KC1-059","ML14KC1-060"],
         "ML17KC2 SERIES": ["ML17KC2-024","ML17KC2-036","ML17KC2-048","ML17KC2-060"],
         "4TTR SERIES": ["4TTR6024N1000AA","4TTR5042A1000AA","4TTR5048A1000AA","4TTR5060A1000AA"],
-        "5TTR SERIES": ["5TTR5018","5TTR5024","5TTR5030","5TTR5036","5TTR5042","5TTR5048","5TTR5060"],
+        "5TTR SERIES": ["5TTR5018","5TTR5024","5TTR5030","5TTR5036","5TTR5042","5TTR5048","5TTR5060","5TTR6018","5TTR6024","5TTR6030","5TTR6036","5TTR6042","5TTR6048","5TTR6060"],
         "GLXS4BA SERIES": ["GLXS4BA1810AA","GLXS4BA2410AA","GLXS4BA3010AA","GLXS4BA3610AA","GLXS4BA4210AA","GLXS4BA4810AA","GLXS4BA6010AA"],
         "GLXS5BA SERIES": ["GLXS5BA1810AA","GLXS5BA2410AA","GLXS5BA3010AA","GLXS5BA3610AA","GLXS5BA4210AA","GLXS5BA4810AA","GLXS5BA6010AA"],
         "GLZS4BA SERIES": ["GLZS4BA1810AA","GLZS4BA2410AA","GLZS4BA3010AA","GLZS4BA3610AA","GLZS4BA4210AA","GLZS4BA4810AA","GLZS4BA6010AA"],
         "DC6VSS SERIES": ["DC6VSS2410","DC6VSS3010","DC6VSS3610","DC6VSS4210","DC6VSS4810","DC6VSS6010"],
       };
 
-      // ── New Job: series → model selectors ──
-      function njInitSeriesSelects() {
-        const map = { furnace: NJ_HEATER_DATA, outdoor: NJ_OUTDOOR_DATA, furnace2: NJ_HEATER_DATA, outdoor2: NJ_OUTDOOR_DATA };
-        ["furnace", "outdoor", "furnace2", "outdoor2"].forEach(field => {
-          const sel = document.getElementById(`nj-${field}-series`);
-          if (!sel || sel.options.length > 1) return;
-          Object.keys(map[field]).forEach(series => {
+      // ── New Job: populate flat model selects ──
+      function njPopulateSelect(sel, isOutdoor) {
+        if (!sel || sel.options.length > 1) return;
+        const data = isOutdoor ? NJ_OUTDOOR_DATA : NJ_HEATER_DATA;
+        Object.entries(data).forEach(([series, models]) => {
+          const grp = document.createElement("optgroup");
+          grp.label = series;
+          models.forEach(m => {
             const opt = document.createElement("option");
-            opt.value = series; opt.textContent = series;
-            sel.appendChild(opt);
+            opt.value = m; opt.textContent = m;
+            grp.appendChild(opt);
           });
+          sel.appendChild(grp);
         });
       }
 
-      function njLoadModels(field) {
-        const data    = (field === "furnace" || field === "furnace2") ? NJ_HEATER_DATA : NJ_OUTDOOR_DATA;
-        const series  = document.getElementById(`nj-${field}-series`).value;
-        const modelSel = document.getElementById(`nj-${field}`);
-        const resetBtn = document.getElementById(`nj-${field}-reset`);
-        modelSel.innerHTML = '<option value="">Select model…</option>';
-        if (!series) {
-          modelSel.disabled = true;
-          modelSel.style.color = "var(--text-dim)";
-          if (resetBtn) resetBtn.style.display = "none";
-          return;
-        }
-        (data[series] || []).forEach(m => {
-          const opt = document.createElement("option");
-          opt.value = m; opt.textContent = m;
-          modelSel.appendChild(opt);
+      function njBuildFlatSelects() {
+        const selF = document.getElementById("nj-furnace");
+        const selO = document.getElementById("nj-outdoor");
+        if (selF) njPopulateSelect(selF, false);
+        if (selO) njPopulateSelect(selO, true);
+      }
+
+      function njAddSystemRow(indoorVal = "", outdoorVal = "") {
+        const container = document.getElementById("nj-systems-container");
+        if (!container) return;
+        const rows = container.querySelectorAll(".nj-sys-row");
+        const idx = rows.length + 1;
+
+        const row = document.createElement("div");
+        row.className = "nj-sys-row";
+        row.dataset.sysIdx = String(idx);
+        row.style.cssText = "display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;align-items:flex-end;";
+
+        const fWrap = document.createElement("div");
+        fWrap.style.cssText = "display:flex;flex-direction:column;gap:5px;";
+        fWrap.innerHTML = `<label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Furnace / AHU — Sys ${idx}</label>`;
+        const fSel = document.createElement("select");
+        fSel.className = "nj-sys-furnace";
+        fSel.style.cssText = "background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono);width:100%;";
+        fSel.innerHTML = '<option value="">Select model…</option>';
+        fSel.onchange = function() { this.style.color = this.value ? "var(--amber)" : "var(--text-dim)"; };
+        njPopulateSelect(fSel, false);
+        if (indoorVal) { fSel.value = indoorVal; fSel.style.color = "var(--amber)"; }
+        fWrap.appendChild(fSel);
+
+        const oWrap = document.createElement("div");
+        oWrap.style.cssText = "display:flex;flex-direction:column;gap:5px;";
+        oWrap.innerHTML = `<label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ice)">Outdoor Unit — Sys ${idx}</label>`;
+        const oSel = document.createElement("select");
+        oSel.className = "nj-sys-outdoor";
+        oSel.style.cssText = "background:var(--bg2);border:1px solid var(--border2);border-radius:3px;color:var(--text-dim);padding:6px 8px;font-size:12px;font-family:var(--mono);width:100%;";
+        oSel.innerHTML = '<option value="">Select model…</option>';
+        oSel.onchange = function() { this.style.color = this.value ? "var(--amber)" : "var(--text-dim)"; };
+        njPopulateSelect(oSel, true);
+        if (outdoorVal) { oSel.value = outdoorVal; oSel.style.color = "var(--amber)"; }
+        oWrap.appendChild(oSel);
+
+        const rmBtn = document.createElement("button");
+        rmBtn.type = "button";
+        rmBtn.style.cssText = "background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:6px 4px;margin-bottom:2px;";
+        rmBtn.title = "Remove system";
+        rmBtn.textContent = "✕";
+        rmBtn.onclick = function() {
+          row.remove();
+          njRenumberSystemRows();
+        };
+
+        row.appendChild(fWrap);
+        row.appendChild(oWrap);
+        row.appendChild(rmBtn);
+        container.appendChild(row);
+      }
+
+      function njRenumberSystemRows() {
+        const container = document.getElementById("nj-systems-container");
+        if (!container) return;
+        const rows = container.querySelectorAll(".nj-sys-row");
+        rows.forEach((row, i) => {
+          row.dataset.sysIdx = String(i + 1);
+          const labels = row.querySelectorAll("label");
+          if (labels[0]) labels[0].textContent = `Furnace / AHU — Sys ${i + 1}`;
+          if (labels[1]) labels[1].textContent = `Outdoor Unit — Sys ${i + 1}`;
         });
-        modelSel.disabled = false;
-        modelSel.style.color = "var(--text)";
-        if (resetBtn) resetBtn.style.display = "none";
       }
 
-      function njModelSelected(field, sel) {
-        const resetBtn = document.getElementById(`nj-${field}-reset`);
-        if (resetBtn) resetBtn.style.display = sel.value ? "" : "none";
-        if (sel.value) sel.style.color = "var(--amber)";
-        else sel.style.color = "var(--text)";
-      }
-
-      function njResetSeries(field) {
-        const seriesSel = document.getElementById(`nj-${field}-series`);
-        const modelSel  = document.getElementById(`nj-${field}`);
-        const resetBtn  = document.getElementById(`nj-${field}-reset`);
-        if (seriesSel) seriesSel.value = "";
-        if (modelSel)  { modelSel.innerHTML = '<option value="">Select model…</option>'; modelSel.disabled = true; modelSel.style.color = "var(--text-dim)"; }
-        if (resetBtn)  resetBtn.style.display = "none";
+      function njGetSystems() {
+        const container = document.getElementById("nj-systems-container");
+        if (!container) return [];
+        const rows = container.querySelectorAll(".nj-sys-row");
+        const list = [];
+        rows.forEach((row, i) => {
+          const f = row.querySelector(".nj-sys-furnace")?.value.trim() || "";
+          const o = row.querySelector(".nj-sys-outdoor")?.value.trim() || "";
+          if (f || o || i === 0) {
+            list.push({ id: `sys_${i + 1}`, indoor: f, outdoor: o });
+          }
+        });
+        return list;
       }
 
       // ── New Job: address autocomplete from history ──
@@ -5954,21 +6046,16 @@
         if (addrInput) addrInput.value = r.address;
         if (r.subdivision) { const el = document.getElementById("nj-subdivision"); if (el) el.value = r.subdivision; }
         if (r.builder)     { const el = document.getElementById("nj-builder");     if (el) el.value = r.builder;     }
-        if (r.indoor_model)  njAutoFillEquip("furnace", r.indoor_model,  NJ_HEATER_DATA);
-        if (r.outdoor_model) njAutoFillEquip("outdoor", r.outdoor_model, NJ_OUTDOOR_DATA);
+        if (r.indoor_model)  njAutoFillEquip("furnace", r.indoor_model);
+        if (r.outdoor_model) njAutoFillEquip("outdoor", r.outdoor_model);
         dd.style.display = "none";
       }
 
-      function njAutoFillEquip(field, model, data) {
-        const seriesSel = document.getElementById(`nj-${field}-series`);
-        const modelSel  = document.getElementById(`nj-${field}`);
-        if (!seriesSel || !modelSel) return;
-        const series = Object.entries(data).find(([, models]) => models.includes(model))?.[0];
-        if (!series) return;
-        seriesSel.value = series;
-        njLoadModels(field);
+      function njAutoFillEquip(field, model) {
+        const modelSel = document.getElementById(`nj-${field}`);
+        if (!modelSel) return;
         modelSel.value = model;
-        njModelSelected(field, modelSel);
+        modelSel.style.color = model ? "var(--amber)" : "var(--text-dim)";
       }
 
       document.addEventListener("click", (e) => {
@@ -6043,12 +6130,13 @@
           alert("Address is required");
           return;
         }
-        const svcEl    = document.getElementById("nj-service");
-        const svcValue = svcEl?.value || document.querySelector(".nj-svc-btn.active")?.dataset.svc || "";
+        const systemsList = njGetSystems();
+        const sys1 = systemsList[0] || { indoor: "", outdoor: "" };
+        const sys2 = systemsList[1] || null;
         const tstat    = document.getElementById("nj-tstat")?.value || "";
         const tstatQty = document.getElementById("nj-tstat-qty")?.value || "1";
         const job = {
-          id: genId(),
+          id: crypto.randomUUID(),
           status: "pending",
           priority: document.getElementById("nj-priority")?.value || "normal",
           orderNumber: document.getElementById("nj-order")?.value.trim() || "",
@@ -6058,8 +6146,8 @@
             document.getElementById("nj-subdivision")?.value.trim() || "",
           cityState: document.getElementById("nj-city")?.value.trim() || "",
           builder: document.getElementById("nj-builder")?.value.trim() || "",
-          serviceType: svcValue,
-          problem: svcValue,
+          serviceType: "",
+          problem: "",
           thermostat: tstat ? { type: tstat, qty: tstatQty } : null,
           accessoryHints: [..._njAccs, ..._njHints],
           contactName:
@@ -6068,14 +6156,11 @@
             document.getElementById("nj-contact-phone")?.value.trim() || "",
           calledInBy:
             document.getElementById("nj-called-by")?.value.trim() || "",
-          furnaceModel:
-            document.getElementById("nj-furnace")?.value.trim() || "",
-          outdoorModel:
-            document.getElementById("nj-outdoor")?.value.trim() || "",
-          furnaceModel2:
-            document.getElementById("nj-furnace2")?.value.trim() || "",
-          outdoorModel2:
-            document.getElementById("nj-outdoor2")?.value.trim() || "",
+          systems: systemsList,
+          furnaceModel: sys1.indoor,
+          outdoorModel: sys1.outdoor,
+          furnaceModel2: sys2 ? sys2.indoor : "",
+          outdoorModel2: sys2 ? sys2.outdoor : "",
           coilModel: document.getElementById("nj-coil")?.value.trim() || "",
           evapModel: document.getElementById("nj-evap")?.value.trim() || "",
           linesetHint:
@@ -6084,7 +6169,7 @@
           historyRough: document.getElementById("nj-rough")?.value.trim() || "",
           historyTrim: document.getElementById("nj-trim")?.value.trim() || "",
           historySet: document.getElementById("nj-set")?.value.trim() || "",
-          twoSystems: document.getElementById("nj-two-systems")?.checked || false,
+          twoSystems: systemsList.length === 2,
           importantNotes:
             document.getElementById("nj-notes-quick")?.value.trim() ||
             document.getElementById("nj-notes")?.value.trim() || "",
@@ -6092,8 +6177,10 @@
             document.getElementById("nj-dispatch-notes")?.value.trim() || "",
           createdAt: new Date().toISOString(),
           routeDate: new Date().toISOString().split("T")[0],
+          dispatchNote: document.getElementById("nj-history")?.value.trim() || "",
         };
         jobs.push(job);
+        njAddToRecentList(job);
         save();
         renderBoard();
         updateStats();
@@ -6106,6 +6193,35 @@
     <button onclick="this.parentNode.remove()" style="background:none;border:none;color:#3ddc84;cursor:pointer;font-size:14px">✕</button>`;
         document.body.appendChild(toast);
         setTimeout(() => toast.parentNode && toast.remove(), 5000);
+      }
+
+      function njAddToRecentList(job) {
+        const section = document.getElementById("nj-recent-section");
+        const list = document.getElementById("nj-recent-list");
+        section.style.display = "block";
+        const row = document.createElement("div");
+        row.className = "export-job-row";
+        row.dataset.id = job.id;
+        row.innerHTML = `
+          <input type="checkbox" class="nj-export-chk" data-id="${job.id}" checked />
+          <div>
+            <strong>${esc(job.address)}</strong>
+            <span style="opacity:0.6;font-size:0.85em;margin-left:6px">
+              ${esc(job.subdivision || "")} ${esc(job.builder || "")}
+            </span>
+          </div>`;
+        list.appendChild(row);
+      }
+
+      async function njExportSelected() {
+        const checked = [...document.querySelectorAll(".nj-export-chk:checked")]
+          .map(cb => cb.dataset.id);
+        if (!checked.length) {
+          alert("No jobs selected");
+          return;
+        }
+        const selected = jobs.filter(j => checked.includes(j.id));
+        await doExportPWA(selected);
       }
 
       function clearNewJobForm() {
@@ -6130,6 +6246,7 @@
           "nj-notes-quick",
           "nj-notes",
           "nj-dispatch-notes",
+          "nj-history",
           "nj-hint-custom",
         ].forEach((id) => {
           const el = document.getElementById(id);
@@ -6143,8 +6260,18 @@
         if (war) war.value = "true";
         const twoSys = document.getElementById("nj-two-systems");
         if (twoSys) twoSys.checked = false;
-        const sys2row = document.getElementById("nj-sys2-row");
-        if (sys2row) sys2row.style.display = "none";
+        
+        // Reset dynamic systems container to 1 row
+        const sysCont = document.getElementById("nj-systems-container");
+        if (sysCont) {
+          const extraRows = sysCont.querySelectorAll(".nj-sys-row:not([data-sys-idx='1'])");
+          extraRows.forEach(r => r.remove());
+        }
+        
+        const histPanel = document.getElementById("nj-history-panel");
+        if (histPanel) histPanel.style.display = "none";
+        const histToggle = document.getElementById("nj-history-toggle");
+        if (histToggle) histToggle.textContent = "▶ History";
 
         // Reset service chips
         document.querySelectorAll(".nj-svc-btn").forEach(b => {
@@ -6152,7 +6279,7 @@
           b.style.color = b.style.borderColor = b.style.background = "";
         });
         // Reset equipment selects (sys 1 + sys 2)
-        ["furnace","outdoor","furnace2","outdoor2"].forEach(f => njResetSeries(f));
+        ["furnace","outdoor","furnace2","outdoor2"].forEach(f => { const el = document.getElementById(`nj-${f}`); if (el) { el.value = ""; el.style.color = "var(--text-dim)"; } });
         // Reset tstat + acc
         const ts = document.getElementById("nj-tstat"); if (ts) ts.value = "";
         const tq = document.getElementById("nj-tstat-qty"); if (tq) tq.value = "1";
@@ -6408,6 +6535,12 @@
       }
 
       function buildRecordSummary(record) {
+        if (record.report_text && record.report_text.trim()) {
+          const prefix = record.date ? `${record.date} — ` : "";
+          return record.technician
+            ? `${prefix}${record.technician}: ${record.report_text.trim()}`
+            : `${prefix}${record.report_text.trim()}`;
+        }
         const parts = [];
         if (record.date) parts.push(record.date);
         if (record.address) parts.push(record.address);
@@ -6432,8 +6565,8 @@
         return parts.join(", ");
       }
 
-      async function doExportPWA() {
-        const selected = getSelectedExportJobs();
+      async function doExportPWA(overrideJobs) {
+        const selected = overrideJobs || getSelectedExportJobs();
         if (selected.length === 0) {
           showExportStatus("⚠ Select at least one job", "var(--amber)");
           return;
@@ -6522,17 +6655,45 @@
 
           return {
             // ── Core fields (PWA loadJobsFromLocalStorage uses these) ──
+            id: crypto.randomUUID(),
+            date: j.routeDate || new Date().toISOString().split("T")[0],
             address: addr,
-            details: j.importantNotes || "",
+            notes: j.importantNotes || "",
             subdivision: j.subdivision || "",
             builder: j.builder || "",
-            heaterModel: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
-            outdoorModel: j.outdoorModel || latest?.outdoor_model || "",
-            heaterModel2: j.furnaceModel2 || j.heaterModel2 || "",
-            outdoorModel2: j.outdoorModel2 || "",
-            isTwoSystems: !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2),
-            thermostat: thermostat,
-            extractedAccessories: extractedAccessories,
+            systems: (Array.isArray(j.systems) && j.systems.length > 0)
+              ? j.systems.map(s => ({
+                  indoor: s.indoor || s.furnaceModel || s.heaterModel || "",
+                  outdoor: s.outdoor || s.outdoorModel || "",
+                  links: s.links || {}
+                }))
+              : [
+                  {
+                    indoor: j.furnaceModel || j.heaterModel || latest?.indoor_model || "",
+                    outdoor: j.outdoorModel || latest?.outdoor_model || "",
+                    links: {}
+                  },
+                  ...((j.furnaceModel2 || j.heaterModel2 || j.outdoorModel2 || j.twoSystems) ? [{
+                    indoor: j.furnaceModel2 || j.heaterModel2 || "",
+                    outdoor: j.outdoorModel2 || "",
+                    links: {}
+                  }] : [])
+                ],
+            system1: {
+              indoor: j.furnaceModel || j.heaterModel || latest?.indoor_model || (j.systems?.[0]?.indoor || ""),
+              outdoor: j.outdoorModel || latest?.outdoor_model || (j.systems?.[0]?.outdoor || ""),
+            },
+            system2: (j.furnaceModel2 || j.heaterModel2 || j.outdoorModel2 || j.systems?.[1])
+              ? {
+                  indoor: j.furnaceModel2 || j.heaterModel2 || (j.systems?.[1]?.indoor || ""),
+                  outdoor: j.outdoorModel2 || (j.systems?.[1]?.outdoor || ""),
+                }
+              : null,
+            isTwoSystems: (Array.isArray(j.systems) ? j.systems.length === 2 : !!(j.twoSystems || j.furnaceModel2 || j.heaterModel2)),
+            jobThermostat: thermostat
+              ? { model: thermostat.type || thermostat.model || "", qty: parseInt(thermostat.qty) || 1 }
+              : null,
+            jobAccessories: extractedAccessories,
             allHeaters: [],
             allUnits: [],
             savedState: null,
@@ -6544,7 +6705,7 @@
             contactPhone: j.contactPhone || "",
             cityState: j.cityState || "",
             dispatchNotes: j.dispatchNotes || "",
-            routeDate: j.routeDate || new Date().toISOString().split("T")[0],
+            dispatchNote: j.dispatchNote || "",
           };
         });
 
@@ -7098,20 +7259,11 @@
           if (!res.ok) throw new Error();
           const d = await res.json();
 
-          // Revenue
-          document.getElementById("hk-revenue").textContent =
-            "$" + parseFloat(d.weekRevenue).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
-          document.getElementById("hk-revenue-sub").textContent =
-            `${d.weekJobs} jobs this week`;
-
-          // Top tech
-          if (d.topTech) {
-            document.getElementById("hk-tech").textContent = d.topTech.technician;
-            document.getElementById("hk-tech-sub").textContent = `${d.topTech.job_count} jobs this week`;
-          } else {
-            document.getElementById("hk-tech").textContent = "—";
-            document.getElementById("hk-tech-sub").textContent = "No data yet";
-          }
+          // Partial jobs (in-memory)
+          const partialCount = jobs.filter(j => j.is_partial === 1).length;
+          document.getElementById("hk-partial").textContent = partialCount;
+          document.getElementById("hk-partial-sub").textContent =
+            partialCount > 0 ? `${partialCount} pending follow-up` : "all clear";
 
           // Low stock
           const stockEl    = document.getElementById("hk-stock");
@@ -7126,7 +7278,7 @@
           // Recent jobs table
           const tbody = document.getElementById("home-recent-tbody");
           if (!d.recentJobs.length) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">No completed jobs yet</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">No completed jobs yet</td></tr>`;
           } else {
             tbody.innerHTML = d.recentJobs.map(j => {
               const dateStr = j.date
@@ -7136,17 +7288,14 @@
                 <td class="dim">${dateStr}</td>
                 <td class="bright" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(j.address||"—")}</td>
                 <td style="color:var(--purple)">${esc(j.technician||"—")}</td>
-                <td style="text-align:right;color:var(--green)">$${parseFloat(j.total).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
               </tr>`;
             }).join("");
           }
         } catch(e) {
           // Server offline — show what we can from memory
-          document.getElementById("hk-revenue").textContent = "—";
-          document.getElementById("hk-tech").textContent = "—";
           document.getElementById("hk-stock").textContent = "—";
           document.getElementById("home-recent-tbody").innerHTML =
-            `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Server offline — showing board data only</td></tr>`;
+            `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">Server offline — showing board data only</td></tr>`;
         }
         // Performance graph — independent fetch, always runs
         loadPerfGraph();
@@ -7650,7 +7799,18 @@
               </tr></thead>
               <tbody>
                 ${record.items.map(i => `<tr data-item-id="${i.id}" style="border-bottom:1px solid var(--border)">
-                  <td style="padding:3px 4px"><input type="text" value="${esc(i.item_name)}" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="item_name" /></td>
+                  <td style="padding:3px 4px">${i.category === "Thermostat"
+                    ? `<select style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)"
+                         onchange="(function(s){var td=s.closest('td');td.querySelector('.hd-tstat-ot').style.display=s.value==='Other'?'inline-block':'none';if(s.value!=='Other')td.querySelector('[data-field=item_name]').value=s.value})(this)">
+                         ${buildTstatOptions(i.item_name)}
+                       </select>
+                       <input type="text" class="hd-tstat-ot" placeholder="Specify tstat…"
+                         style="display:${!TSTAT_OPTIONS.includes(i.item_name) && i.item_name ? 'inline-block' : 'none'};width:100%;margin-top:2px;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)"
+                         value="${esc(!TSTAT_OPTIONS.includes(i.item_name) ? i.item_name : '')}"
+                         oninput="this.closest('td').querySelector('[data-field=item_name]').value=this.value" />
+                       <input type="hidden" data-field="item_name" value="${esc(i.item_name)}" />`
+                    : `<input type="text" value="${esc(i.item_name)}" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="item_name" />`
+                  }</td>
                   <td style="padding:3px 4px"><select data-field="category" style="background:transparent;border:none;color:var(--text-dim);font-size:11px;width:100%">${["Service","Accessory","Fix","Thermostat","Refrigerant"].map(c=>`<option value="${c}" ${i.category===c?"selected":""}>${c}</option>`).join("")}</select></td>
                   <td style="padding:3px 4px;text-align:right"><input type="number" value="${i.quantity}" min="0" step="any" style="width:48px;text-align:right;background:transparent;border:none;color:var(--text);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="quantity" /></td>
                   <td style="padding:3px 4px;text-align:right"><input type="number" value="${i.price}" min="0" step="any" style="width:52px;text-align:right;background:transparent;border:none;color:var(--amber);font-size:12px;outline:none;border-bottom:1px solid var(--border2)" data-field="price" /></td>
@@ -8173,31 +8333,6 @@
       // ═══════════════════════════════════════
       let _crData = { income: [], equipment: [], refrigerant: [] };
 
-      const CR_EQUIPMENT_GROUPS = [
-        { label: "Tstats", items: ["T-4","T-6","T-10","T-8321","Ecobee","Daikin One","TH2110","Otro"] },
-        { label: "Zone Boards", items: ["HZ322","UT3000","Harmony"] },
-        { label: "Accessories", items: ["Float Switch","RDS","DAPC","Bypass Damper","Trane Harness","A2L R32 Sensor","A2L R445B Sensor"] },
-      ];
-
-      function buildCrChecklist() {
-        const container = document.getElementById("cr-eq-checklist");
-        container.innerHTML = CR_EQUIPMENT_GROUPS.map(g => `
-          <div style="grid-column:1/-1;font-size:9px;letter-spacing:.08em;color:var(--text-dim);text-transform:uppercase;margin-top:6px;margin-bottom:2px">${g.label}</div>
-          ${g.items.map(item => `
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-size:12px;white-space:nowrap">
-              <input type="checkbox" class="cr-eq-cb" value="${item}" checked style="accent-color:var(--amber);cursor:pointer" />
-              ${item}
-            </label>`).join("")}
-        `).join("");
-      }
-
-      function crCheckAll(state) {
-        document.querySelectorAll(".cr-eq-cb").forEach(cb => cb.checked = state);
-      }
-
-      function getCrSelectedItems() {
-        return Array.from(document.querySelectorAll(".cr-eq-cb:checked")).map(cb => cb.value);
-      }
 
       function crRefCheckAll(state) {
         document.querySelectorAll(".cr-ref-cb").forEach(cb => cb.checked = state);
@@ -8220,14 +8355,10 @@
       async function _runCrEquipment(from, to) {
         const empty   = document.getElementById("cr-empty-equipment");
         const tblWrap = document.getElementById("cr-tbl-equipment");
-        const tbody   = document.getElementById("cr-tbody-equipment");
-        const thead   = document.getElementById("cr-thead-equipment");
         empty.textContent = "Loading...";
         tblWrap.style.display = "none";
-        const selected = getCrSelectedItems();
-        if (!selected.length) { empty.textContent = "Select at least one item."; return; }
         try {
-          const res = await fetch(`${API_BASE}/reports/custom/equipment?from=${from}&to=${to}&items=${encodeURIComponent(selected.join(","))}`);
+          const res = await fetch(`${API_BASE}/reports/custom/equipment?from=${from}&to=${to}`);
           if (!res.ok) throw new Error(await res.text());
           const eqData = await res.json();
           _crData.equipment = eqData.rows || eqData;
@@ -8245,14 +8376,32 @@
           ).join("");
           summaryEl.style.display = "";
 
-          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Equipment used</th></tr>`;
-          tbody.innerHTML = _crData.equipment.map(r => `<tr>
-            <td class="amber" style="white-space:nowrap">${r.date}</td>
-            <td>${esc(r.address)}</td>
-            <td style="color:var(--ice)">${esc(r.items_list)}</td>
-          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
-            <td colspan="3" style="color:var(--text-dim)">${_crData.equipment.length} records</td>
-          </tr>`;
+          const eqGroups = [];
+          const eqMap = {};
+          _crData.equipment.forEach(item => {
+            const key = `${item.date}|${item.address}`;
+            if (!eqMap[key]) { eqMap[key] = { date: item.date, address: item.address, items: [] }; eqGroups.push(eqMap[key]); }
+            eqMap[key].items.push(item);
+          });
+          tblWrap.innerHTML = eqGroups.map((g, gi) => `
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+                <input type="checkbox" class="restock-group-cb" checked data-group="eq-${gi}" onchange="restockToggleGroup(this)" style="accent-color:var(--amber)" />
+                <span style="color:var(--amber);font-size:11px;font-family:monospace;white-space:nowrap">${g.date}</span>
+                <span style="font-size:12px;font-weight:600">${esc(g.address)}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px 18px;padding-left:22px">
+                ${g.items.map(item => `
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text)">
+                    <input type="checkbox" class="restock-cb" checked data-id="${item.job_item_id}" data-group="eq-${gi}"
+                      data-name="${item.item_name.replace(/"/g,'&quot;')}" data-qty="${Math.round(item.quantity)}"
+                      onchange="restockSyncGroup('eq-${gi}')" style="accent-color:var(--amber)" />
+                    ${esc(item.item_name)}${item.quantity > 1 ? `<span style="color:var(--text-dim);margin-left:2px">x${Math.round(item.quantity)}</span>` : ""}
+                  </label>
+                `).join("")}
+              </div>
+            </div>
+          `).join("");
           empty.textContent = "";
           tblWrap.style.display = "";
         } catch(e) { empty.textContent = "Error: " + e.message; }
@@ -8261,8 +8410,6 @@
       async function _runCrRefrigerant(from, to) {
         const empty   = document.getElementById("cr-empty-refrigerant");
         const tblWrap = document.getElementById("cr-tbl-refrigerant");
-        const tbody   = document.getElementById("cr-tbody-refrigerant");
-        const thead   = document.getElementById("cr-thead-refrigerant");
         empty.textContent = "Loading...";
         tblWrap.style.display = "none";
         const selectedRef = getCrSelectedRefTypes();
@@ -8272,19 +8419,36 @@
           if (!res.ok) throw new Error(await res.text());
           _crData.refrigerant = await res.json();
           if (!_crData.refrigerant.length) { empty.textContent = "No results for the selected range."; return; }
-          thead.innerHTML = `<tr><th>Date</th><th>Address</th><th>Type</th><th style="text-align:right">oz</th><th style="text-align:right">lbs</th></tr>`;
+          const refGroups = [];
+          const refMap = {};
+          _crData.refrigerant.forEach(item => {
+            const key = `${item.date}|${item.address}`;
+            if (!refMap[key]) { refMap[key] = { date: item.date, address: item.address, items: [] }; refGroups.push(refMap[key]); }
+            refMap[key].items.push(item);
+          });
           const totalOz = _crData.refrigerant.reduce((s, r) => s + r.oz_used, 0);
-          tbody.innerHTML = _crData.refrigerant.map(r => `<tr>
-            <td class="amber">${r.date}</td>
-            <td>${esc(r.address)}</td>
-            <td style="color:var(--ice)">${esc(r.ref_type)}</td>
-            <td style="text-align:right">${r.oz_used}</td>
-            <td style="text-align:right;color:var(--amber)">${r.lbs_display}</td>
-          </tr>`).join("") + `<tr style="border-top:1px solid var(--border2);font-weight:600">
-            <td colspan="3" style="color:var(--text-dim)">TOTAL — ${_crData.refrigerant.length} records</td>
-            <td style="text-align:right">${totalOz.toFixed(1)}</td>
-            <td style="text-align:right;color:var(--amber)">${(totalOz/16).toFixed(2)} lb</td>
-          </tr>`;
+          tblWrap.innerHTML = refGroups.map((g, gi) => `
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+                <input type="checkbox" class="restock-group-cb" checked data-group="ref-${gi}" onchange="restockToggleGroup(this)" style="accent-color:var(--amber)" />
+                <span style="color:var(--amber);font-size:11px;font-family:monospace;white-space:nowrap">${g.date}</span>
+                <span style="font-size:12px;font-weight:600">${esc(g.address)}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px 18px;padding-left:22px">
+                ${g.items.map(item => `
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text)">
+                    <input type="checkbox" class="restock-cb" checked data-id="${item.job_item_id}" data-group="ref-${gi}"
+                      data-name="${item.ref_type.replace(/"/g,'&quot;')}" data-qty="${item.oz_used}"
+                      onchange="restockSyncGroup('ref-${gi}')" style="accent-color:var(--amber)" />
+                    <span style="color:var(--ice)">${esc(item.ref_type)}</span>
+                    <span style="color:var(--text-dim);font-size:11px">${item.oz_used} oz · ${item.lbs_display}</span>
+                  </label>
+                `).join("")}
+              </div>
+            </div>
+          `).join("") + `<div style="padding:8px 10px;border-top:1px solid var(--border);margin-top:4px;font-size:11px;color:var(--text-dim);font-weight:600">
+            TOTAL — ${_crData.refrigerant.length} records · ${totalOz.toFixed(1)} oz · ${(totalOz/16).toFixed(2)} lb
+          </div>`;
           empty.textContent = "";
           tblWrap.style.display = "";
         } catch(e) { empty.textContent = "Error: " + e.message; }
@@ -8337,6 +8501,32 @@
       // Keep runCustomReport as alias for legacy callers (export/print still reference _crTab)
       function runCustomReport() { runAllCustomReports(); }
 
+      async function crMarkRestocked() {
+        const checked = Array.from(document.querySelectorAll(".restock-cb:checked"));
+        const ids = checked.map(cb => parseInt(cb.dataset.id)).filter(n => !isNaN(n));
+        if (!ids.length) { alert("No items selected."); return; }
+        try {
+          const r = await fetch(`${API_BASE}/restock/mark`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          const d = await r.json();
+          const toast = document.createElement("div");
+          toast.textContent = `${d.count} item(s) added to inventory`;
+          toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--green-dim,#0d2a1a);color:var(--green);border:1px solid var(--green);padding:10px 16px;border-radius:4px;font-size:12px;z-index:9999";
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+          const groupIds = new Set(checked.map(cb => cb.dataset.group));
+          checked.forEach(cb => cb.closest("label").remove());
+          groupIds.forEach(gid => {
+            const groupCb = document.querySelector(`.restock-group-cb[data-group="${gid}"]`);
+            if (groupCb && !document.querySelector(`.restock-cb[data-group="${gid}"]`))
+              groupCb.parentElement.parentElement.remove();
+          });
+        } catch(e) { alert("Error: " + e.message); }
+      }
+
       function exportCustomReportCSV() {
         const from = document.getElementById("cr-from").value;
         const to   = document.getElementById("cr-to").value;
@@ -8347,8 +8537,8 @@
           sections.push(..._crData.income.map(r => `${r.date},"${r.address}",${r.total}`));
         }
         if (_crData.equipment.length) {
-          sections.push("\n# Equipment Used\nDate,Address,Equipment");
-          sections.push(..._crData.equipment.map(r => `${r.date},"${r.address}","${r.items_list}"`));
+          sections.push("\n# Equipment Used\nDate,Address,Item,Qty");
+          sections.push(..._crData.equipment.map(r => `${r.date},"${r.address}","${r.item_name}",${Math.round(r.quantity)}`));
         }
         if (_crData.refrigerant.length) {
           sections.push("\n# Refrigerant\nDate,Address,Type,oz,lbs");
@@ -8386,11 +8576,18 @@
         }
         if (chkEquipment && _crData.equipment.length) {
           const eqSum = _crData.equipmentSummary || [];
+          const eqByJob = {};
+          _crData.equipment.forEach(r => {
+            const key = `${r.date}|${r.address}`;
+            if (!eqByJob[key]) eqByJob[key] = { date: r.date, address: r.address, items: [] };
+            eqByJob[key].items.push(r.quantity > 1 ? `${r.item_name} x${Math.round(r.quantity)}` : r.item_name);
+          });
+          const eqJobs = Object.values(eqByJob);
           const summaryRows = eqSum.map(s => `<tr><td>${s.item}</td><td class="num">${s.qty}</td></tr>`).join("")
-            + `<tr class="total"><td>${eqSum.length} models</td><td class="num">${_crData.equipment.length} jobs</td></tr>`;
+            + `<tr class="total"><td>${eqSum.length} models</td><td class="num">${eqJobs.length} jobs</td></tr>`;
           sections += buildSection("Equipment Summary", "<tr><th>Model</th><th>Qty</th></tr>", summaryRows);
-          const detailRows = _crData.equipment.map(r => `<tr><td>${r.date}</td><td>${r.address}</td><td>${r.items_list}</td></tr>`).join("")
-            + `<tr class="total"><td colspan="3">${_crData.equipment.length} records</td></tr>`;
+          const detailRows = eqJobs.map(g => `<tr><td>${g.date}</td><td>${g.address}</td><td>${g.items.join(", ")}</td></tr>`).join("")
+            + `<tr class="total"><td colspan="3">${eqJobs.length} records</td></tr>`;
           sections += buildSection("Equipment Detail", "<tr><th>Date</th><th>Address</th><th>Equipment</th></tr>", detailRows);
         }
         if (chkRefrigerant && _crData.refrigerant.length) {
@@ -8465,12 +8662,22 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
       }
 
       async function loadRestockPending() {
+        const fromEl = document.getElementById("restock-from");
+        const toEl   = document.getElementById("restock-to");
+        if (fromEl && !fromEl.value) {
+          const d = new Date(); d.setDate(d.getDate() - 30);
+          fromEl.value = d.toISOString().slice(0, 10);
+        }
+        if (toEl && !toEl.value) toEl.value = new Date().toISOString().slice(0, 10);
+        const from = fromEl ? fromEl.value : "";
+        const to   = toEl   ? toEl.value   : "";
         const list     = document.getElementById("restock-list");
         const printBtn = document.getElementById("restock-print-btn");
         list.innerHTML = '<div style="color:var(--text-dim);font-size:11px">Loading...</div>';
         printBtn.style.display = "none";
         try {
-          const res = await fetch(`${API_BASE}/restock/pending`);
+          const params = from && to ? `?from=${from}&to=${to}` : "";
+          const res = await fetch(`${API_BASE}/restock/pending${params}`);
           if (!res.ok) throw new Error(await res.text());
           const items = await res.json();
           if (!items.length) {
@@ -8649,8 +8856,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       // Wire Quick Stats lazy load on first open + init new job selects
       document.addEventListener("DOMContentLoaded", () => {
-        njInitSeriesSelects();
-        if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
+        njBuildFlatSelects();
         const det = document.querySelector("#panel-reports details");
         if (det) {
           let loaded = false;
@@ -8658,12 +8864,11 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
             if (det.open && !loaded) { loaded = true; await _loadQuickStats(); }
           });
         }
-        if (!document.getElementById("cr-eq-checklist").children.length) buildCrChecklist();
       });
 
       async function _loadQuickStats() {
         document.getElementById("rev-tbody").innerHTML =
-          `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
+          `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
         document.getElementById("tech-tbody").innerHTML =
           `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Loading...</td></tr>`;
         document.getElementById("rev-chart").innerHTML = "";
@@ -9243,11 +9448,13 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
 
       function filterHistory() {
         const q = document.getElementById("gs-input").value.toLowerCase();
-        const filtered = _histAllJobs.filter((j) =>
-          `${j.address} ${j.technician} ${j.notes} ${j.date}`
+        const partialOnly = document.getElementById("hist-partial-only")?.checked;
+        const filtered = _histAllJobs.filter((j) => {
+          if (partialOnly && !j.is_partial) return false;
+          return `${j.address} ${j.technician} ${j.notes} ${j.date}`
             .toLowerCase()
-            .includes(q)
-        );
+            .includes(q);
+        });
         renderHistoryTable(filtered);
       }
 
@@ -9263,7 +9470,7 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
             (j) => `
     <tr style="cursor:pointer" onclick="showHistDetail(${j.id})">
       <td class="amber">${esc(j.date || "")}</td>
-      <td class="bright">${esc(j.address || "")}</td>
+      <td class="bright">${esc(j.address || "")}${j.is_partial ? ' <span style="font-size:9px;background:var(--amber);color:#000;padding:1px 5px;border-radius:2px;margin-left:4px;font-family:var(--head);letter-spacing:.05em">PARTIAL</span>' : ""}</td>
       <td class="dim">${esc(j.technician || "—")}</td>
       <td class="dim" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         ${esc(j.notes || "")}
@@ -9278,11 +9485,26 @@ ${autoPrint ? "<script>window.onload=()=>window.print();<\/script>" : ""}
           })">Detail</button>
         <button type="button" class="btn btn-ghost btn-sm" title="View property history"
           onclick="event.stopPropagation();openPropertySearch('${esc(j.address || "").replace(/'/g,"\\'")}')">🏠</button>
+        <button type="button" class="btn btn-ghost btn-sm"
+          title="${j.is_partial ? "Remove partial flag" : "Mark as partial"}"
+          style="${j.is_partial ? "color:var(--amber)" : ""}"
+          onclick="event.stopPropagation();toggleHistPartial(${j.id},${j.is_partial ? 0 : 1})">${j.is_partial ? "⚠️" : "○"}</button>
       </td>
     </tr>
   `
           )
           .join("");
+      }
+
+      async function toggleHistPartial(id, newVal) {
+        await fetch(`${API_BASE}/jobs/${id}/partial`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_partial: newVal }),
+        });
+        const job = _histAllJobs.find(j => j.id === id);
+        if (job) job.is_partial = newVal;
+        filterHistory();
       }
 
       async function showHistDetail(jobId) {
