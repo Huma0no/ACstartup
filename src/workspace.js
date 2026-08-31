@@ -271,6 +271,11 @@ export function setOption(name, value) {
 
 function _syncLegacySystemFields() {
   if (!_state) return;
+  if (Array.isArray(_state.systems)) {
+    _state.systems.forEach((s, idx) => {
+      s.id = `sys_${idx + 1}`;
+    });
+  }
   _state.isTwoSystems = _state.systems.length === 2;
   _state.system2 = _state.systems[1] || null;
   _state.weightInData = _state.systems[0]?.weightInData || null;
